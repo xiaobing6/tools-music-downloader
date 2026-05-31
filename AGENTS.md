@@ -1,90 +1,90 @@
 # AGENTS.md
 
-## Project Overview
+## 项目概述
 
-This is a CLI tool for searching and downloading music from `music.gdstudio.org`. It uses Playwright to handle Cloudflare protection and the site's API to search, stream, and download MP3 files with full metadata (ID3 tags, cover art, lyrics).
+这是一个命令行音乐搜索下载工具，数据来源为 `music.gdstudio.org`。通过 Playwright 绕过 Cloudflare 防护，调用站点 API 搜索、下载 MP3 文件，并自动写入完整的元数据（ID3 标签、封面图、歌词）。
 
-## Tech Stack
+## 技术栈
 
-- **Language**: Python 3
-- **Dependencies**: `playwright` (headless browser for Cloudflare bypass and API calls), `mutagen` (MP3 ID3 tag read/write)
-- **No test framework** is currently set up.
+- **语言**：Python 3
+- **依赖库**：`playwright`（无头浏览器，用于绕过 Cloudflare 和调用 API）、`mutagen`（MP3 ID3 标签读写）
+- **测试框架**：目前未配置
 
-## Project Structure
+## 项目结构
 
 ```
-download.py          # Main script — all logic lives here (search, download, ID3 tagging, CLI)
-requirements.txt     # Python dependencies
-downloads/           # Output directory for downloaded MP3 files (gitignored)
+download.py          # 主脚本 — 所有逻辑均在此文件中（搜索、下载、ID3 标签写入、命令行界面）
+requirements.txt     # Python 依赖
+downloads/           # 下载目录，用于存放 MP3 文件（已加入 .gitignore）
 ```
 
-## How to Run
+## 运行方式
 
 ```bash
 pip install -r requirements.txt
 playwright install chromium
-python download.py -k "关键词"              # Search and download (default: 网易云, 320kbps, 20 results)
-python download.py -k "Beyond" --search-only # Search only, no download
-python download.py -k "Beyond" --select      # Search then pick songs to download
-python download.py -i                        # Interactive mode
+python download.py -k "关键词"              # 搜索并下载（默认：网易云，320kbps，20 条结果）
+python download.py -k "Beyond" --search-only # 仅搜索，不下载
+python download.py -k "Beyond" --select      # 搜索后选择要下载的歌曲
+python download.py -i                        # 交互模式
 ```
 
-## Key Architecture
+## 核心架构
 
-### API Interaction Flow
+### API 交互流程
 
-1. Launch Playwright browser → visit `music.gdstudio.org` → pass Cloudflare verification
-2. Extract `mkPlayer.version` from the page (used for signature computation)
-3. All API calls go to `/api.php` via POST with a computed MD5 signature (`compute_signature`)
-4. Signature formula: `MD5(hostname | zero-padded-version | timestamp[:9] | search_id)[-8:].upper()`
+1. 启动 Playwright 浏览器 → 访问 `music.gdstudio.org` → 通过 Cloudflare 验证
+2. 从页面提取 `mkPlayer.version`（用于签名计算）
+3. 所有 API 调用通过 POST 发送到 `/api.php`，附带的签名由 `compute_signature` 生成
+4. 签名算法：`MD5(hostname | 补零版本号 | timestamp[:9] | search_id)[-8:].upper()`
 
-### Core Functions in `download.py`
+### `download.py` 核心函数
 
-| Function | Purpose |
+| 函数 | 功能 |
 |---|---|
-| `compute_signature()` | Generate API request signature |
-| `search_with_pagination()` | Search songs with auto-pagination (max 99 per page) |
-| `get_play_url()` | Get MP3 playback URL for a song |
-| `get_lyric()` | Fetch lyrics for a song |
-| `get_pic_url()` | Fetch cover art URL for a song |
-| `download_song()` | Download MP3 + embed ID3 tags (cover, lyrics, metadata) |
-| `embed_id3_tags()` | Write ID3v2 tags (TIT2, TPE1, TALB, TRCK, APIC, USLT) |
-| `interactive_mode()` | REPL-style interactive search/download loop |
+| `compute_signature()` | 生成 API 请求签名 |
+| `search_with_pagination()` | 分页搜索歌曲（每页最多 99 条，自动翻页） |
+| `get_play_url()` | 获取歌曲的 MP3 播放链接 |
+| `get_lyric()` | 获取歌曲歌词 |
+| `get_pic_url()` | 获取歌曲封面图链接 |
+| `download_song()` | 下载 MP3 + 嵌入 ID3 标签（封面、歌词、元数据） |
+| `embed_id3_tags()` | 写入 ID3v2 标签（TIT2、TPE1、TALB、TRCK、APIC、USLT） |
+| `interactive_mode()` | 交互式循环，可反复搜索下载 |
 
-### Supported Music Sources
+### 支持的音乐源
 
-`netease`, `migu`, `kuwo`, `ytmusic`, `tidal`, `qobuz`, `deezer`, `spotify`, `tencent`, `ximalaya`, `joox`, `apple`
+`netease`（网易云）、`migu`（咪咕）、`kuwo`（酷我）、`ytmusic`（YouTube Music）、`tidal`、`qobuz`、`deezer`、`spotify`、`tencent`（QQ音乐）、`ximalaya`（喜马拉雅）、`joox`、`apple`
 
-### CLI Arguments
+### 命令行参数
 
-| Flag | Description |
+| 参数 | 说明 |
 |---|---|
-| `-k / --keyword` | Search keyword (default: "Beyond") |
-| `-s / --source` | Music source (default: "netease") |
-| `-n / --number` | Number of results (default: 20) |
-| `-t / --type` | Search type: song/album/playlist |
-| `-o / --output` | Output directory |
-| `-f / --format` | Output format: table/json/list |
-| `-b / --bitrate` | Bitrate: 128/192/320/flac |
-| `--search-only` | Search without downloading |
-| `--select` | Choose songs interactively after search |
-| `--no-lyric` | Skip lyrics embedding |
-| `--no-cover` | Skip cover art embedding |
-| `-i / --interactive` | Interactive REPL mode |
+| `-k / --keyword` | 搜索关键词（默认："Beyond"） |
+| `-s / --source` | 音乐源（默认："netease"） |
+| `-n / --number` | 结果数量（默认：20） |
+| `-t / --type` | 搜索类型：song（单曲）/album（专辑）/playlist（歌单） |
+| `-o / --output` | 下载目录 |
+| `-f / --format` | 输出格式：table（表格）/json/list（列表） |
+| `-b / --bitrate` | 音质：128/192/320/flac |
+| `--search-only` | 仅搜索，不下载 |
+| `--select` | 搜索后选择要下载的歌曲 |
+| `--no-lyric` | 不嵌入歌词 |
+| `--no-cover` | 不嵌入封面图 |
+| `-i / --interactive` | 交互模式 |
 
-## Coding Conventions
+## 代码规范
 
-- Single-file architecture — all logic is in `download.py`
-- Chinese-language CLI output and comments
-- No external config files; all constants defined at module top
-- Error handling: retry with Cloudflare refresh on HTTP 403; retry download up to 2 times
-- Filename sanitization replaces `\/:*?"<>|` with `_`
-- Downloaded files are named `[song_id] artist - name.mp3`
+- 单文件架构 — 所有逻辑集中在 `download.py`
+- 注释和 CLI 输出均使用中文
+- 无外部配置文件，所有常量定义在文件顶部
+- 错误处理：HTTP 403 时重试并刷新 Cloudflare；下载失败最多重试 2 次
+- 文件名中非法字符（`\/:*?"<>|`）替换为 `_`
+- 下载文件命名格式：`[歌曲ID] 歌手 - 歌名.mp3`
 
-## Common Modification Scenarios
+## 常见修改场景
 
-- **Adding a new music source**: Add the source name to `VALID_SOURCES` list; the API handles routing server-side
-- **Changing default settings**: Modify `DEFAULT_KEYWORD`, `DEFAULT_SOURCE`, `DEFAULT_NUMBER` constants
-- **Adjusting ID3 tag writing**: Edit `embed_id3_tags()` — currently writes TIT2, TPE1, TALB, TRCK, APIC, USLT
-- **Changing download behavior**: Modify `download_song()` — retry logic, proxy URL pattern, temp file handling
-- **API signature changes**: Update `compute_signature()` if the site changes its signing algorithm
+- **新增音乐源**：在 `VALID_SOURCES` 列表中添加源名称，API 端路由由服务端处理
+- **修改默认设置**：调整 `DEFAULT_KEYWORD`、`DEFAULT_SOURCE`、`DEFAULT_NUMBER` 常量
+- **调整 ID3 标签写入**：修改 `embed_id3_tags()` — 当前写入 TIT2、TPE1、TALB、TRCK、APIC、USLT
+- **修改下载行为**：修改 `download_song()` — 重试逻辑、代理 URL 规则、临时文件处理
+- **API 签名变更**：若站点调整签名算法，更新 `compute_signature()` 中的逻辑
