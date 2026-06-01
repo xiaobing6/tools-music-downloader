@@ -68,3 +68,13 @@ def test_check_env_cli_does_not_start_real_browser(monkeypatch):
     monkeypatch.setattr(env, "render_environment_checks", lambda checks: None)
 
     assert env.check_environment() == 0
+
+
+def test_render_environment_checks_falls_back_without_rich(monkeypatch, capsys):
+    monkeypatch.setattr(env, "RichTable", None)
+
+    env.render_environment_checks([env.EnvironmentCheck("rich", False, "missing")])
+
+    captured = capsys.readouterr()
+    assert "rich" in captured.out
+    assert "missing" in captured.out

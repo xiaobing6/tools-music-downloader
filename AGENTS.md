@@ -8,7 +8,7 @@
 
 - **语言**：Python 3.8+
 - **运行依赖**：`playwright`、`mutagen`、`rich`
-- **开发依赖**：`pytest`、`ruff`、`mypy`
+- **开发依赖**：`pytest`、`ruff`、`mypy<2`
 - **浏览器要求**：系统已安装 Google Chrome，代码使用 `channel="chrome"`
 
 ## 项目结构
@@ -26,6 +26,9 @@ music_downloader/downloader.py # 下载、重试、临时文件和文件命名
 music_downloader/metadata.py   # MP3/FLAC 元数据写入
 music_downloader/utils.py      # 通用工具函数
 tests/                      # 单元测试
+.github/workflows/ci.yml     # GitHub Actions 检查
+.gitattributes               # 换行规则
+pyproject.toml               # pytest/ruff/mypy 配置
 ```
 
 ## 运行方式
