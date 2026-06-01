@@ -38,6 +38,7 @@ def positive_int(value: str) -> int:
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
+        prog="music_download.py",
         description="music.gdstudio.org 音乐搜索与下载工具",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""示例:

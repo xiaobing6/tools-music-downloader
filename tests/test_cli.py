@@ -21,7 +21,7 @@ def test_module_help_uses_same_cli():
     )
 
     assert result.returncode == 0
-    assert b"-m music_downloader" in result.stdout
+    assert b"--check-env" in result.stdout
 
 
 def test_number_must_be_positive():
