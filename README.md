@@ -38,31 +38,31 @@ pip install -r requirements-dev.txt
 
 ```bash
 # 搜索并下载默认关键词（Beyond，网易云，320kbps，20 首）
-python download.py
+python music_download.py
 
 # 指定关键词搜索并下载
-python download.py -k "周杰伦"
+python music_download.py -k "周杰伦"
 
 # 搜索并选择要下载的歌曲
-python download.py -k "张学友" --select
+python music_download.py -k "张学友" --select
 
 # 仅搜索，不下载
-python download.py -k "邓紫棋" --search-only
+python music_download.py -k "邓紫棋" --search-only
 
 # 切换音乐源
-python download.py -k "Taylor Swift" -s spotify
+python music_download.py -k "Taylor Swift" -s spotify
 
 # 搜索专辑
-python download.py -k "周杰伦" -t album
+python music_download.py -k "周杰伦" -t album
 
 # 下载 FLAC
-python download.py -k "林俊杰" -b flac
+python music_download.py -k "林俊杰" -b flac
 
 # 下载到指定目录
-python download.py -k "林俊杰" -o "D:\MyMusic"
+python music_download.py -k "林俊杰" -o "D:\MyMusic"
 
 # 交互模式
-python download.py -i
+python music_download.py -i
 ```
 
 ## 命令行参数
@@ -103,7 +103,7 @@ python download.py -i
 
 ```text
 .
-├── download.py                 # 兼容旧用法的 CLI 入口
+├── music_download.py           # CLI 入口
 ├── music_downloader/           # 核心包
 │   ├── api.py                  # API 请求、签名、Cloudflare 处理
 │   ├── cli.py                  # 参数解析、交互模式、主流程
@@ -121,10 +121,10 @@ python download.py -i
 ## 开发
 
 ```bash
-python download.py -h
+python music_download.py -h
 python -m pytest
 python -m ruff check .
-python -m py_compile download.py
+python -m py_compile music_download.py
 ```
 
 测试不会访问真实音乐站点，避免网络和 Cloudflare 影响结果。
@@ -150,5 +150,5 @@ python -m py_compile download.py
 **Q: 如何查看所有参数？**
 
 ```bash
-python download.py -h
+python music_download.py -h
 ```

@@ -6,17 +6,17 @@ from music_downloader.cli import parse_args
 
 def test_help_works_without_runtime_dependencies():
     result = subprocess.run(
-        [sys.executable, "download.py", "-h"],
+        [sys.executable, "music_download.py", "-h"],
         capture_output=True,
     )
 
     assert result.returncode == 0
-    assert b"usage: download.py" in result.stdout
+    assert b"usage: music_download.py" in result.stdout
 
 
 def test_number_must_be_positive():
     result = subprocess.run(
-        [sys.executable, "download.py", "-n", "0", "--search-only"],
+        [sys.executable, "music_download.py", "-n", "0", "--search-only"],
         capture_output=True,
     )
 
