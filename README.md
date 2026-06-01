@@ -147,6 +147,56 @@ python -m py_compile music_download.py
 
 测试不会访问真实音乐站点，避免网络和 Cloudflare 影响结果。
 
+## 打包 EXE
+
+本项目推荐使用 Nuitka 打包 Windows 可执行文件。打包后的 exe 会包含 Python 运行时和 Python 依赖，但仍然使用用户系统里已安装的 Google Chrome，不会把 Playwright 浏览器一起打包进去。
+
+安装构建依赖：
+
+```bash
+pip install -r requirements-build.txt
+```
+
+默认构建单文件 exe，后续分发时只需要复制这个文件：
+
+```powershell
+.\scripts\build_exe.ps1
+```
+
+单文件产物：
+
+```text
+dist/music_download.exe
+```
+
+如需先用目录模式排查依赖问题：
+
+```powershell
+.\scripts\build_exe.ps1 -Mode standalone
+```
+
+输出目录：
+
+```text
+dist/
+```
+
+目录模式产物需要整个目录一起复制，仅用于排查：
+
+```text
+dist/music_download.dist/music_download.exe
+```
+
+打包后建议先检查环境：
+
+```powershell
+.\dist\music_download.exe --check-env
+# 或目录模式：
+.\dist\music_download.dist\music_download.exe --check-env
+```
+
+如果目标机器缺少 Visual C++ 运行库，请安装 Microsoft Visual C++ Redistributable for Visual Studio 2015-2022。Nuitka 会尽量打包可用运行库，但在部分构建环境下仍可能需要目标机器预装。
+
 ## 注意事项
 
 - 下载的歌曲仅供个人学习交流使用，请尊重版权。

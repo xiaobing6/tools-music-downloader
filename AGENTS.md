@@ -9,6 +9,7 @@
 - **语言**：Python 3.8+
 - **运行依赖**：`playwright`、`mutagen`、`rich`
 - **开发依赖**：`pytest`、`ruff`、`mypy<2`
+- **构建依赖**：`nuitka`、`ordered-set`、`zstandard`
 - **浏览器要求**：系统已安装 Google Chrome，代码使用 `channel="chrome"`
 
 ## 项目结构
@@ -29,6 +30,8 @@ tests/                      # 单元测试
 .github/workflows/ci.yml     # GitHub Actions 检查
 .gitattributes               # 换行规则
 pyproject.toml               # pytest/ruff/mypy 配置
+requirements-build.txt       # Nuitka 构建依赖
+scripts/build_exe.ps1        # Windows exe 构建脚本
 ```
 
 ## 运行方式
@@ -56,6 +59,23 @@ python -m ruff check .
 python -m mypy music_downloader
 python -m py_compile music_download.py
 ```
+
+## EXE 构建
+
+```powershell
+pip install -r requirements-build.txt
+.\scripts\build_exe.ps1
+.\dist\music_download.exe --check-env
+```
+
+默认使用 Nuitka onefile 模式，产物为 `dist/music_download.exe`，分发时只复制这个 exe 即可。脚本通过 `--playwright-include-browser=none` 排除 Playwright 浏览器。遇到依赖排查问题时，先运行 standalone 模式，目录模式产物需要整个 `dist/music_download.dist/` 一起复制：
+
+```powershell
+.\scripts\build_exe.ps1 -Mode standalone
+.\dist\music_download.dist\music_download.exe --check-env
+```
+
+目标机器仍需安装 Google Chrome；如缺少 Visual C++ 运行库，请安装 Microsoft Visual C++ Redistributable for Visual Studio 2015-2022。
 
 ## 核心架构
 
