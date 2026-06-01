@@ -34,6 +34,8 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
+`requirements-dev.txt` 会同时安装运行依赖和开发工具。
+
 ## 快速开始
 
 ```bash
@@ -63,6 +65,12 @@ python music_download.py -k "林俊杰" -o "D:\MyMusic"
 
 # 交互模式
 python music_download.py -i
+
+# 检查本地运行环境
+python music_download.py --check-env
+
+# 也可以使用模块入口
+python -m music_downloader -h
 ```
 
 ## 命令行参数
@@ -80,6 +88,7 @@ python music_download.py -i
 | `--select` | 搜索后手动选择要下载的歌曲 | - |
 | `--no-lyric` | 不下载歌词 | - |
 | `--no-cover` | 不嵌入封面图 | - |
+| `--check-env` | 检查依赖和系统 Chrome，不访问音乐站点 | - |
 | `-i / --interactive` | 交互模式 | - |
 
 ## 支持的音乐源
@@ -107,9 +116,12 @@ python music_download.py -i
 ├── music_downloader/           # 核心包
 │   ├── api.py                  # API 请求、签名、Cloudflare 处理
 │   ├── cli.py                  # 参数解析、交互模式、主流程
+│   ├── env.py                  # 本地环境检查
 │   ├── downloader.py           # 下载、重试、临时文件
 │   ├── metadata.py             # MP3/FLAC 元数据写入
 │   ├── display.py              # 输出格式
+│   ├── console.py              # rich 终端输出
+│   ├── __main__.py             # python -m music_downloader 入口
 │   ├── utils.py                # 通用工具
 │   └── config.py               # 常量配置
 ├── tests/                      # 单元测试
@@ -122,8 +134,11 @@ python music_download.py -i
 
 ```bash
 python music_download.py -h
+python -m music_downloader -h
+python music_download.py --check-env
 python -m pytest
 python -m ruff check .
+python -m mypy music_downloader
 python -m py_compile music_download.py
 ```
 

@@ -7,8 +7,8 @@
 ## 技术栈
 
 - **语言**：Python 3.8+
-- **运行依赖**：`playwright`、`mutagen`
-- **开发依赖**：`pytest`、`ruff`
+- **运行依赖**：`playwright`、`mutagen`、`rich`
+- **开发依赖**：`pytest`、`ruff`、`mypy`
 - **浏览器要求**：系统已安装 Google Chrome，代码使用 `channel="chrome"`
 
 ## 项目结构
@@ -18,7 +18,10 @@ music_download.py           # 轻量 CLI 入口
 music_downloader/config.py  # 常量、默认值、支持的平台
 music_downloader/api.py     # 签名、Cloudflare 检查、API 请求
 music_downloader/cli.py     # 参数解析、交互模式、主流程
+music_downloader/env.py     # 本地环境检查
 music_downloader/display.py # 表格、列表、JSON 输出
+music_downloader/console.py # rich 终端输出
+music_downloader/__main__.py # python -m music_downloader 入口
 music_downloader/downloader.py # 下载、重试、临时文件和文件命名
 music_downloader/metadata.py   # MP3/FLAC 元数据写入
 music_downloader/utils.py      # 通用工具函数
@@ -33,6 +36,8 @@ python music_download.py -k "关键词"
 python music_download.py -k "Beyond" --search-only
 python music_download.py -k "Beyond" --select
 python music_download.py -k "Beyond" -b flac
+python music_download.py --check-env
+python -m music_downloader -h
 python music_download.py -i
 ```
 
@@ -41,8 +46,11 @@ python music_download.py -i
 ```bash
 pip install -r requirements-dev.txt
 python music_download.py -h
+python -m music_downloader -h
+python music_download.py --check-env
 python -m pytest
 python -m ruff check .
+python -m mypy music_downloader
 python -m py_compile music_download.py
 ```
 
@@ -66,7 +74,7 @@ python -m py_compile music_download.py
 
 ## 约定
 
-- 使用 `python music_download.py ...` 作为项目 CLI 入口。
+- 使用 `python music_download.py ...` 作为脚本入口，也支持 `python -m music_downloader ...`。
 - CLI 输出和文档使用中文。
 - 自动化测试不要访问真实音乐站点，使用 fake page/context 覆盖逻辑。
 - 下载目录 `downloads/` 已由 `.gitignore` 忽略。
