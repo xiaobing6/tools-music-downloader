@@ -1,15 +1,23 @@
 import json
 from typing import Any, Dict, List
 
-from rich.table import Table
-
 from .console import console
 from .utils import normalize_song
 
+RichTable: Any
+try:
+    from rich.table import Table as RichTable
+except ImportError:
+    RichTable = None
+
 
 def display_table(data: List[Dict[str, Any]], keyword: str) -> None:
+    if RichTable is None:
+        display_list(data, keyword)
+        return
+
     songs = [normalize_song(song) for song in data]
-    table = Table(title=f'搜索结果："{keyword}"')
+    table = RichTable(title=f'搜索结果："{keyword}"')
     for header in ["#", "歌名", "歌手", "专辑", "时长", "来源", "ID"]:
         table.add_column(header)
 

@@ -3,9 +3,13 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Tuple
 
-from rich.table import Table
-
 from .console import console
+
+RichTable: Any
+try:
+    from rich.table import Table as RichTable
+except ImportError:
+    RichTable = None
 
 
 @dataclass
@@ -68,7 +72,14 @@ def run_environment_checks(
 
 
 def render_environment_checks(checks: List[EnvironmentCheck]) -> None:
-    table = Table(title="环境检查")
+    if RichTable is None:
+        console.print("环境检查")
+        for check in checks:
+            status = "通过" if check.ok else "失败"
+            console.print(f"- {check.name}: {status} - {check.detail}")
+        return
+
+    table = RichTable(title="环境检查")
     table.add_column("项目", style="cyan")
     table.add_column("状态")
     table.add_column("说明")

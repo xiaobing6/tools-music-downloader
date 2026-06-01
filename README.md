@@ -125,6 +125,9 @@ python -m music_downloader -h
 │   ├── utils.py                # 通用工具
 │   └── config.py               # 常量配置
 ├── tests/                      # 单元测试
+├── .github/workflows/ci.yml    # GitHub Actions 检查
+├── .gitattributes              # 换行规则
+├── pyproject.toml              # pytest/ruff/mypy 配置
 ├── requirements.txt            # 运行依赖
 ├── requirements-dev.txt        # 开发依赖
 └── README.md
@@ -148,7 +151,7 @@ python -m py_compile music_download.py
 
 - 下载的歌曲仅供个人学习交流使用，请尊重版权。
 - 部分平台（如 Spotify、Tidal）可能需要可访问对应服务的网络环境。
-- 如提示缺少 `playwright` 或 `mutagen`，请运行 `pip install -r requirements.txt`。
+- 如提示缺少 `playwright`、`mutagen` 或 `rich`，请运行 `pip install -r requirements.txt`。
 - 如提示无法启动 Google Chrome，请确认系统已安装 Chrome。
 - 已存在的文件会自动跳过，不会重复下载。
 
