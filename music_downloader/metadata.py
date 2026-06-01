@@ -61,6 +61,10 @@ def embed_id3_tags(
             return
 
     tags = audio.tags
+    if tags is None:
+        print("  ⚠ 无法写入 ID3 标签: 未能初始化标签")
+        return
+
     name = str(song.get("name", ""))
     if name:
         tags.add(TIT2(encoding=3, text=name))

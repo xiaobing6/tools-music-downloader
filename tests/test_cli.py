@@ -14,6 +14,16 @@ def test_help_works_without_runtime_dependencies():
     assert b"usage: music_download.py" in result.stdout
 
 
+def test_module_help_uses_same_cli():
+    result = subprocess.run(
+        [sys.executable, "-m", "music_downloader", "-h"],
+        capture_output=True,
+    )
+
+    assert result.returncode == 0
+    assert b"-m music_downloader" in result.stdout
+
+
 def test_number_must_be_positive():
     result = subprocess.run(
         [sys.executable, "music_download.py", "-n", "0", "--search-only"],
