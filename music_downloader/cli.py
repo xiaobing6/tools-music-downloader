@@ -38,12 +38,12 @@ def parse_args(argv=None):
         description="music.gdstudio.org 音乐搜索与下载工具",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""示例:
-  python download.py -k "周杰伦"
-  python download.py -k "Beyond" -n 5
-  python download.py -k "Beyond" -t album
-  python download.py -k "Beyond" -o "D:\\Music"
-  python download.py -k "Beyond" --search-only
-  python download.py -i""",
+  python music_download.py -k "周杰伦"
+  python music_download.py -k "Beyond" -n 5
+  python music_download.py -k "Beyond" -t album
+  python music_download.py -k "Beyond" -o "D:\\Music"
+  python music_download.py -k "Beyond" --search-only
+  python music_download.py -i""",
     )
     parser.add_argument("-k", "--keyword", default=DEFAULT_KEYWORD, help=f"搜索关键词 (默认: {DEFAULT_KEYWORD})")
     parser.add_argument("-s", "--source", default=DEFAULT_SOURCE, choices=VALID_SOURCES, help=f"音乐源 (默认: {DEFAULT_SOURCE})")

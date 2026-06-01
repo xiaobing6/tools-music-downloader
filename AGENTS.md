@@ -14,7 +14,7 @@
 ## 项目结构
 
 ```text
-download.py                 # 兼容旧用法的轻量 CLI 入口
+music_download.py           # 轻量 CLI 入口
 music_downloader/config.py  # 常量、默认值、支持的平台
 music_downloader/api.py     # 签名、Cloudflare 检查、API 请求
 music_downloader/cli.py     # 参数解析、交互模式、主流程
@@ -29,21 +29,21 @@ tests/                      # 单元测试
 
 ```bash
 pip install -r requirements.txt
-python download.py -k "关键词"
-python download.py -k "Beyond" --search-only
-python download.py -k "Beyond" --select
-python download.py -k "Beyond" -b flac
-python download.py -i
+python music_download.py -k "关键词"
+python music_download.py -k "Beyond" --search-only
+python music_download.py -k "Beyond" --select
+python music_download.py -k "Beyond" -b flac
+python music_download.py -i
 ```
 
 ## 开发检查
 
 ```bash
 pip install -r requirements-dev.txt
-python download.py -h
+python music_download.py -h
 python -m pytest
 python -m ruff check .
-python -m py_compile download.py
+python -m py_compile music_download.py
 ```
 
 ## 核心架构
@@ -66,7 +66,7 @@ python -m py_compile download.py
 
 ## 约定
 
-- 保持 `python download.py ...` 入口兼容。
+- 使用 `python music_download.py ...` 作为项目 CLI 入口。
 - CLI 输出和文档使用中文。
 - 自动化测试不要访问真实音乐站点，使用 fake page/context 覆盖逻辑。
 - 下载目录 `downloads/` 已由 `.gitignore` 忽略。
