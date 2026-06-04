@@ -73,7 +73,7 @@ python music_download.py --check-env
 python -m music_downloader -h
 ```
 
-> **下载目录建议**：默认输出在仓库根的 `downloads/`，已加入 `.gitignore`。为避免被 IDE 索引或被同步盘误抓，**建议把 `-o` 指到仓库外**，例如 `D:\MyMusic`。
+> **下载目录建议**：默认输出在仓库根的 `downloads/<关键词>/`，已加入 `.gitignore`。为避免被 IDE 索引或被同步盘误抓，**建议把 `-o` 指到仓库外**，例如 `D:\MyMusic`，实际落盘路径为 `D:\MyMusic\<关键词>\`。
 
 ## 命令行参数
 
@@ -83,7 +83,7 @@ python -m music_downloader -h
 | `-s / --source` | 音乐源 | `netease` |
 | `-n / --number` | 结果数量，必须是正整数 | `20` |
 | `-t / --type` | 搜索类型：`song` / `album` / `playlist` | `song` |
-| `-o / --output` | 下载目录 | `./downloads/` |
+| `-o / --output` | 下载目录（会再自动按关键词建子目录） | `./downloads/` |
 | `-f / --format` | 输出格式：`table` / `list` / `json` | `table` |
 | `-b / --bitrate` | 音质：`128` / `192` / `320` / `flac` | `320` |
 | `--search-only` | 仅搜索，不下载 | - |
