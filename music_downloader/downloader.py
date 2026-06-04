@@ -3,7 +3,7 @@ import os
 import shutil
 import time
 from collections.abc import Iterable
-from typing import Optional, Union
+from typing import Union
 
 from .api import get_lyric, get_pic_url, get_play_url
 from .config import (
@@ -33,7 +33,7 @@ def build_output_path(save_dir: str, song: dict, bitrate: str) -> str:
     return os.path.join(save_dir, filename)
 
 
-def cleanup_paths(paths: Optional[Iterable[PathLike]]) -> None:
+def cleanup_paths(paths: Iterable[PathLike] | None) -> None:
     """尽力删除给定文件/目录路径。缺失或失败时静默。"""
     if not paths:
         return

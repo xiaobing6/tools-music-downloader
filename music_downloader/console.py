@@ -1,6 +1,6 @@
 import sys
 from contextlib import suppress
-from typing import Any, Optional
+from typing import Any
 
 RichTable: Any
 try:
@@ -26,7 +26,7 @@ def _force_utf8_stdout() -> None:
 
 
 class PlainConsole:
-    def print(self, *objects: Any, style: Optional[str] = None, **kwargs: Any) -> None:
+    def print(self, *objects: Any, style: str | None = None, **kwargs: Any) -> None:
         print(*objects)
 
     def rule(self, title: str) -> None:

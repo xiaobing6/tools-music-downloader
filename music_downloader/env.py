@@ -1,8 +1,9 @@
 import contextlib
 import importlib.util
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 from .console import PlainConsole, RichTable, console
 
@@ -23,7 +24,7 @@ def check_python_version(
     return EnvironmentCheck("Python 版本", ok, detail)
 
 
-def check_module(module_name: str, package_name: Optional[str] = None) -> EnvironmentCheck:
+def check_module(module_name: str, package_name: str | None = None) -> EnvironmentCheck:
     package = package_name or module_name
     if importlib.util.find_spec(module_name) is None:
         return EnvironmentCheck(package, False, "未安装，请运行: pip install -r requirements.txt")
@@ -31,7 +32,7 @@ def check_module(module_name: str, package_name: Optional[str] = None) -> Enviro
 
 
 def check_chrome_launcher(
-    sync_playwright_factory: Optional[Callable[[], Any]] = None,
+    sync_playwright_factory: Callable[[], Any] | None = None,
 ) -> EnvironmentCheck:
     try:
         if sync_playwright_factory is None:
@@ -57,7 +58,7 @@ def check_chrome_launcher(
 
 
 def run_environment_checks(
-    chrome_checker: Optional[Callable[[], EnvironmentCheck]] = None,
+    chrome_checker: Callable[[], EnvironmentCheck] | None = None,
 ) -> list[EnvironmentCheck]:
     checks = [
         check_python_version(),

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-import enum
 import os
 import sys
 import time
@@ -37,11 +36,6 @@ SET_SOURCE_PREFIX = "s "
 SET_NUMBER_PREFIX = "n "
 SEARCH_ONLY_TOKEN = "so"
 QUIT_TOKEN = "q"
-
-
-class InteractiveOutcome(enum.Enum):
-    QUIT = "quit"
-    CONTINUE = "continue"
 
 
 @dataclass

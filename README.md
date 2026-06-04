@@ -13,7 +13,7 @@
 
 ## 环境要求
 
-- Python 3.9+
+- Python 3.10+
 - 已安装 Google Chrome 浏览器
 - Windows / macOS / Linux
 
