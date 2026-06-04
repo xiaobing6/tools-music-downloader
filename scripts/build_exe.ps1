@@ -8,12 +8,18 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
+# 幂等安装构建依赖
+python -m pip install -r requirements-build.txt
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to install build dependencies (exit $LASTEXITCODE)"
+}
+
 $env:NUITKA_CACHE_DIR = Join-Path $ProjectRoot ".nuitka-cache"
 New-Item -ItemType Directory -Force -Path $env:NUITKA_CACHE_DIR | Out-Null
 
 $commonArgs = @(
     "--assume-yes-for-downloads",
-    "--enable-plugin=pylint-warnings",
+    "--enable-plugin=anti-bloat",
     "--playwright-include-browser=none",
     "--output-dir=dist",
     "--output-filename=music_download.exe",
@@ -30,6 +36,12 @@ if ($LASTEXITCODE -ne 0) {
     throw "Nuitka build failed with exit code $LASTEXITCODE"
 }
 
+# 校验产物确实存在
+$expectedExe = Join-Path $ProjectRoot "dist/music_download.exe"
+if (-not (Test-Path $expectedExe)) {
+    throw "Build did not produce expected artifact: $expectedExe"
+}
+
 Write-Host ""
 Write-Host "Build finished." -ForegroundColor Green
-Write-Host "Output directory: $ProjectRoot\dist"
+Write-Host "Output: $expectedExe"

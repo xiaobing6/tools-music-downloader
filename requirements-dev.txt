@@ -1,4 +1,4 @@
 -r requirements.txt
-pytest
-ruff
-mypy<2
+pytest>=8,<9
+ruff>=0.5,<1
+mypy>=1.10,<2
