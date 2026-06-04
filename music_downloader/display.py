@@ -1,14 +1,8 @@
 import json
 from typing import Any
 
-from .console import console
+from .console import PlainConsole, RichTable, console
 from .utils import normalize_song
-
-RichTable: Any
-try:
-    from rich.table import Table as RichTable
-except ImportError:
-    RichTable = None
 
 
 def display_table(data: list[dict[str, Any]], keyword: str) -> None:
@@ -50,8 +44,6 @@ def display_list(data: list[dict[str, Any]], keyword: str) -> None:
     # When rich is unavailable we render with PlainConsole so the output
     # goes directly to sys.stdout (and is therefore captured by
     # capsys in tests).
-    from .console import PlainConsole, console
-
     sink = PlainConsole() if RichTable is None else console
     sink.rule(f'搜索结果："{keyword}"')
     for index, song in enumerate(data, 1):

@@ -1,3 +1,4 @@
+from .console import console
 from .utils import get_artist_str
 
 
@@ -45,7 +46,10 @@ def embed_id3_tags(
         from mutagen.id3 import APIC, TALB, TIT2, TPE1, TRCK, USLT
         from mutagen.mp3 import MP3
     except ImportError:
-        print("  ⚠ 未安装 mutagen，已跳过 MP3 元数据写入。请运行: pip install -r requirements.txt")
+        console.print(
+            "  ⚠ 未安装 mutagen，已跳过 MP3 元数据写入。请运行: pip install -r requirements.txt",
+            style="yellow",
+        )
         return
 
     try:
@@ -57,12 +61,12 @@ def embed_id3_tags(
             audio = MP3(filepath)
             audio.add_tags()
         except Exception as exc:
-            print(f"  ⚠ 无法写入 ID3 标签: {exc}")
+            console.print(f"  ⚠ 无法写入 ID3 标签: {exc}", style="yellow")
             return
 
     tags = audio.tags
     if tags is None:
-        print("  ⚠ 无法写入 ID3 标签: 未能初始化标签")
+        console.print("  ⚠ 无法写入 ID3 标签: 未能初始化标签", style="yellow")
         return
 
     name = str(song.get("name", ""))
@@ -88,9 +92,9 @@ def embed_id3_tags(
 
     try:
         audio.save()
-        print(f"  ✓ ID3 标签已写入: {name}")
+        console.print(f"  ✓ ID3 标签已写入: {name}", style="green")
     except Exception as exc:
-        print(f"  ⚠ 保存 ID3 标签失败: {exc}")
+        console.print(f"  ⚠ 保存 ID3 标签失败: {exc}", style="yellow")
 
 
 def embed_flac_tags(
@@ -105,13 +109,16 @@ def embed_flac_tags(
     try:
         from mutagen.flac import FLAC, Picture
     except ImportError:
-        print("  ⚠ 未安装 mutagen，已跳过 FLAC 元数据写入。请运行: pip install -r requirements.txt")
+        console.print(
+            "  ⚠ 未安装 mutagen，已跳过 FLAC 元数据写入。请运行: pip install -r requirements.txt",
+            style="yellow",
+        )
         return
 
     try:
         audio = FLAC(filepath)
     except Exception as exc:
-        print(f"  ⚠ 无法写入 FLAC 标签: {exc}")
+        console.print(f"  ⚠ 无法写入 FLAC 标签: {exc}", style="yellow")
         return
 
     name = str(song.get("name", ""))
@@ -140,6 +147,6 @@ def embed_flac_tags(
 
     try:
         audio.save()
-        print(f"  ✓ FLAC 标签已写入: {name}")
+        console.print(f"  ✓ FLAC 标签已写入: {name}", style="green")
     except Exception as exc:
-        print(f"  ⚠ 保存 FLAC 标签失败: {exc}")
+        console.print(f"  ⚠ 保存 FLAC 标签失败: {exc}", style="yellow")
