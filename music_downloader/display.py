@@ -47,17 +47,23 @@ def display_table(data: list[dict[str, Any]], keyword: str) -> None:
 
 
 def display_list(data: list[dict[str, Any]], keyword: str) -> None:
-    console.rule(f'搜索结果："{keyword}"')
+    # When rich is unavailable we render with PlainConsole so the output
+    # goes directly to sys.stdout (and is therefore captured by
+    # capsys in tests).
+    from .console import PlainConsole, console
+
+    sink = PlainConsole() if RichTable is None else console
+    sink.rule(f'搜索结果："{keyword}"')
     for index, song in enumerate(data, 1):
         normalized = normalize_song(song)
-        console.print(f"  {index:2d}. {normalized['name']}", style="bold")
-        console.print(
+        sink.print(f"  {index:2d}. {normalized['name']}", style="bold")
+        sink.print(
             "      歌手: {artist} | 专辑: {album} | 时长: {duration} | 来源: {source} | ID: {id}".format(
                 **normalized
             )
         )
-        console.print()
-    console.print(f'共找到 {len(data)} 首歌曲 (关键词: "{keyword}")', style="cyan")
+        sink.print()
+    sink.print(f'共找到 {len(data)} 首歌曲 (关键词: "{keyword}")', style="cyan")
 
 
 def display_results(data: list[dict[str, Any]], keyword: str, output_format: str = "table") -> None:

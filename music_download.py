@@ -1,16 +1,11 @@
-# Force UTF-8 encoding on Windows so rich / subprocess can print Chinese
-# characters.  Must run before any other import / Console instantiation.
+# Force UTF-8 on Windows so rich / subprocess can print Chinese characters.
+# music_downloader/console.py re-wraps sys.stdout with a UTF-8 writer
+# before constructing rich.Console, which is the actual fix; this entry
+# point just sets the env var so subprocess calls and child processes
+# inherit the right encoding.
 import os
-import sys
 
 os.environ.setdefault("PYTHONUTF8", "1")
-
-# Nuitka onefile bundle may not honour PYTHONUTF8 at runtime; reconfigure
-# directly so sys.stdout / sys.stderr always use UTF-8.
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from music_downloader.cli import main
 

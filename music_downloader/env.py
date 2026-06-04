@@ -78,10 +78,15 @@ def run_environment_checks(
 
 def render_environment_checks(checks: list[EnvironmentCheck]) -> None:
     if RichTable is None:
-        console.print("环境检查")
+        # Use a PlainConsole so the output goes straight to sys.stdout
+        # (and is therefore captured by tests via capsys).
+        from .console import PlainConsole
+
+        fallback = PlainConsole()
+        fallback.print("环境检查")
         for check in checks:
             status = "通过" if check.ok else "失败"
-            console.print(f"- {check.name}: {status} - {check.detail}")
+            fallback.print(f"- {check.name}: {status} - {check.detail}")
         return
 
     table = RichTable(title="环境检查")

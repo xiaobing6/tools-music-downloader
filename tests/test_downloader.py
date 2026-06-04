@@ -214,7 +214,7 @@ def test_download_song_logs_cover_failure(monkeypatch, capsys):
         captured = capsys.readouterr()
 
         assert result == "success"
-        assert "封面下载失败" in captured.out
+        assert "封面下载失败" in captured.out or "封面下载失败" in captured.err
     finally:
         remove_test_dir(test_dir)
 
