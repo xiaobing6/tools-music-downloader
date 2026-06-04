@@ -7,7 +7,6 @@ import sys
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 from .api import search_with_pagination, wait_for_cloudflare
@@ -443,7 +442,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
 
     script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     user_data_dir = _resolve_user_data_dir(args, script_dir)
-    Path(user_data_dir).mkdir(parents=True, exist_ok=True)
+    os.makedirs(user_data_dir, exist_ok=True)
     console.print(f"  ✓ Chrome 用户数据目录: {user_data_dir}", style="dim")
 
     context: Any = None

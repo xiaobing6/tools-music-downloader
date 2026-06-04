@@ -3,7 +3,6 @@ import os
 import shutil
 import time
 from collections.abc import Iterable
-from typing import Union
 
 from .api import get_lyric, get_pic_url, get_play_url
 from .config import (
@@ -17,7 +16,7 @@ from .console import console
 from .metadata import embed_metadata
 from .utils import get_artist_str, sanitize_filename
 
-PathLike = Union[str, "os.PathLike[str]"]
+PathLike = str | os.PathLike[str]
 
 
 def get_output_extension(bitrate: str) -> str:
