@@ -1,3 +1,4 @@
+# -*-coding:utf-8 -*-
 # 不钉上界：本机实测兼容到 playwright 1.60.x / mutagen 1.47.x / rich 15.0.x。
 # >= 仍然是有效信号——告诉别人"我测过的最低版本"，但不再硬拦
 # 新 major bump；真出问题再补。

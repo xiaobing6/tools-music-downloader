@@ -28,7 +28,7 @@ from .display import display_results
 from .downloader import download_song
 from .env import check_environment
 from .models import RunOptions
-from .utils import parse_selection
+from .utils import parse_selection, sanitize_filename
 
 # 交互模式命令字面量
 SET_SOURCE_PREFIX = "s "
