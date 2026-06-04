@@ -35,7 +35,6 @@ requirements.txt              # 运行依赖
 requirements-dev.txt          # 开发依赖（ruff/mypy）
 requirements-build.txt        # 构建依赖（Nuitka 等）
 scripts/build_exe.ps1         # Windows exe 构建脚本
-scripts/git-fixup.py          # 修复 Windows git 2.53.0 删 loose ref 的 bug
 ```
 
 ## 核心架构

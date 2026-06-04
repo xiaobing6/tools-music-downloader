@@ -130,8 +130,7 @@ python -m music_downloader -h
 │   ├── utils.py                # 通用工具
 │   └── config.py               # 常量配置
 ├── scripts/                    # 工具脚本
-│   ├── build_exe.ps1           # Windows Nuitka 打包脚本
-│   └── git-fixup.py            # 修复 Windows git 2.53.0 删 loose ref 的 bug
+│   └── build_exe.ps1           # Windows Nuitka 打包脚本
 ├── .gitattributes              # 换行规则
 ├── pyproject.toml              # ruff/mypy 配置
 ├── requirements.txt            # 运行依赖
