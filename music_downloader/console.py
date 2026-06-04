@@ -1,4 +1,5 @@
 import importlib
+import sys
 from types import ModuleType
 from typing import Any, Optional
 
@@ -22,4 +23,11 @@ class PlainConsole:
 if _rich_console_module is None:
     console: Any = PlainConsole()
 else:
-    console = _rich_console_module.Console()
+    # Force UTF-8 encoding so Chinese characters (and all Unicode) print
+    # correctly on Windows CI runners where the default codepage is cp1252.
+    console = _rich_console_module.Console(
+        encoding="utf-8",
+        # Disable auto-detection of colour system; let Rich pick the best
+        # one based on the actual terminal capabilities.
+        force_terminal=None,
+    )
