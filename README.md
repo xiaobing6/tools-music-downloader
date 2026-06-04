@@ -119,19 +119,24 @@ python -m music_downloader -h
 .
 ├── music_download.py           # CLI 入口
 ├── music_downloader/           # 核心包
+│   ├── __init__.py             # 包标识
+│   ├── __main__.py             # python -m music_downloader 入口
 │   ├── api.py                  # API 请求、签名、Cloudflare 处理
 │   ├── cli.py                  # 参数解析、交互模式、主流程
-│   ├── env.py                  # 本地环境检查
-│   ├── downloader.py           # 下载、重试、临时文件
-│   ├── metadata.py             # MP3/FLAC 元数据写入
-│   ├── display.py              # 输出格式
+│   ├── config.py               # 常量配置
 │   ├── console.py              # rich 终端输出
-│   ├── __main__.py             # python -m music_downloader 入口
-│   ├── utils.py                # 通用工具
-│   └── config.py               # 常量配置
+│   ├── display.py              # 输出格式
+│   ├── downloader.py           # 下载、重试、临时文件
+│   ├── env.py                  # 本地环境检查
+│   ├── metadata.py             # MP3/FLAC 元数据写入
+│   ├── models.py               # RunOptions 数据类
+│   └── utils.py                # 通用工具
 ├── scripts/                    # 工具脚本
 │   └── build_exe.ps1           # Windows Nuitka 打包脚本
 ├── .gitattributes              # 换行规则
+├── .gitignore                  # 忽略规则
+├── AGENTS.md                   # AI 协作规则
+├── LICENSE                     # MIT 协议
 ├── pyproject.toml              # ruff/mypy 配置
 ├── requirements.txt            # 运行依赖
 ├── requirements-dev.txt        # 开发依赖（ruff/mypy）
