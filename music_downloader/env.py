@@ -18,9 +18,9 @@ class EnvironmentCheck:
 def check_python_version(
     version_info: tuple[int, int, int] = sys.version_info[:3],
 ) -> EnvironmentCheck:
-    ok = version_info >= (3, 8, 0)
+    ok = version_info >= (3, 10, 0)
     version = ".".join(str(part) for part in version_info)
-    detail = f"Python {version}" if ok else f"需要 Python 3.8+，当前为 Python {version}"
+    detail = f"Python {version}" if ok else f"需要 Python 3.10+，当前为 Python {version}"
     return EnvironmentCheck("Python 版本", ok, detail)
 
 
