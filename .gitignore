@@ -36,6 +36,8 @@ MANIFEST
 *.dist/
 *.onefile-build/
 .nuitka-cache/
+nuitka-crash-report.xml
+nuitka-crash-report.url
 
 # Installer logs
 pip-log.txt
