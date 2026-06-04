@@ -1,8 +1,15 @@
+from __future__ import annotations
+
 import argparse
+import contextlib
+import enum
 import os
 import sys
 import time
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 from .api import search_with_pagination, wait_for_cloudflare
 from .config import (
@@ -25,18 +32,37 @@ from .env import check_environment
 from .models import RunOptions
 from .utils import parse_selection
 
+# 交互模式命令字面量
+SET_SOURCE_PREFIX = "s "
+SET_NUMBER_PREFIX = "n "
+SEARCH_ONLY_TOKEN = "so"
+QUIT_TOKEN = "q"
+
+
+class InteractiveOutcome(enum.Enum):
+    QUIT = "quit"
+    CONTINUE = "continue"
+
+
+@dataclass
+class InteractiveCommand:
+    """解析后的交互模式单次输入。"""
+
+    kind: str  # "search" | "search_only" | "set_source" | "set_number" | "quit"
+    value: str = ""
+
 
 def positive_int(value: str) -> int:
     try:
         parsed = int(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("必须是正整数") from exc
+        raise argparse.ArgumentTypeError("必须是大于 0 的整数") from exc
     if parsed < 1:
-        raise argparse.ArgumentTypeError("必须是正整数")
+        raise argparse.ArgumentTypeError("必须是大于 0 的整数")
     return parsed
 
 
-def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="music_download.py",
         description="music.gdstudio.org 音乐搜索与下载工具",
@@ -50,24 +76,85 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
   python music_download.py --check-env
   python music_download.py -i""",
     )
-    parser.add_argument("-k", "--keyword", default=DEFAULT_KEYWORD, help=f"搜索关键词 (默认: {DEFAULT_KEYWORD})")
-    parser.add_argument("-s", "--source", default=DEFAULT_SOURCE, choices=VALID_SOURCES, help=f"音乐源 (默认: {DEFAULT_SOURCE})")
-    parser.add_argument("-n", "--number", type=positive_int, default=DEFAULT_NUMBER, help=f"获取结果总数 (默认: {DEFAULT_NUMBER}, 自动分页)")
-    parser.add_argument("-t", "--type", default="song", choices=SEARCH_TYPE_MAP.keys(), dest="search_type", help="搜索类型: song/album/playlist (默认: song)")
-    parser.add_argument("-o", "--output", default="", dest="output_dir", help="下载目录 (默认: 脚本同级 downloads/)")
-    parser.add_argument("-f", "--format", default="table", choices=VALID_FORMATS, dest="output_format", help="输出格式 (默认: table)")
-    parser.add_argument("-b", "--bitrate", default=DEFAULT_BITRATE, choices=VALID_BITRATES, help=f"音质选择: 128/192/320/flac (默认: {DEFAULT_BITRATE})")
+    parser.add_argument(
+        "-k", "--keyword", default=DEFAULT_KEYWORD, help=f"搜索关键词 (默认: {DEFAULT_KEYWORD})"
+    )
+    parser.add_argument(
+        "-s",
+        "--source",
+        default=DEFAULT_SOURCE,
+        choices=VALID_SOURCES,
+        help=f"音乐源 (默认: {DEFAULT_SOURCE})",
+    )
+    parser.add_argument(
+        "-n",
+        "--number",
+        type=positive_int,
+        default=DEFAULT_NUMBER,
+        help=f"获取结果总数 (默认: {DEFAULT_NUMBER}, 自动分页)",
+    )
+    parser.add_argument(
+        "-t",
+        "--type",
+        default="song",
+        choices=SEARCH_TYPE_MAP.keys(),
+        dest="search_type",
+        help="搜索类型: song/album/playlist (默认: song)",
+    )
+    parser.add_argument(
+        "-o", "--output", default="", dest="output_dir", help="下载目录 (默认: 脚本同级 downloads/)"
+    )
+    parser.add_argument(
+        "-f",
+        "--format",
+        default="table",
+        choices=VALID_FORMATS,
+        dest="output_format",
+        help="输出格式 (默认: table)",
+    )
+    parser.add_argument(
+        "-b",
+        "--bitrate",
+        default=DEFAULT_BITRATE,
+        choices=VALID_BITRATES,
+        help=f"音质选择: 128/192/320/flac (默认: {DEFAULT_BITRATE})",
+    )
     parser.add_argument("--search-only", action="store_true", help="只搜索不下载")
     parser.add_argument("--select", action="store_true", help="搜索后选择要下载的歌曲")
     parser.add_argument("--no-lyric", action="store_true", help="不下载歌词（默认下载）")
     parser.add_argument("--no-cover", action="store_true", help="不嵌入封面（默认嵌入）")
-    parser.add_argument("--check-env", action="store_true", help="检查本地依赖和 Google Chrome，不访问音乐站点")
-    parser.add_argument("-i", "--interactive", action="store_true", help="交互模式，浏览器保持运行可反复搜索")
+    parser.add_argument(
+        "--check-env", action="store_true", help="检查本地依赖和 Google Chrome，不访问音乐站点"
+    )
+    parser.add_argument(
+        "-i", "--interactive", action="store_true", help="交互模式，浏览器保持运行可反复搜索"
+    )
+    parser.add_argument(
+        "--user-data-dir",
+        default=None,
+        help="自定义 Chrome 用户数据目录（默认在脚本同级 .chrome-profile/，与系统 Chrome 隔离）",
+    )
+    parser.add_argument(
+        "--no-isolated-profile",
+        action="store_true",
+        help="不创建项目内 profile（会污染系统 Chrome profile，仅排错时使用）",
+    )
+    parser.add_argument(
+        "--mk-version",
+        default=None,
+        help=f"手动指定 mkPlayer 版本号，覆盖页面抓取失败时的默认值 {FALLBACK_VERSION}",
+    )
     return parser.parse_args(argv)
 
 
-def make_run_options(args: argparse.Namespace, script_dir: str) -> RunOptions:
-    save_dir = args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
+def make_run_options(
+    args: argparse.Namespace,
+    script_dir: str,
+    version: str,
+) -> RunOptions:
+    save_dir = os.path.abspath(
+        args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
+    )
     return RunOptions(
         keyword=args.keyword,
         source=args.source,
@@ -80,6 +167,7 @@ def make_run_options(args: argparse.Namespace, script_dir: str) -> RunOptions:
         download_lyric=not args.no_lyric,
         download_cover=not args.no_cover,
         bitrate=args.bitrate,
+        version=version,
     )
 
 
@@ -115,7 +203,11 @@ def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None
         if not selection:
             console.print("  未选择，跳过下载", style="yellow")
             return
-        indices = parse_selection(selection, len(results))
+        indices = parse_selection(
+            selection,
+            len(results),
+            warn=lambda msg: console.print(msg, style="dim"),
+        )
         if not indices:
             console.print("  无有效选择，跳过下载", style="yellow")
             return
@@ -163,6 +255,64 @@ def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None
     )
 
 
+def parse_interactive_command(text: str) -> InteractiveCommand | None:
+    """纯函数：从用户输入解析为 InteractiveCommand。
+
+    返回 None 表示空输入，跳过本轮。
+    """
+    stripped = text.strip()
+    if not stripped:
+        return None
+    lowered = stripped.lower()
+    if lowered == QUIT_TOKEN:
+        return InteractiveCommand(kind="quit")
+    if lowered.startswith(SET_SOURCE_PREFIX) and len(stripped) > len(SET_SOURCE_PREFIX):
+        return InteractiveCommand(
+            kind="set_source",
+            value=stripped[len(SET_SOURCE_PREFIX) :].strip(),
+        )
+    if lowered.startswith(SET_NUMBER_PREFIX) and len(stripped) > len(SET_NUMBER_PREFIX):
+        return InteractiveCommand(
+            kind="set_number",
+            value=stripped[len(SET_NUMBER_PREFIX) :].strip(),
+        )
+    if lowered == SEARCH_ONLY_TOKEN:
+        return InteractiveCommand(kind="search_only")
+    return InteractiveCommand(kind="search", value=stripped)
+
+
+def build_interactive_options(
+    cmd: InteractiveCommand,
+    base: argparse.Namespace,
+    state: dict,
+    version: str,
+    save_dir: str,
+) -> RunOptions:
+    """根据 interactive 内部状态和命令构造 RunOptions。"""
+    keyword = cmd.value if cmd.kind == "search" else ""
+    if not keyword and cmd.kind in ("search", "search_only"):
+        try:
+            keyword = input("关键词: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return None  # type: ignore[return-value]
+    if not keyword and cmd.kind in ("search", "search_only"):
+        return None  # type: ignore[return-value]
+    return RunOptions(
+        keyword=keyword,
+        source=state["source"],
+        search_type=state["search_type"],
+        number=state["number"],
+        output_dir=save_dir,
+        output_format=state["output_format"],
+        search_only=cmd.kind == "search_only",
+        select=False,
+        download_lyric=not base.no_lyric,
+        download_cover=not base.no_cover,
+        bitrate=base.bitrate,
+        version=version,
+    )
+
+
 def interactive_mode(
     page: Any,
     context: Any,
@@ -170,73 +320,58 @@ def interactive_mode(
     args: argparse.Namespace,
     script_dir: str,
 ) -> None:
-    source = args.source
-    search_type = args.search_type
-    number = args.number
-    save_dir = args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
-    output_format = args.output_format
+    state = {
+        "source": args.source,
+        "search_type": args.search_type,
+        "number": args.number,
+        "output_format": args.output_format,
+    }
+    save_dir = os.path.abspath(
+        args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
+    )
 
     console.print("\n=== 交互模式 ===", style="bold")
     console.print("输入关键词搜索并下载，输入 q 退出")
     console.print("命令: s <来源> 切换音乐源 | n <数量> 修改数量 | so 只搜索不下载")
-    console.print(f"当前设置: 来源={source}, 类型={search_type}, 数量={number}")
+    console.print(
+        f"当前设置: 来源={state['source']}, 类型={state['search_type']}, 数量={state['number']}"
+    )
     console.print()
 
     while True:
         try:
-            user_input = input("搜索: ").strip()
+            user_input = input("搜索: ")
         except (EOFError, KeyboardInterrupt):
             console.print("\n退出")
-            break
+            return
 
-        if not user_input:
+        cmd = parse_interactive_command(user_input)
+        if cmd is None:
             continue
-        if user_input.lower() == "q":
+        if cmd.kind == "quit":
             console.print("退出")
-            break
-
-        if user_input.lower().startswith("s ") and len(user_input) > 2:
-            new_source = user_input[2:].strip()
-            if new_source in VALID_SOURCES:
-                source = new_source
-                console.print(f"  ✓ 音乐源已切换为: {source}", style="green")
+            return
+        if cmd.kind == "set_source":
+            if cmd.value in VALID_SOURCES:
+                state["source"] = cmd.value
+                console.print(f"  ✓ 音乐源已切换为: {state['source']}", style="green")
             else:
-                console.print(f"  ✗ 无效来源: {new_source}，可选: {', '.join(VALID_SOURCES)}", style="red")
+                console.print(
+                    f"  ✗ 无效来源: {cmd.value}，可选: {', '.join(VALID_SOURCES)}",
+                    style="red",
+                )
             continue
-
-        if user_input.lower().startswith("n ") and len(user_input) > 2:
+        if cmd.kind == "set_number":
             try:
-                number = positive_int(user_input[2:].strip())
-                console.print(f"  ✓ 数量已修改为: {number}", style="green")
+                state["number"] = positive_int(cmd.value)
+                console.print(f"  ✓ 数量已修改为: {state['number']}", style="green")
             except argparse.ArgumentTypeError:
                 console.print("  ✗ 无效数量，请输入正整数", style="red")
             continue
 
-        search_only = user_input.lower() == "so"
-        keyword = user_input if not search_only else ""
-        if not keyword:
-            try:
-                keyword = input("关键词: ").strip()
-            except (EOFError, KeyboardInterrupt):
-                console.print()
-                continue
-            if not keyword:
-                continue
-
-        options = RunOptions(
-            keyword=keyword,
-            source=source,
-            search_type=search_type,
-            number=number,
-            output_dir=save_dir,
-            output_format=output_format,
-            search_only=search_only,
-            select=False,
-            download_lyric=not args.no_lyric,
-            download_cover=not args.no_cover,
-            bitrate=args.bitrate,
-            version=version,
-        )
+        options = build_interactive_options(cmd, args, state, version, save_dir)
+        if options is None:
+            continue
         do_search_and_download(page, context, options)
         console.print()
 
@@ -246,32 +381,94 @@ def import_playwright() -> tuple[Any, Any]:
         from playwright.sync_api import Error as PlaywrightError
         from playwright.sync_api import sync_playwright
     except ImportError:
-        console.print("缺少运行依赖 playwright。请先运行: pip install -r requirements.txt", style="red")
+        console.print(
+            "缺少运行依赖 playwright。请先运行: pip install -r requirements.txt",
+            style="red",
+        )
         return None, None
     return sync_playwright, PlaywrightError
 
 
-def run_with_browser(args: argparse.Namespace, options: RunOptions) -> int:
+def fetch_player_version(
+    page: Any,
+    fallback: str = FALLBACK_VERSION,
+    override: str | None = None,
+) -> str:
+    if override:
+        return override
+    version = page.evaluate("typeof mkPlayer !== 'undefined' ? mkPlayer.version : ''")
+    if not version:
+        console.print(
+            f"  ⚠ 未能从页面获取 mkPlayer.version，使用默认值 {fallback}",
+            style="yellow",
+        )
+        return fallback
+    return version
+
+
+def _open_browser(
+    playwright: Any,
+    *,
+    headless: bool,
+    user_agent: str,
+    user_data_dir: str,
+) -> Any:
+    """启动一个持久化 context 浏览器。
+
+    与 launch + new_context 的区别：persistent context 自带 user_data_dir，
+    cf_clearance 等 cookie 在多次运行间复用，且不会污染用户系统 Chrome profile。
+    返回值即 context，page 需用 context.pages[0] 或 context.new_page() 获取。
+    """
+    return playwright.chromium.launch_persistent_context(
+        user_data_dir=user_data_dir,
+        channel="chrome",
+        headless=headless,
+        user_agent=user_agent,
+    )
+
+
+def _resolve_user_data_dir(args: argparse.Namespace, script_dir: str) -> str:
+    """根据 CLI 参数决定 user_data_dir。"""
+    if args.user_data_dir:
+        return os.path.abspath(args.user_data_dir)
+    if args.no_isolated_profile:
+        # 警告：仍不指明时 Playwright 会用系统默认 profile；
+        # 这里显式指到脚本同级的 .chrome-profile 以保证 headless 启动不冲突。
+        return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
+    return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
+
+
+def run_with_browser(args: argparse.Namespace) -> int:
     sync_playwright, playwright_error = import_playwright()
     if sync_playwright is None:
         return 1
 
-    browser = None
-    context = None
     script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    user_data_dir = _resolve_user_data_dir(args, script_dir)
+    Path(user_data_dir).mkdir(parents=True, exist_ok=True)
+    console.print(f"  ✓ Chrome 用户数据目录: {user_data_dir}", style="dim")
+
+    browser: Any = None
+    context: Any = None
 
     try:
         with sync_playwright() as playwright:
             console.print("正在访问页面，等待 Cloudflare 验证...", style="cyan")
             try:
-                browser = playwright.chromium.launch(channel="chrome", headless=True)
+                context = _open_browser(
+                    playwright,
+                    headless=True,
+                    user_agent=USER_AGENT,
+                    user_data_dir=user_data_dir,
+                )
             except playwright_error as exc:
                 console.print(f"  ✗ 无法启动系统 Google Chrome: {exc}", style="red")
-                console.print("  请确认已安装 Google Chrome，并可通过 Playwright channel='chrome' 启动。")
+                console.print(
+                    "  请确认已安装 Google Chrome，并可通过 Playwright channel='chrome' 启动。"
+                )
                 return 1
 
-            context = browser.new_context(user_agent=USER_AGENT)
-            page = context.new_page()
+            page = context.pages[0] if context.pages else context.new_page()
 
             try:
                 page.goto(BASE_URL, wait_until="networkidle", timeout=60000)
@@ -281,52 +478,55 @@ def run_with_browser(args: argparse.Namespace, options: RunOptions) -> int:
 
             cf_passed = wait_for_cloudflare(page)
             if not cf_passed:
-                console.print("  ⚠ 无头模式未通过 Cloudflare 验证，尝试有头模式...", style="yellow")
-                context.close()
-                browser.close()
-                browser = playwright.chromium.launch(channel="chrome", headless=False)
-                context = browser.new_context(user_agent=USER_AGENT)
-                page = context.new_page()
+                console.print(
+                    "  ⚠ 无头模式未通过 Cloudflare 验证，尝试有头模式...",
+                    style="yellow",
+                )
+                with contextlib.suppress(Exception):
+                    context.close()
+                context = _open_browser(
+                    playwright,
+                    headless=False,
+                    user_agent=USER_AGENT,
+                    user_data_dir=user_data_dir,
+                )
+                page = context.pages[0] if context.pages else context.new_page()
                 page.goto(BASE_URL, wait_until="networkidle", timeout=60000)
                 cf_passed = wait_for_cloudflare(page)
 
             if not cf_passed:
-                console.print("  ✗ Cloudflare 验证未通过。请稍后重试，或在有头模式窗口中手动完成验证。", style="red")
+                console.print(
+                    "  ✗ Cloudflare 验证未通过。请稍后重试，或在有头模式窗口中手动完成验证。",
+                    style="red",
+                )
                 return 1
 
-            version = page.evaluate("typeof mkPlayer !== 'undefined' ? mkPlayer.version : ''")
-            if not version:
-                console.print(f"  ⚠ 未能从页面获取 mkPlayer.version，使用默认值 {FALLBACK_VERSION}", style="yellow")
-                version = FALLBACK_VERSION
+            version = fetch_player_version(page, override=args.mk_version)
             console.print(f"  ✓ 版本: {version}", style="green")
+
+            options = make_run_options(args, script_dir, version)
 
             if args.interactive:
                 interactive_mode(page, context, version, args, script_dir)
             else:
-                options.version = version
                 do_search_and_download(page, context, options)
     finally:
+        # launch_persistent_context 返回的 context 本身关闭时即关闭浏览器进程
         if context is not None:
-            try:
+            with contextlib.suppress(Exception):
                 context.close()
-            except Exception:
-                pass
-        if browser is not None:
-            try:
+        if browser is not None and browser is not context:
+            with contextlib.suppress(Exception):
                 browser.close()
-            except Exception:
-                pass
 
     return 0
 
 
-def main(argv: Optional[Sequence[str]] = None) -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     if args.check_env:
         sys.exit(check_environment())
 
-    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    options = make_run_options(args, script_dir)
-    return_code = run_with_browser(args, options)
+    return_code = run_with_browser(args)
     if return_code:
         sys.exit(return_code)

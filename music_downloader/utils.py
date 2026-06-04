@@ -84,7 +84,18 @@ def normalize_song(song):
     }
 
 
-def parse_selection(selection, total):
+def parse_selection(selection, total, *, warn=None):
+    """解析 1,3,5-7 这样的选择字符串为 0-based 索引列表。
+
+    Parameters
+    ----------
+    selection:
+        用户输入字符串。
+    total:
+        总条目数。
+    warn:
+        可选的可调用对象，接收提示信息字符串。用于在反向区间时给用户可见提示。
+    """
     indices = set()
     for part in selection.split(","):
         part = part.strip()
@@ -98,6 +109,8 @@ def parse_selection(selection, total):
             except ValueError:
                 continue
             if start_num > end_num:
+                if warn is not None:
+                    warn(f"  ⚠ 已反转区间 {start_num}-{end_num} 为 {end_num}-{start_num}")
                 start_num, end_num = end_num, start_num
             for index in range(start_num, min(end_num, total) + 1):
                 if 1 <= index <= total:

@@ -1,7 +1,8 @@
+import contextlib
 import importlib.util
 import sys
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 from .console import console
 
@@ -19,7 +20,9 @@ class EnvironmentCheck:
     detail: str
 
 
-def check_python_version(version_info: Tuple[int, int, int] = sys.version_info[:3]) -> EnvironmentCheck:
+def check_python_version(
+    version_info: tuple[int, int, int] = sys.version_info[:3],
+) -> EnvironmentCheck:
     ok = version_info >= (3, 8, 0)
     version = ".".join(str(part) for part in version_info)
     detail = f"Python {version}" if ok else f"需要 Python 3.8+，当前为 Python {version}"
@@ -33,7 +36,9 @@ def check_module(module_name: str, package_name: Optional[str] = None) -> Enviro
     return EnvironmentCheck(package, True, "已安装")
 
 
-def check_chrome_launcher(sync_playwright_factory: Optional[Callable[[], Any]] = None) -> EnvironmentCheck:
+def check_chrome_launcher(
+    sync_playwright_factory: Optional[Callable[[], Any]] = None,
+) -> EnvironmentCheck:
     try:
         if sync_playwright_factory is None:
             from playwright.sync_api import sync_playwright
@@ -46,20 +51,20 @@ def check_chrome_launcher(sync_playwright_factory: Optional[Callable[[], Any]] =
     try:
         with sync_playwright_factory() as playwright:
             browser = playwright.chromium.launch(channel="chrome", headless=True)
-            return EnvironmentCheck("Google Chrome", True, "可通过 Playwright channel='chrome' 启动")
+            return EnvironmentCheck(
+                "Google Chrome", True, "可通过 Playwright channel='chrome' 启动"
+            )
     except Exception as exc:
         return EnvironmentCheck("Google Chrome", False, f"无法启动系统 Chrome: {exc}")
     finally:
         if browser is not None:
-            try:
+            with contextlib.suppress(Exception):
                 browser.close()
-            except Exception:
-                pass
 
 
 def run_environment_checks(
     chrome_checker: Optional[Callable[[], EnvironmentCheck]] = None,
-) -> List[EnvironmentCheck]:
+) -> list[EnvironmentCheck]:
     checks = [
         check_python_version(),
         check_module("playwright"),
@@ -71,7 +76,7 @@ def run_environment_checks(
     return checks
 
 
-def render_environment_checks(checks: List[EnvironmentCheck]) -> None:
+def render_environment_checks(checks: list[EnvironmentCheck]) -> None:
     if RichTable is None:
         console.print("环境检查")
         for check in checks:
