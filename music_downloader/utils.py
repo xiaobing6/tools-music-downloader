@@ -29,13 +29,7 @@ WINDOWS_RESERVED_NAMES = {
 
 
 def url_encode(value):
-    encoded = urllib.parse.quote(value, safe="")
-    encoded = encoded.replace("(", "%28")
-    encoded = encoded.replace(")", "%29")
-    encoded = encoded.replace("*", "%2A")
-    encoded = encoded.replace("'", "%27")
-    encoded = encoded.replace("!", "%21")
-    return encoded
+    return urllib.parse.quote(value, safe="")
 
 
 def format_duration(seconds):

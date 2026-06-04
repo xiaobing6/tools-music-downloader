@@ -287,16 +287,19 @@ def build_interactive_options(
     state: dict,
     version: str,
     save_dir: str,
-) -> RunOptions:
-    """根据 interactive 内部状态和命令构造 RunOptions。"""
+) -> RunOptions | None:
+    """根据 interactive 内部状态和命令构造 RunOptions。
+
+    返回 None 表示用户取消（Ctrl-C / EOF） 或未输入关键词。
+    """
     keyword = cmd.value if cmd.kind == "search" else ""
     if not keyword and cmd.kind in ("search", "search_only"):
         try:
             keyword = input("关键词: ").strip()
         except (EOFError, KeyboardInterrupt):
-            return None  # type: ignore[return-value]
+            return None
     if not keyword and cmd.kind in ("search", "search_only"):
-        return None  # type: ignore[return-value]
+        return None
     return RunOptions(
         keyword=keyword,
         source=state["source"],
@@ -428,13 +431,14 @@ def _open_browser(
 
 
 def _resolve_user_data_dir(args: argparse.Namespace, script_dir: str) -> str:
-    """根据 CLI 参数决定 user_data_dir。"""
+    """根据 CLI 参数决定 user_data_dir。
+
+    用户显式 --user-data-dir 时用用户路径；否则统一用脚本同级的
+    .chrome-profile/（与系统 Chrome 隔离）。--no-isolated-profile 仅为
+    保留参数兼容，实际行为和默认一致。
+    """
     if args.user_data_dir:
         return os.path.abspath(args.user_data_dir)
-    if args.no_isolated_profile:
-        # 警告：仍不指明时 Playwright 会用系统默认 profile；
-        # 这里显式指到脚本同级的 .chrome-profile 以保证 headless 启动不冲突。
-        return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
     return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
 
 
@@ -448,7 +452,6 @@ def run_with_browser(args: argparse.Namespace) -> int:
     Path(user_data_dir).mkdir(parents=True, exist_ok=True)
     console.print(f"  ✓ Chrome 用户数据目录: {user_data_dir}", style="dim")
 
-    browser: Any = None
     context: Any = None
 
     try:
@@ -515,9 +518,6 @@ def run_with_browser(args: argparse.Namespace) -> int:
         if context is not None:
             with contextlib.suppress(Exception):
                 context.close()
-        if browser is not None and browser is not context:
-            with contextlib.suppress(Exception):
-                browser.close()
 
     return 0
 

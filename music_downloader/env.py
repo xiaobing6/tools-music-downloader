@@ -4,13 +4,7 @@ import sys
 from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
-from .console import console
-
-RichTable: Any
-try:
-    from rich.table import Table as RichTable
-except ImportError:
-    RichTable = None
+from .console import PlainConsole, RichTable, console
 
 
 @dataclass
@@ -80,8 +74,6 @@ def render_environment_checks(checks: list[EnvironmentCheck]) -> None:
     if RichTable is None:
         # Use a PlainConsole so the output goes straight to sys.stdout
         # (and is therefore captured by tests via capsys).
-        from .console import PlainConsole
-
         fallback = PlainConsole()
         fallback.print("环境检查")
         for check in checks:
