@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -14,4 +16,4 @@ class RunOptions:
     download_lyric: bool
     download_cover: bool
     bitrate: str
-    version: str = ""
+    version: str

@@ -1,4 +1,6 @@
 -r requirements.txt
-pytest
-ruff
-mypy<2
+# 不钉上界：本机实测兼容到 pytest 9.x / ruff 0.15.x / mypy 1.20.x。
+# >= 仍然给出"测过的最低版本"信号。
+pytest>=8
+ruff>=0.5
+mypy>=1.10

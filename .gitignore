@@ -11,6 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+# 用户下载物，体积大且与本仓库无关。建议把 -o 指到仓库外。
 downloads/
 eggs/
 .eggs/
@@ -54,6 +55,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .pytest_tmp/
+# 单元测试生成的临时数据（每次跑测试会自动清理）
 tests/_runtime/
 cover/
 
@@ -192,7 +194,7 @@ cython_debug/
 #   be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #   and can be added to the global gitignore or merged into this file.  For a more nuclear
 #   option (not recommended) you can uncomment the following to ignore the entire idea folder.
-# .idea/
+.idea/
 
 # Abstra
 #   Abstra is an AI-powered process automation framework.
@@ -201,11 +203,11 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#   and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#   and can be added to the global gitignore or merged into this file. However, if you prefer,
 #   you could uncomment the following to ignore the entire vscode folder
-# .vscode/
+.vscode/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
@@ -222,3 +224,43 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Playwright / Chrome 临时数据
+# .chrome-profile 包含 cf_clearance 等与 IP/UA 绑定的 cookie，勿随仓库分发；
+# 同步盘（OneDrive/iCloud/Dropbox）可能把它们同步上云。详见 AGENTS.md。
+.chrome-profile/
+
+# Trae IDE workspace
+# Trae 的工作目录，含 plan/会话记录等本地状态，无需入库。
+.trae/
+
+# 操作系统垃圾文件
+# .DS_Store     macOS Finder
+# Thumbs.db     Windows 缩略图缓存
+# ehthumbs.db   Windows 旧版缩略图
+# desktop.ini   Windows 文件夹自定义
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# 编辑器临时 / 备份文件
+# *.swp / *.swo / *.swn   Vim swap
+# *~                      Vim/Emacs backup
+# *.bak                   通用备份
+*.swp
+*.swo
+*.swn
+*~
+*.bak
+
+# Git / patch 残留
+*.orig
+*.rej
+
+# Core dump
+core
+core.*
+
+# build_exe.ps1 副产物（用 Tee-Object 实时写出的本地日志）
+build.log
