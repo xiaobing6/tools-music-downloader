@@ -41,24 +41,6 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py.cover
-.hypothesis/
-.pytest_cache/
-.pytest_tmp/
-# 单元测试生成的临时数据（每次跑测试会自动清理）
-tests/_runtime/
-cover/
-
 # Translations
 *.mo
 *.pot

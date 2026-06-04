@@ -27,11 +27,6 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio",
 ]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
-addopts = ["-p", "no:cacheprovider"]
-
 [tool.ruff]
 line-length = 100
 target-version = "py39"

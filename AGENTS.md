@@ -10,7 +10,7 @@
 
 - **语言**：Python 3.9+
 - **运行依赖**：`playwright>=1.45`、`mutagen>=1.47`、`rich>=13`（不钉上界，本机实测兼容到 playwright 1.60.x / mutagen 1.47.x / rich 15.x）
-- **开发依赖**：`pytest>=8`、`ruff>=0.5`、`mypy>=1.10`
+- **开发依赖**：`ruff>=0.5`、`mypy>=1.10`（无测试，故 pytest 不在此列）
 - **构建依赖**（见 `requirements-build.txt`）：`nuitka>=2.5`、`ordered-set>=4.1`、`zstandard>=0.23`
 - **浏览器要求**：系统已安装 Google Chrome，代码使用 `channel="chrome"`
 
@@ -29,12 +29,10 @@ music_downloader/downloader.py  # 下载、重试、临时文件和文件命名
 music_downloader/metadata.py    # MP3/FLAC 元数据写入
 music_downloader/models.py      # RunOptions 数据类
 music_downloader/utils.py       # 通用工具函数
-tests/                        # 单元测试
-.github/workflows/ci.yml      # GitHub Actions 检查（lint + test）
 .gitattributes                # 换行规则
-pyproject.toml                # 项目元数据 + pytest/ruff/mypy 配置
+pyproject.toml                # 项目元数据 + ruff/mypy 配置
 requirements.txt              # 运行依赖
-requirements-dev.txt          # 开发依赖
+requirements-dev.txt          # 开发依赖（ruff/mypy）
 requirements-build.txt        # 构建依赖（Nuitka 等）
 scripts/build_exe.ps1         # Windows exe 构建脚本
 scripts/git-fixup.py          # 修复 Windows git 2.53.0 删 loose ref 的 bug
@@ -63,7 +61,7 @@ scripts/git-fixup.py          # 修复 Windows git 2.53.0 删 loose ref 的 bug
 - **调整 ID3/FLAC 标签**：修改 `music_downloader/metadata.py`。
 - **修改下载行为**：修改 `music_downloader/downloader.py`。注意：metadata 写入失败会触发残缺文件清理并返回 fail，下次运行可重试——不要把"已存在即跳过"逻辑放到 `os.replace` 之前，否则残缺文件会永久卡住。
 - **API 签名变更**：修改 `music_downloader/api.py` 中的 `compute_signature`；同时把 `FALLBACK_VERSION` 和 README 的 401 排错指引一起改。
-- **交互模式命令解析**：见 [cli.py](./music_downloader/cli.py) 的 `parse_interactive_command`，单测覆盖在 `tests/test_cli.py`。
+- **交互模式命令解析**：见 [cli.py](./music_downloader/cli.py) 的 `parse_interactive_command`。
 - **CLI 参数**：见 `cli.parse_args`，所有变更要同步更新 `README.md` 的参数表。
 
 ## 约定
@@ -71,6 +69,6 @@ scripts/git-fixup.py          # 修复 Windows git 2.53.0 删 loose ref 的 bug
 - Python 3.9+ 语法；用 PEP 604 `X | None`，避免 `Optional[X]`。
 - 业务日志统一走 `music_downloader.console.console.print`，**不要**再用 `print` 直出。
 - CLI 输出和文档使用中文。
-- 自动化测试不要访问真实音乐站点，使用 fake page/context 覆盖逻辑。
+- 端到端功能验证靠 `music_download.py --check-env` + 一次真实搜索；不要把对真实音乐站点的访问写进 CI 或单测。
 - 下载目录 `downloads/` 与 Chrome profile `.chrome-profile/` 已由 `.gitignore` 忽略。
-- 每个 PR 跑过 `pytest`、`ruff check .`、`ruff format --check .`、`mypy music_downloader`、`py_compile music_download.py` 再合入。
+- 每次发版前跑过 `ruff check .`、`ruff format --check .`、`mypy music_downloader`、`py_compile music_download.py`，再加 `music_download.py --check-env` 和一次端到端搜索（确认 Chrome 能正常启动并拿到签名）。

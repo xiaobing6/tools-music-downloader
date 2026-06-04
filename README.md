@@ -28,13 +28,13 @@ cd tools-music-downloader
 pip install -r requirements.txt
 ```
 
-如需运行测试和静态检查：
+如需本地静态检查（ruff / mypy）：
 
 ```bash
 pip install -r requirements-dev.txt
 ```
 
-`requirements-dev.txt` 会同时安装运行依赖和开发工具。
+`requirements-dev.txt` 会同时安装运行依赖和静态检查工具。
 
 ## 快速开始
 
@@ -129,15 +129,13 @@ python -m music_downloader -h
 │   ├── __main__.py             # python -m music_downloader 入口
 │   ├── utils.py                # 通用工具
 │   └── config.py               # 常量配置
-├── tests/                      # 单元测试
 ├── scripts/                    # 工具脚本
 │   ├── build_exe.ps1           # Windows Nuitka 打包脚本
 │   └── git-fixup.py            # 修复 Windows git 2.53.0 删 loose ref 的 bug
-├── .github/workflows/ci.yml    # GitHub Actions 检查
 ├── .gitattributes              # 换行规则
-├── pyproject.toml              # pytest/ruff/mypy 配置
+├── pyproject.toml              # ruff/mypy 配置
 ├── requirements.txt            # 运行依赖
-├── requirements-dev.txt        # 开发依赖
+├── requirements-dev.txt        # 开发依赖（ruff/mypy）
 ├── requirements-build.txt      # 构建依赖（Nuitka 等）
 └── README.md
 ```
@@ -148,13 +146,11 @@ python -m music_downloader -h
 python music_download.py -h
 python -m music_downloader -h
 python music_download.py --check-env
-python -m pytest
 python -m ruff check .
+python -m ruff format --check .
 python -m mypy music_downloader
 python -m py_compile music_download.py
 ```
-
-测试不会访问真实音乐站点，避免网络和 Cloudflare 影响结果。
 
 ## 打包 EXE
 
