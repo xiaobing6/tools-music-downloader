@@ -13,7 +13,7 @@
 
 ## 环境要求
 
-- Python 3.8+
+- Python 3.9+
 - 已安装 Google Chrome 浏览器
 - Windows / macOS / Linux
 
@@ -73,6 +73,8 @@ python music_download.py --check-env
 python -m music_downloader -h
 ```
 
+> **下载目录建议**：默认输出在仓库根的 `downloads/`，已加入 `.gitignore`。为避免被 IDE 索引或被同步盘误抓，**建议把 `-o` 指到仓库外**，例如 `D:\MyMusic`。
+
 ## 命令行参数
 
 | 参数 | 说明 | 默认值 |
@@ -90,6 +92,9 @@ python -m music_downloader -h
 | `--no-cover` | 不嵌入封面图 | - |
 | `--check-env` | 检查依赖和系统 Chrome，不访问音乐站点 | - |
 | `-i / --interactive` | 交互模式 | - |
+| `--user-data-dir` | 自定义 Chrome 用户数据目录；默认在脚本同级 `.chrome-profile/`，与系统 Chrome 隔离 | - |
+| `--no-isolated-profile` | 不创建项目内 profile（会污染系统 Chrome profile，仅排错时使用） | - |
+| `--mk-version` | 手动指定 mkPlayer 版本号，覆盖 `FALLBACK_VERSION`（默认 `2026.5.10`） | - |
 
 ## 支持的音乐源
 
@@ -214,6 +219,23 @@ dist/music_download.dist/music_download.exe
 **Q: 提示 `Cloudflare 验证未通过` 怎么办？**
 
 程序会先用无头模式尝试，通过不了会打开可见 Chrome 窗口。请在窗口中完成验证后继续。
+
+**Q: 提示 HTTP 401 (签名验证失败) 怎么办？**
+
+- 站点更新了 `mkPlayer.version` 而代码里 `FALLBACK_VERSION` 没跟上 → 升级到最新版；如果最新版也不可用，运行 `python music_download.py -k "x" --mk-version 2026.x.y` 手动指定版本号。
+- 站点**整体**更换了签名算法 → 请到 [issues](https://github.com/xiaobing6/tools-music-downloader/issues) 反馈。
+
+**Q: 为什么 Cloudflare 每次启动都要重新过？**
+
+`cf_clearance` 与 IP、UA、TLS 指纹绑定。本工具使用隔离的 `.chrome-profile/` 目录，与系统 Chrome profile 不共享 cookie；只要换 IP、换 UA 或换 profile，就要重新过验证，这是 Cloudflare 的预期行为。
+
+**Q: 为什么用隔离的 `.chrome-profile/`？**
+
+避免读取你已登录的系统 Chrome profile（避免 session 污染和 SingletonLock 冲突）。如果你**确实**要复用系统 profile 的状态，用 `--user-data-dir "%LOCALAPPDATA%\Google\Chrome\User Data"`，但要清楚这会让工具读到你的 Google 账号登录态。
+
+**Q: 跨盘移动文件失败 (`os.replace` 报错)？**
+
+把 `-o` 输出目录指到和系统盘（一般是 C 盘）相同盘符下。Windows 上 `os.replace` 跨盘符不支持。
 
 **Q: 如何查看所有参数？**
 
