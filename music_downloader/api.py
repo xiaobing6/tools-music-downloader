@@ -1,7 +1,7 @@
 import hashlib
 import json
 import math
-from typing import Any, Optional
+from typing import Any
 
 from .config import API_RETRY_ATTEMPTS, HOSTNAME, MAX_PER_PAGE, SEARCH_TYPE_MAP
 from .console import console
@@ -19,7 +19,7 @@ def compute_signature(hostname: str, version: str, timestamp: str, search_id: st
 
 def wait_for_cloudflare(page: Any, max_retries: int = 3) -> bool:
     for attempt in range(1, max_retries + 1):
-        cf_cookie: Optional[str] = None
+        cf_cookie: str | None = None
         for cookie in page.context.cookies():
             if cookie.get("name") == "cf_clearance":
                 cf_cookie = cookie.get("value")

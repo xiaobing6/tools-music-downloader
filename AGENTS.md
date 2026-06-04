@@ -8,7 +8,7 @@
 
 ## 技术栈
 
-- **语言**：Python 3.9+
+- **语言**：Python 3.10+
 - **运行依赖**：`playwright>=1.45`、`mutagen>=1.47`、`rich>=13`（不钉上界，本机实测兼容到 playwright 1.60.x / mutagen 1.47.x / rich 15.x）
 - **开发依赖**：`ruff>=0.5`、`mypy>=1.10`（无测试，故 pytest 不在此列）
 - **构建依赖**（见 `requirements-build.txt`）：`nuitka>=2.5`、`ordered-set>=4.1`、`zstandard>=0.23`
@@ -69,7 +69,7 @@ scripts/build_exe.ps1         # Windows exe 构建脚本
 
 ## 约定
 
-- Python 3.9+ 语法；用 PEP 604 `X | None`，避免 `Optional[X]`。
+- Python 3.10+ 语法；用 PEP 604 `X | None`，避免 `Optional[X]`。
 - 业务日志统一走 `music_downloader.console.console.print`，**不要**再用 `print` 直出。
 - CLI 输出和文档使用中文。
 - 端到端功能验证靠 `music_download.py --check-env` + 一次真实搜索；不要把对真实音乐站点的访问写进 CI 或单测。
