@@ -261,3 +261,6 @@ desktop.ini
 # Core dump
 core
 core.*
+
+# build_exe.ps1 副产物（用 Tee-Object 实时写出的本地日志）
+build.log

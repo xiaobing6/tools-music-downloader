@@ -1,6 +1,7 @@
 param(
     [ValidateSet("standalone", "onefile")]
-    [string]$Mode = "onefile"
+    [string]$Mode = "onefile",
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,17 +9,24 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
-# 幂等安装构建依赖
-python -m pip install -r requirements-build.txt
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to install build dependencies (exit $LASTEXITCODE)"
+if (-not $SkipInstall) {
+    # 幂等安装构建依赖
+    python -m pip install -r requirements-build.txt
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to install build dependencies (exit $LASTEXITCODE)"
+    }
+} else {
+    Write-Host "Skipping pip install (SkipInstall mode). Using already-installed tools." -ForegroundColor Yellow
 }
 
 $env:NUITKA_CACHE_DIR = Join-Path $ProjectRoot ".nuitka-cache"
 New-Item -ItemType Directory -Force -Path $env:NUITKA_CACHE_DIR | Out-Null
 
+# Deliberately do NOT pass --assume-yes-for-downloads / --downloads:
+# Nuitka may silently fetch depends.exe (dependencywalker) or other external tools.
+# The repo rule is "no new build tools" - keep auto-download disabled.
+# If something is actually needed, install it manually or add --include-* flags explicitly.
 $commonArgs = @(
-    "--assume-yes-for-downloads",
     "--enable-plugin=anti-bloat",
     "--playwright-include-browser=none",
     "--output-dir=dist",

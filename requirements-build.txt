@@ -1,4 +1,6 @@
 -r requirements.txt
-nuitka>=2.5,<3
-ordered-set>=4.1,<5
-zstandard>=0.23,<1
+# 不再钉死上界：Nuitka 4.x 仍兼容我们这套用法（playwright plugin + anti-bloat + onefile）
+nuitka>=2.5
+# 放宽上界：Nuitka 4.x 的依赖会拉新版本
+ordered-set>=4.1
+zstandard>=0.23
