@@ -22,17 +22,27 @@ if (-not $SkipInstall) {
 $env:NUITKA_CACHE_DIR = Join-Path $ProjectRoot ".nuitka-cache"
 New-Item -ItemType Directory -Force -Path $env:NUITKA_CACHE_DIR | Out-Null
 
-# Deliberately do NOT pass --assume-yes-for-downloads / --downloads:
-# Nuitka may silently fetch depends.exe (dependencywalker) or other external tools.
-# The repo rule is "no new build tools" - keep auto-download disabled.
-# If something is actually needed, install it manually or add --include-* flags explicitly.
+# Decide whether to allow Nuitka to fetch its toolchain (zig/scons/...):
+#   * CI (GitHub Actions, etc.) is a clean runner with nothing cached, so we
+#     MUST allow downloads or Nuitka aborts with "no (default non-interactive)".
+#   * Local developer machines already have the toolchain cached, and the
+#     repo rule is "no new build tools" - keep auto-download disabled so we
+#     never silently fetch depends.exe or other extras.
+$isCi = ($env:CI -eq 'true') -or ($env:GITHUB_ACTIONS -eq 'true')
+
 $commonArgs = @(
     "--enable-plugin=anti-bloat",
     "--playwright-include-browser=none",
     "--output-dir=dist",
-    "--output-filename=music_download.exe",
-    "music_download.py"
+    "--output-filename=music_download.exe"
 )
+if ($isCi) {
+    Write-Host "CI mode: enabling --assume-yes-for-downloads so Nuitka can fetch zig/scons." -ForegroundColor Yellow
+    $commonArgs = @("--assume-yes-for-downloads") + $commonArgs
+} else {
+    Write-Host "Local mode: auto-downloads disabled. Make sure zig/scons are already installed." -ForegroundColor Yellow
+}
+$commonArgs += "music_download.py"
 
 if ($Mode -eq "onefile") {
     python -m nuitka --mode=onefile @commonArgs
