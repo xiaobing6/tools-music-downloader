@@ -18,6 +18,7 @@
 
 ```text
 music_download.py             # 轻量 CLI 入口
+music_downloader/__init__.py  # 包标识
 music_downloader/config.py    # 常量、默认值、支持的平台
 music_downloader/api.py       # 签名、Cloudflare 检查、API 请求
 music_downloader/cli.py       # 参数解析、交互模式、主流程
@@ -30,6 +31,9 @@ music_downloader/metadata.py    # MP3/FLAC 元数据写入
 music_downloader/models.py      # RunOptions 数据类
 music_downloader/utils.py       # 通用工具函数
 .gitattributes                # 换行规则
+.gitignore                    # 忽略规则
+LICENSE                       # MIT 协议
+README.md                     # 终端用户文档
 pyproject.toml                # 项目元数据 + ruff/mypy 配置
 requirements.txt              # 运行依赖
 requirements-dev.txt          # 开发依赖（ruff/mypy）
