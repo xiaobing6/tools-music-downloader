@@ -95,7 +95,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="搜索类型: song/album/playlist (默认: song)",
     )
     parser.add_argument(
-        "-o", "--output", default="", dest="output_dir", help="下载目录 (默认: 脚本同级 downloads/)"
+        "-o",
+        "--output",
+        default="",
+        dest="output_dir",
+        help="下载目录 (默认: 脚本同级 downloads/，会再自动按关键词建子目录)",
     )
     parser.add_argument(
         "-f",
@@ -213,8 +217,9 @@ def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None
             style="yellow",
         )
 
-    os.makedirs(options.output_dir, exist_ok=True)
-    console.print(f"\n开始下载 ({len(results)} 首)...", style="bold")
+    target_dir = os.path.join(options.output_dir, sanitize_filename(options.keyword))
+    os.makedirs(target_dir, exist_ok=True)
+    console.print(f"\n开始下载 ({len(results)} 首) -> {target_dir}", style="bold")
     success = 0
     fail = 0
     skip = 0
@@ -226,7 +231,7 @@ def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None
             song,
             options.source,
             options.version,
-            options.output_dir,
+            target_dir,
             index + 1,
             len(results),
             download_lyric=options.download_lyric,
