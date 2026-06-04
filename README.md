@@ -130,11 +130,15 @@ python -m music_downloader -h
 │   ├── utils.py                # 通用工具
 │   └── config.py               # 常量配置
 ├── tests/                      # 单元测试
+├── scripts/                    # 工具脚本
+│   ├── build_exe.ps1           # Windows Nuitka 打包脚本
+│   └── git-fixup.py            # 修复 Windows git 2.53.0 删 loose ref 的 bug
 ├── .github/workflows/ci.yml    # GitHub Actions 检查
 ├── .gitattributes              # 换行规则
 ├── pyproject.toml              # pytest/ruff/mypy 配置
 ├── requirements.txt            # 运行依赖
 ├── requirements-dev.txt        # 开发依赖
+├── requirements-build.txt      # 构建依赖（Nuitka 等）
 └── README.md
 ```
 
@@ -166,6 +170,12 @@ pip install -r requirements-build.txt
 
 ```powershell
 .\scripts\build_exe.ps1
+```
+
+如果构建依赖已经装好、想跳过 `pip install` 阶段：
+
+```powershell
+.\scripts\build_exe.ps1 -SkipInstall
 ```
 
 单文件产物：

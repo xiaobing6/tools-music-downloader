@@ -9,9 +9,9 @@
 ## 技术栈
 
 - **语言**：Python 3.9+
-- **运行依赖**：`playwright>=1.45,<2`、`mutagen>=1.47,<2`、`rich>=13,<14`
-- **开发依赖**：`pytest`、`ruff`、`mypy`
-- **构建依赖**：`nuitka`、`ordered-set`、`zstandard`
+- **运行依赖**：`playwright>=1.45`、`mutagen>=1.47`、`rich>=13`（不钉上界，本机实测兼容到 playwright 1.60.x / mutagen 1.47.x / rich 15.x）
+- **开发依赖**：`pytest>=8`、`ruff>=0.5`、`mypy>=1.10`
+- **构建依赖**（见 `requirements-build.txt`）：`nuitka>=2.5`、`ordered-set>=4.1`、`zstandard>=0.23`
 - **浏览器要求**：系统已安装 Google Chrome，代码使用 `channel="chrome"`
 
 ## 项目结构
@@ -30,11 +30,14 @@ music_downloader/metadata.py    # MP3/FLAC 元数据写入
 music_downloader/models.py      # RunOptions 数据类
 music_downloader/utils.py       # 通用工具函数
 tests/                        # 单元测试
-.github/workflows/ci.yml      # GitHub Actions 检查（lint + Windows build）
+.github/workflows/ci.yml      # GitHub Actions 检查（lint + test）
 .gitattributes                # 换行规则
 pyproject.toml                # 项目元数据 + pytest/ruff/mypy 配置
-requirements*.txt             # 依赖（钉次版本）
+requirements.txt              # 运行依赖
+requirements-dev.txt          # 开发依赖
+requirements-build.txt        # 构建依赖（Nuitka 等）
 scripts/build_exe.ps1         # Windows exe 构建脚本
+scripts/git-fixup.py          # 修复 Windows git 2.53.0 删 loose ref 的 bug
 ```
 
 ## 核心架构
