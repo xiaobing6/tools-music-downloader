@@ -3,7 +3,7 @@ import json
 import math
 from typing import Any
 
-from .config import API_RETRY_ATTEMPTS, HOSTNAME, MAX_PER_PAGE, SEARCH_TYPE_MAP
+from .config import API_RETRY_ATTEMPTS, CF_RETRY_ATTEMPTS, HOSTNAME, MAX_PER_PAGE, SEARCH_TYPE_MAP
 from .console import console
 from .utils import url_encode
 
@@ -17,7 +17,7 @@ def compute_signature(hostname: str, version: str, timestamp: str, search_id: st
     return hashlib.md5(signing_string.encode()).hexdigest()[-8:].upper()
 
 
-def wait_for_cloudflare(page: Any, max_retries: int = 3) -> bool:
+def wait_for_cloudflare(page: Any, max_retries: int = CF_RETRY_ATTEMPTS) -> bool:
     for attempt in range(1, max_retries + 1):
         cf_cookie: str | None = None
         for cookie in page.context.cookies():
