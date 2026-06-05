@@ -93,7 +93,6 @@ python -m music_downloader -h
 | `--check-env` | 检查依赖和系统 Chrome，不访问音乐站点 | - |
 | `-i / --interactive` | 交互模式 | - |
 | `--user-data-dir` | 自定义 Chrome 用户数据目录；默认在脚本同级 `.chrome-profile/`，与系统 Chrome 隔离 | - |
-| `--no-isolated-profile` | 不创建项目内 profile（会污染系统 Chrome profile，仅排错时使用） | - |
 | `--mk-version` | 手动指定 mkPlayer 版本号，覆盖 `FALLBACK_VERSION`（默认 `2026.5.10`） | - |
 
 ## 支持的音乐源

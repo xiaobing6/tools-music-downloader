@@ -50,7 +50,7 @@ scripts/build_exe.ps1         # Windows exe 构建脚本
 3. 从页面提取 `mkPlayer.version`，用于签名计算。
 4. 通过 POST 调用 `/api.php`，签名由 `compute_signature` 生成。
 5. 签名算法：`MD5(hostname | 补零版本号 | timestamp[:9] | search_id)[-8:].upper()`。
-6. `get_play_url`/`get_lyric`/`get_pic_url` 三个 URL 类接口都走 `_signed_get` 共享的"签名 + Cloudflare 重试"逻辑。
+6. `get_play_url`/`get_lyric`/`get_pic_url` 三个 URL 类接口都走 `fetch_with_cf_retry` 共享的"签名 + Cloudflare 重试"逻辑。
 
 ### Chrome profile 隔离
 

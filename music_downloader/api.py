@@ -78,17 +78,20 @@ def _load_json_response(result_text: str, error_message: str) -> Any:
         return None
 
 
-def _signed_get(
+def fetch_with_cf_retry(
     page: Any,
     body: str,
     resource_name: str,
     *,
     attempts: int = API_RETRY_ATTEMPTS,
 ) -> tuple[int, str]:
-    """带 Cloudflare 重试的 fetch_api 包装。
+    """对 /api.php 一次 fetch 加上 Cloudflare 自动重试。
 
-    返回 (status, text)。重试耗尽仍失败时返回最后一次的 status 与空文本，
-    调用方据此判定是否放弃。
+    行为：
+    - 遇到 403 时调用 refresh_cloudflare 刷新一次，然后重试。
+    - CF 刷新失败立即返回 (403, "")，调用方应放弃。
+    - 用尽 attempts 后返回最后一次 (status, text)。
+    - 401/502 等非 403 状态码不会被当作"需要刷 CF"，按原样返回。
     """
     last_status = 0
     last_text = ""
@@ -113,14 +116,13 @@ def search_with_pagination(
     search_type: str,
     total: int,
     version: str,
-) -> list:
-    all_results: list = []
+) -> list[dict[str, Any]]:
+    all_results: list[dict[str, Any]] = []
     remaining = total
     current_page = 1
     total_pages = int(math.ceil(float(total) / MAX_PER_PAGE))
     encoded_name = url_encode(keyword)
     api_type = SEARCH_TYPE_MAP.get(search_type, "search")
-    cf_retry_count = 0
 
     while remaining > 0:
         count = min(remaining, MAX_PER_PAGE)
@@ -136,7 +138,7 @@ def search_with_pagination(
             f"types={api_type}&count={count}&source={source}"
             f"&pages={current_page}&name={encoded_name}&s={signature}"
         )
-        status, result_text = fetch_api(page, body)
+        status, result_text = fetch_with_cf_retry(page, body, "搜索结果")
 
         if status != 200:
             if status == 401:
@@ -144,14 +146,6 @@ def search_with_pagination(
                     "  ✗ 请求被拒绝 (HTTP 401) - 签名验证失败，站点版本或签名算法可能已更新",
                     style="red",
                 )
-            elif status == 403:
-                console.print(
-                    "  ✗ 请求被拒绝 (HTTP 403) - Cloudflare 验证可能已过期",
-                    style="red",
-                )
-                cf_retry_count += 1
-                if cf_retry_count <= 2 and refresh_cloudflare(page):
-                    continue
             elif status == 502:
                 console.print(
                     "  ✗ 服务器连接中断 (HTTP 502) - 请稍后重试",
@@ -159,7 +153,8 @@ def search_with_pagination(
                 )
             else:
                 console.print(f"  ✗ 请求失败 (HTTP {status})", style="red")
-            console.print(f"  响应内容: {result_text[:200]}", style="dim")
+            if result_text:
+                console.print(f"  响应内容: {result_text[:200]}", style="dim")
             break
 
         data = _load_json_response(result_text, "响应解析失败")
@@ -178,7 +173,7 @@ def search_with_pagination(
 
 def _signed_url_get(page: Any, body: str, resource_name: str) -> str:
     """带 Cloudflare 重试的 URL 资源拉取，仅返回 url 字符串。"""
-    status, result_text = _signed_get(page, body, resource_name)
+    status, result_text = fetch_with_cf_retry(page, body, resource_name)
     if status != 200:
         if status != 403:
             console.print(
@@ -211,7 +206,7 @@ def get_lyric(page: Any, song: dict, source: str, version: str) -> str:
     encoded_id = url_encode(lyric_id)
     signature = compute_signature(HOSTNAME, version, timestamp, encoded_id)
     body = f"types=lyric&id={encoded_id}&source={source}&s={signature}"
-    status, result_text = _signed_get(page, body, "歌词")
+    status, result_text = fetch_with_cf_retry(page, body, "歌词")
     if status != 200:
         return ""
     data = _load_json_response(result_text, "解析歌词响应失败")

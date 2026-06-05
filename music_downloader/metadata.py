@@ -1,17 +1,21 @@
+from __future__ import annotations
+
+from typing import Any
+
 from .console import console
 from .utils import get_artist_str
 
 
 def embed_metadata(
-    filepath,
-    song,
-    index=0,
-    total=0,
-    cover_data=b"",
-    cover_mime="image/jpeg",
-    lyric_text="",
-    bitrate="320",
-):
+    filepath: str,
+    song: dict[str, Any],
+    index: int = 0,
+    total: int = 0,
+    cover_data: bytes = b"",
+    cover_mime: str = "image/jpeg",
+    lyric_text: str = "",
+    bitrate: str = "320",
+) -> None:
     if bitrate == "flac" or filepath.lower().endswith(".flac"):
         return embed_flac_tags(
             filepath,
@@ -34,14 +38,14 @@ def embed_metadata(
 
 
 def embed_id3_tags(
-    filepath,
-    song,
-    index=0,
-    total=0,
-    cover_data=b"",
-    cover_mime="image/jpeg",
-    lyric_text="",
-):
+    filepath: str,
+    song: dict[str, Any],
+    index: int = 0,
+    total: int = 0,
+    cover_data: bytes = b"",
+    cover_mime: str = "image/jpeg",
+    lyric_text: str = "",
+) -> None:
     try:
         from mutagen.id3 import APIC, TALB, TIT2, TPE1, TRCK, USLT
         from mutagen.mp3 import MP3
@@ -98,14 +102,14 @@ def embed_id3_tags(
 
 
 def embed_flac_tags(
-    filepath,
-    song,
-    index=0,
-    total=0,
-    cover_data=b"",
-    cover_mime="image/jpeg",
-    lyric_text="",
-):
+    filepath: str,
+    song: dict[str, Any],
+    index: int = 0,
+    total: int = 0,
+    cover_data: bytes = b"",
+    cover_mime: str = "image/jpeg",
+    lyric_text: str = "",
+) -> None:
     try:
         from mutagen.flac import FLAC, Picture
     except ImportError:

@@ -1,13 +1,16 @@
 import contextlib
 import os
+import random
 import shutil
 import time
 from collections.abc import Iterable
+from typing import Any
 
 from .api import get_lyric, get_pic_url, get_play_url
 from .config import (
     COVER_TIMEOUT_MS,
     DOWNLOAD_RETRIES,
+    DOWNLOAD_RETRY_BACKOFF_SEC,
     MIN_DOWNLOAD_BYTES,
     PROXY_BASE_URL,
     REQUEST_TIMEOUT_MS,
@@ -17,6 +20,14 @@ from .metadata import embed_metadata
 from .utils import get_artist_str, sanitize_filename
 
 PathLike = str | os.PathLike[str]
+
+
+def _retry_backoff() -> float:
+    """下载重试的随机退避：基础值上下浮动 ±20%，避免 Cloudflare 风控。"""
+    return random.uniform(
+        DOWNLOAD_RETRY_BACKOFF_SEC * 0.8,
+        DOWNLOAD_RETRY_BACKOFF_SEC * 1.2,
+    )
 
 
 def get_output_extension(bitrate: str) -> str:
@@ -48,7 +59,7 @@ def cleanup_paths(paths: Iterable[PathLike] | None) -> None:
                 os.remove(path)
 
 
-def _safe_embed_metadata(**kwargs) -> bool:
+def _safe_embed_metadata(**kwargs: Any) -> bool:
     """在 downloader 内安全调用 embed_metadata。
 
     元数据写入失败会留下"无标签文件"且下次运行被"已存在"逻辑跳过。
@@ -62,19 +73,126 @@ def _safe_embed_metadata(**kwargs) -> bool:
         return False
 
 
+def _download_body_to_file(
+    context: Any,
+    proxy_url: str,
+    tmp_path: PathLike,
+    filepath: PathLike,
+) -> bool:
+    """下载音频到临时文件并原子重命名。成功返回 True；任何失败返回 False 并清理 tmp。"""
+    try:
+        resp = context.request.get(proxy_url, timeout=REQUEST_TIMEOUT_MS)
+    except Exception as exc:  # noqa: BLE001 - 网络层异常吞掉即可
+        console.print(f"  ✗ 下载异常: {exc}", style="red")
+        cleanup_paths([tmp_path])
+        return False
+
+    if not resp.ok:
+        console.print(f"  ✗ 下载失败: HTTP {resp.status}", style="red")
+        cleanup_paths([tmp_path])
+        return False
+
+    content_length = resp.headers.get("content-length")
+    if content_length:
+        try:
+            size_hint = int(content_length) / 1024 / 1024
+            console.print(f"  文件大小: 约 {size_hint:.1f} MB", style="dim")
+        except ValueError:
+            pass
+
+    body = resp.body()
+    if len(body) < MIN_DOWNLOAD_BYTES:
+        console.print(
+            f"  ✗ 下载文件异常 (仅 {len(body)} 字节)，可能是错误响应",
+            style="red",
+        )
+        cleanup_paths([tmp_path])
+        return False
+
+    with open(tmp_path, "wb") as file_obj:
+        file_obj.write(body)
+    try:
+        os.replace(tmp_path, filepath)
+    except OSError as exc:
+        console.print(f"  ✗ 移动临时文件失败: {exc}", style="red")
+        console.print(
+            "    目标目录可能与源不在同一盘符，请检查 -o 输出目录",
+            style="yellow",
+        )
+        cleanup_paths([tmp_path])
+        return False
+
+    size_mb = len(body) / 1024 / 1024
+    filename = os.path.basename(filepath)
+    console.print(f"  ✓ 已保存: {filename} ({size_mb:.1f} MB)", style="green")
+    return True
+
+
+def _attach_metadata(
+    filepath: PathLike,
+    song: dict,
+    index: int,
+    total: int,
+    download_lyric: bool,
+    download_cover: bool,
+    page: Any,
+    context: Any,
+    source: str,
+    version: str,
+    bitrate: str,
+) -> bool:
+    """拉歌词/封面并写入元数据。成功返回 True；失败返回 False 并清理残缺文件。"""
+    cover_data = b""
+    cover_mime = "image/jpeg"
+    lyric_text = ""
+    if download_lyric:
+        lyric_text = get_lyric(page, song, source, version)
+    if download_cover:
+        pic_url = get_pic_url(page, song, source, version)
+        if pic_url:
+            try:
+                cover_resp = context.request.get(pic_url, timeout=COVER_TIMEOUT_MS)
+                if cover_resp.ok:
+                    cover_data = cover_resp.body()
+                    cover_mime = cover_resp.headers.get("content-type", "image/jpeg")
+                else:
+                    console.print(
+                        f"  ⚠ 封面下载失败: HTTP {cover_resp.status}",
+                        style="yellow",
+                    )
+            except Exception as exc:  # noqa: BLE001
+                console.print(f"  ⚠ 封面下载异常: {exc}", style="yellow")
+
+    embedded = _safe_embed_metadata(
+        filepath=filepath,
+        song=song,
+        index=index,
+        total=total,
+        cover_data=cover_data,
+        cover_mime=cover_mime,
+        lyric_text=lyric_text,
+        bitrate=bitrate,
+    )
+    if not embedded:
+        # 删除残缺文件，避免下次被"已存在"逻辑永久跳过
+        cleanup_paths([filepath])
+        return False
+    return True
+
+
 def download_song(
-    page,
-    context,
-    song,
-    source,
-    version,
-    save_dir,
-    index=0,
-    total=0,
-    download_lyric=True,
-    download_cover=True,
-    bitrate="320",
-):
+    page: Any,
+    context: Any,
+    song: dict,
+    source: str,
+    version: str,
+    save_dir: str,
+    index: int = 0,
+    total: int = 0,
+    download_lyric: bool = True,
+    download_cover: bool = True,
+    bitrate: str = "320",
+) -> str:
     name = str(song.get("name", "未知"))
     filepath = build_output_path(save_dir, song, bitrate)
     filename = os.path.basename(filepath)
@@ -85,120 +203,40 @@ def download_song(
         return "skip"
 
     console.print(f"  获取播放链接: {name}...", style="cyan")
-    play_url = get_play_url(page, song, source, version, bitrate)
-    if not play_url:
-        console.print("  ✗ 未获取到播放链接，跳过", style="red")
-        return "fail"
-
-    console.print(f"  下载中: {filename}...", style="cyan")
     for attempt in range(1, DOWNLOAD_RETRIES + 1):
         if attempt > 1:
             console.print(f"  重新获取播放链接: {name}...", style="cyan")
-            play_url = get_play_url(page, song, source, version, bitrate)
-            if not play_url:
-                console.print("  ✗ 未获取到播放链接", style="red")
-                if attempt < DOWNLOAD_RETRIES:
-                    time.sleep(3)
-                continue
 
+        play_url = get_play_url(page, song, source, version, bitrate)
+        if not play_url:
+            console.print("  ✗ 未获取到播放链接", style="red")
+            if attempt >= DOWNLOAD_RETRIES:
+                return "fail"
+            console.print("  等待后重试...", style="dim")
+            time.sleep(_retry_backoff())
+            continue
+
+        console.print(f"  下载中: {filename}...", style="cyan")
         proxy_url = f"{PROXY_BASE_URL}/{play_url}"
-        try:
-            resp = context.request.get(proxy_url, timeout=REQUEST_TIMEOUT_MS)
-            if not resp.ok:
-                console.print(
-                    f"  ✗ 第 {attempt} 次下载失败: HTTP {resp.status}",
-                    style="red",
-                )
-                if attempt < DOWNLOAD_RETRIES:
-                    time.sleep(3)
-                    continue
-                return "fail"
-
-            content_length = resp.headers.get("content-length")
-            if content_length:
-                try:
-                    size_hint = int(content_length) / 1024 / 1024
-                    console.print(f"  文件大小: 约 {size_hint:.1f} MB", style="dim")
-                except ValueError:
-                    pass
-
-            body = resp.body()
-            if len(body) < MIN_DOWNLOAD_BYTES:
-                console.print(
-                    f"  ✗ 第 {attempt} 次下载文件异常 (仅 {len(body)} 字节)，可能是错误响应",
-                    style="red",
-                )
-                cleanup_paths([tmp_path])
-                if attempt < DOWNLOAD_RETRIES:
-                    time.sleep(3)
-                    continue
-                return "fail"
-
-            with open(tmp_path, "wb") as file_obj:
-                file_obj.write(body)
-            try:
-                os.replace(tmp_path, filepath)
-            except OSError as exc:
-                console.print(
-                    f"  ✗ 移动临时文件失败: {exc}",
-                    style="red",
-                )
-                console.print(
-                    "    目标目录可能与源不在同一盘符，请检查 -o 输出目录",
-                    style="yellow",
-                )
-                cleanup_paths([tmp_path])
-                if attempt < DOWNLOAD_RETRIES:
-                    time.sleep(3)
-                    continue
-                return "fail"
-
-            size_mb = len(body) / 1024 / 1024
-            console.print(f"  ✓ 已保存: {filename} ({size_mb:.1f} MB)", style="green")
-
-            cover_data = b""
-            cover_mime = "image/jpeg"
-            lyric_text = ""
-            if download_lyric:
-                lyric_text = get_lyric(page, song, source, version)
-            if download_cover:
-                pic_url = get_pic_url(page, song, source, version)
-                if pic_url:
-                    try:
-                        cover_resp = context.request.get(pic_url, timeout=COVER_TIMEOUT_MS)
-                        if cover_resp.ok:
-                            cover_data = cover_resp.body()
-                            cover_mime = cover_resp.headers.get("content-type", "image/jpeg")
-                        else:
-                            console.print(
-                                f"  ⚠ 封面下载失败: HTTP {cover_resp.status}",
-                                style="yellow",
-                            )
-                    except Exception as exc:  # noqa: BLE001
-                        console.print(f"  ⚠ 封面下载异常: {exc}", style="yellow")
-
-            embedded = _safe_embed_metadata(
+        if _download_body_to_file(context, proxy_url, tmp_path, filepath):
+            ok = _attach_metadata(
                 filepath=filepath,
                 song=song,
                 index=index,
                 total=total,
-                cover_data=cover_data,
-                cover_mime=cover_mime,
-                lyric_text=lyric_text,
+                download_lyric=download_lyric,
+                download_cover=download_cover,
+                page=page,
+                context=context,
+                source=source,
+                version=version,
                 bitrate=bitrate,
             )
-            if not embedded:
-                # 删除残缺文件，避免下次被"已存在"逻辑永久跳过
-                cleanup_paths([filepath, tmp_path])
-                return "fail"
-            return "success"
-        except Exception as exc:
-            console.print(f"  ✗ 第 {attempt} 次下载失败: {exc}", style="red")
-            cleanup_paths([filepath, tmp_path])
-            if attempt < DOWNLOAD_RETRIES:
-                console.print("  等待 3 秒后重试...", style="dim")
-                time.sleep(3)
-            else:
-                return "fail"
+            return "success" if ok else "fail"
+
+        if attempt >= DOWNLOAD_RETRIES:
+            return "fail"
+        console.print("  等待后重试...", style="dim")
+        time.sleep(_retry_backoff())
 
     return "fail"
