@@ -3,7 +3,14 @@ import json
 import math
 from typing import Any
 
-from .config import API_RETRY_ATTEMPTS, CF_RETRY_ATTEMPTS, HOSTNAME, MAX_PER_PAGE, SEARCH_TYPE_MAP
+from .config import (
+    API_RETRY_ATTEMPTS,
+    CF_RETRY_ATTEMPTS,
+    HOSTNAME,
+    MAX_PER_PAGE,
+    PAGE_NAV_TIMEOUT_MS,
+    SEARCH_TYPE_MAP,
+)
 from .console import console
 from .utils import url_encode
 
@@ -32,13 +39,13 @@ def wait_for_cloudflare(page: Any, max_retries: int = CF_RETRY_ATTEMPTS) -> bool
                 f"  ⚠ 未检测到 cf_clearance，第 {attempt + 1} 次重试...",
                 style="yellow",
             )
-            page.reload(wait_until="networkidle", timeout=60000)
+            page.reload(wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
     return False
 
 
 def refresh_cloudflare(page: Any) -> bool:
     console.print("  ⚠ Cloudflare 验证可能已过期，尝试重新验证...", style="yellow")
-    page.reload(wait_until="networkidle", timeout=60000)
+    page.reload(wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
     return wait_for_cloudflare(page)
 
 

@@ -25,6 +25,8 @@ from .config import (
     DEFAULT_NUMBER,
     DEFAULT_SOURCE,
     FALLBACK_VERSION,
+    INTER_SONG_DELAY_SEC,
+    PAGE_NAV_TIMEOUT_MS,
     SEARCH_TYPE_MAP,
     USER_AGENT,
     VALID_BITRATES,
@@ -281,7 +283,7 @@ def do_search_and_download(
                 fail += 1
             progress.advance(task_id)
             if index < len(results) - 1:
-                time.sleep(1)
+                time.sleep(INTER_SONG_DELAY_SEC)
 
     console.print(
         f"\n下载完成: 成功 {success} 首 / 失败 {fail} 首 / 跳过 {skip} 首",
@@ -507,7 +509,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
             page = context.pages[0] if context.pages else context.new_page()
 
             try:
-                page.goto(BASE_URL, wait_until="networkidle", timeout=60000)
+                page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
             except Exception as exc:
                 console.print(f"  ✗ 页面加载失败: {exc}", style="red")
                 return 1
@@ -527,7 +529,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
                     user_data_dir=user_data_dir,
                 )
                 page = context.pages[0] if context.pages else context.new_page()
-                page.goto(BASE_URL, wait_until="networkidle", timeout=60000)
+                page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                 cf_passed = wait_for_cloudflare(page)
 
             if not cf_passed:
