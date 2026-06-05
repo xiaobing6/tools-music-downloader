@@ -8,10 +8,15 @@ version = "0.1.0"
 description = "命令行音乐搜索下载工具，数据来源为 music.gdstudio.org"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 keywords = ["music", "downloader", "netease", "playwright"]
 authors = [
     { name = "tools-music-downloader contributors" },
+]
+dependencies = [
+    "playwright>=1.45",
+    "mutagen>=1.47",
+    "rich>=13",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -26,19 +31,27 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio",
 ]
 
+[project.scripts]
+music_download = "music_downloader.cli:main"
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = ["E", "F", "I", "UP", "B", "SIM", "A", "C4", "T20"]
 # RUF 全量关闭：本项目大量中文文案/注释，全角标点（，。（）：；）属于合理用法，
 # 强行让 ruff 提示是误报。
-ignore = ["E501"]
+# T201 忽略：console.py 的 PlainConsole 和 display.py 的 JSON 输出需要裸 print。
+ignore = ["E501", "T201"]
 
 [tool.mypy]
 python_version = "3.10"
-ignore_missing_imports = true
+exclude = ["dist/", "\\.nuitka-cache/", "\\.chrome-profile/"]
 warn_unused_configs = true
 check_untyped_defs = true
 no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["playwright.*", "mutagen.*"]
+ignore_missing_imports = true

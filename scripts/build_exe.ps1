@@ -9,6 +9,12 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
+# 从 pyproject.toml 读取版本号，避免多处硬编码
+$ProjectVersion = python -c "import tomllib; print(tomllib.open('pyproject.toml','rb')['project']['version'])"
+if ($LASTEXITCODE -ne 0) {
+    throw "Failed to read version from pyproject.toml (exit $LASTEXITCODE)"
+}
+
 if (-not $SkipInstall) {
     # 幂等安装构建依赖
     python -m pip install -r requirements-build.txt
@@ -22,6 +28,13 @@ if (-not $SkipInstall) {
 $env:NUITKA_CACHE_DIR = Join-Path $ProjectRoot ".nuitka-cache"
 New-Item -ItemType Directory -Force -Path $env:NUITKA_CACHE_DIR | Out-Null
 
+# 清理旧构建产物，避免残留混淆
+$distDir = Join-Path $ProjectRoot "dist"
+if (Test-Path $distDir) {
+    Write-Host "Cleaning old dist directory..." -ForegroundColor Yellow
+    Remove-Item $distDir -Recurse -Force
+}
+
 # Decide whether to allow Nuitka to fetch its toolchain (zig/scons/...):
 #   * CI (GitHub Actions, etc.) is a clean runner with nothing cached, so we
 #     MUST allow downloads or Nuitka aborts with "no (default non-interactive)".
@@ -34,7 +47,13 @@ $commonArgs = @(
     "--enable-plugin=anti-bloat",
     "--playwright-include-browser=none",
     "--output-dir=dist",
-    "--output-filename=music_download.exe"
+    "--output-filename=music_download.exe",
+    "--lto=yes",
+    "--jobs=$([System.Environment]::ProcessorCount)",
+    "--windows-product-name=music_download",
+    "--windows-file-version=$ProjectVersion",
+    "--windows-company-name=tools-music-downloader",
+    "--windows-file-description=命令行音乐搜索下载工具"
 )
 if ($isCi) {
     Write-Host "CI mode: enabling --assume-yes-for-downloads so Nuitka can fetch zig/scons." -ForegroundColor Yellow
