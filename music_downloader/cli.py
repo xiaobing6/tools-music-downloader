@@ -482,10 +482,11 @@ def run_with_browser(args: argparse.Namespace) -> int:
     if sync_playwright is None:
         return 1
 
-    # Nuitka onefile 模式下 __file__ 和 sys.executable 都指向临时解压目录，
-    # 需要用 __nuitka_binary_dir 获取 exe 实际所在目录。
-    script_dir = getattr(sys, "__nuitka_binary_dir", None)
-    if not script_dir:
+    if "__compiled__" in globals():
+        # Nuitka 编译环境：sys.argv[0] 是用户执行的真实 EXE 路径
+        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    else:
+        # 源码环境：__file__ 是 cli.py 的路径，需要向上两层到项目根目录
         script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     user_data_dir = _resolve_user_data_dir(args, script_dir)
     os.makedirs(user_data_dir, exist_ok=True)
