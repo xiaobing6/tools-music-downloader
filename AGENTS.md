@@ -9,8 +9,8 @@
 ## 技术栈
 
 - **语言**：Python 3.10+
-- **运行依赖**：`playwright>=1.45`、`mutagen>=1.47`、`rich>=13`（不钉上界，本机实测兼容到 playwright 1.60.x / mutagen 1.47.x / rich 15.x）
-- **开发依赖**：`ruff>=0.5`、`mypy>=1.10`（无测试，故 pytest 不在此列）
+- **运行依赖**：`playwright>=1.45`、`mutagen>=1.47`、`rich>=13`
+- **开发依赖**：`ruff>=0.5`、`mypy>=1.10`
 - **构建依赖**（见 `requirements-build.txt`）：`nuitka>=2.5`、`ordered-set>=4.1`、`zstandard>=0.23`
 - **浏览器要求**：系统已安装 Google Chrome，代码使用 `channel="chrome"`
 
