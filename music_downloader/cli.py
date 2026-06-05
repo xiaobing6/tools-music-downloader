@@ -482,9 +482,11 @@ def run_with_browser(args: argparse.Namespace) -> int:
     if sync_playwright is None:
         return 1
 
-    # sys.executable 指向实际运行的 exe/python 路径；
-    # onefile 模式下 __file__ 指向临时解压目录，不适合作为基准路径。
-    script_dir = os.path.dirname(os.path.abspath(sys.executable))
+    # Nuitka onefile 模式下 __file__ 和 sys.executable 都指向临时解压目录，
+    # 需要用 __nuitka_binary_dir 获取 exe 实际所在目录。
+    script_dir = getattr(sys, "__nuitka_binary_dir", None)
+    if not script_dir:
+        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     user_data_dir = _resolve_user_data_dir(args, script_dir)
     os.makedirs(user_data_dir, exist_ok=True)
     console.print(f"  ✓ Chrome 用户数据目录: {user_data_dir}", style="dim")
