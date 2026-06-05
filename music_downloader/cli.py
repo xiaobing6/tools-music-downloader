@@ -16,6 +16,9 @@ from rich.progress import (
     SpinnerColumn,
     TextColumn,
 )
+from rich_argparse import (
+    RawDescriptionRichHelpFormatter as _HelpFormatter,  # type: ignore[assignment]
+)
 
 from .api import search_with_pagination, wait_for_cloudflare
 from .config import (
@@ -69,34 +72,38 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="music_download.py",
         description="music.gdstudio.org 音乐搜索与下载工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=_HelpFormatter,
+        usage="%(prog)s [-k KEYWORD] [options]",
         epilog="""示例:
-  python music_download.py -k "周杰伦"
-  python music_download.py -k "Beyond" -n 5
-  python music_download.py -k "Beyond" -t album
-  python music_download.py -k "Beyond" -o "D:\\Music"
-  python music_download.py -k "Beyond" --search-only
-  python music_download.py --check-env
-  python music_download.py -i""",
+  %(prog)s -k "周杰伦"                 # 搜索并下载
+  %(prog)s -k "Beyond" -n 5            # 限制下载数量
+  %(prog)s -k "Beyond" -t album        # 搜索专辑
+  %(prog)s -k "Beyond" -o "D:\\Music"   # 指定下载目录
+  %(prog)s -k "Beyond" --search-only   # 仅搜索
+  %(prog)s --check-env                 # 检查环境
+  %(prog)s -i                          # 交互模式""",
     )
-    parser.add_argument(
+
+    # ── 搜索选项 ──
+    search_group = parser.add_argument_group("搜索选项")
+    search_group.add_argument(
         "-k", "--keyword", default=DEFAULT_KEYWORD, help=f"搜索关键词 (默认: {DEFAULT_KEYWORD})"
     )
-    parser.add_argument(
+    search_group.add_argument(
         "-s",
         "--source",
         default=DEFAULT_SOURCE,
         choices=VALID_SOURCES,
         help=f"音乐源 (默认: {DEFAULT_SOURCE})",
     )
-    parser.add_argument(
+    search_group.add_argument(
         "-n",
         "--number",
         type=positive_int,
         default=DEFAULT_NUMBER,
         help=f"获取结果总数 (默认: {DEFAULT_NUMBER}, 自动分页)",
     )
-    parser.add_argument(
+    search_group.add_argument(
         "-t",
         "--type",
         default="song",
@@ -104,14 +111,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         dest="search_type",
         help="搜索类型: song/album/playlist (默认: song)",
     )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default="",
-        dest="output_dir",
-        help="下载目录 (默认: 脚本同级 downloads/，会再自动按关键词建子目录)",
-    )
-    parser.add_argument(
+    search_group.add_argument(
         "-f",
         "--format",
         default="table",
@@ -119,33 +119,47 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         dest="output_format",
         help="输出格式 (默认: table)",
     )
-    parser.add_argument(
+    search_group.add_argument("--search-only", action="store_true", help="只搜索不下载")
+    search_group.add_argument("--select", action="store_true", help="搜索后选择要下载的歌曲")
+
+    # ── 下载选项 ──
+    download_group = parser.add_argument_group("下载选项")
+    download_group.add_argument(
+        "-o",
+        "--output",
+        default="",
+        dest="output_dir",
+        help="下载目录 (默认: 脚本同级 downloads/, 会再自动按关键词建子目录)",
+    )
+    download_group.add_argument(
         "-b",
         "--bitrate",
         default=DEFAULT_BITRATE,
         choices=VALID_BITRATES,
         help=f"音质选择: 128/192/320/flac (默认: {DEFAULT_BITRATE})",
     )
-    parser.add_argument("--search-only", action="store_true", help="只搜索不下载")
-    parser.add_argument("--select", action="store_true", help="搜索后选择要下载的歌曲")
-    parser.add_argument("--no-lyric", action="store_true", help="不下载歌词（默认下载）")
-    parser.add_argument("--no-cover", action="store_true", help="不嵌入封面（默认嵌入）")
-    parser.add_argument(
-        "--check-env", action="store_true", help="检查本地依赖和 Google Chrome，不访问音乐站点"
+    download_group.add_argument("--no-lyric", action="store_true", help="不下载歌词 (默认下载)")
+    download_group.add_argument("--no-cover", action="store_true", help="不嵌入封面 (默认嵌入)")
+
+    # ── 高级选项 ──
+    advanced_group = parser.add_argument_group("高级选项")
+    advanced_group.add_argument(
+        "--check-env", action="store_true", help="检查本地依赖和 Google Chrome, 不访问音乐站点"
     )
-    parser.add_argument(
-        "-i", "--interactive", action="store_true", help="交互模式，浏览器保持运行可反复搜索"
+    advanced_group.add_argument(
+        "-i", "--interactive", action="store_true", help="交互模式, 浏览器保持运行可反复搜索"
     )
-    parser.add_argument(
+    advanced_group.add_argument(
         "--user-data-dir",
         default=None,
-        help="自定义 Chrome 用户数据目录（默认在脚本同级 .chrome-profile/，与系统 Chrome 隔离）",
+        help="自定义 Chrome 用户数据目录 (默认在脚本同级 .chrome-profile/, 与系统 Chrome 隔离)",
     )
-    parser.add_argument(
+    advanced_group.add_argument(
         "--mk-version",
         default=None,
-        help=f"手动指定 mkPlayer 版本号，覆盖页面抓取失败时的默认值 {FALLBACK_VERSION}",
+        help=f"手动指定 mkPlayer 版本号, 覆盖页面抓取失败时的默认值 {FALLBACK_VERSION}",
     )
+
     return parser.parse_args(argv)
 
 
