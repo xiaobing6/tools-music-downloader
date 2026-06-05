@@ -9,6 +9,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+)
+
 from .api import search_with_pagination, wait_for_cloudflare
 from .config import (
     BASE_URL,
@@ -132,11 +140,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="自定义 Chrome 用户数据目录（默认在脚本同级 .chrome-profile/，与系统 Chrome 隔离）",
     )
     parser.add_argument(
-        "--no-isolated-profile",
-        action="store_true",
-        help="不创建项目内 profile（会污染系统 Chrome profile，仅排错时使用）",
-    )
-    parser.add_argument(
         "--mk-version",
         default=None,
         help=f"手动指定 mkPlayer 版本号，覆盖页面抓取失败时的默认值 {FALLBACK_VERSION}",
@@ -168,7 +171,13 @@ def make_run_options(
     )
 
 
-def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None:
+def do_search_and_download(
+    page: Any,
+    context: Any,
+    options: RunOptions,
+    *,
+    show_progress: bool = True,
+) -> None:
     console.print(
         f'搜索 "{options.keyword}" (来源: {options.source}, 类型: {options.search_type}, 数量: {options.number})...',
         style="bold cyan",
@@ -185,6 +194,19 @@ def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None
     if not results:
         console.print("  未找到结果", style="yellow")
         return
+
+    # 按 id 去重（保序）
+    seen: set = set()
+    unique_results = []
+    for song in results:
+        sid = song.get("id", "")
+        if sid and sid not in seen:
+            seen.add(sid)
+            unique_results.append(song)
+    dropped = len(results) - len(unique_results)
+    if dropped:
+        console.print(f"  ⊘ 跳过 {dropped} 首重复结果", style="dim")
+    results = unique_results
 
     display_results(results, options.keyword, output_format=options.output_format)
 
@@ -224,28 +246,42 @@ def do_search_and_download(page: Any, context: Any, options: RunOptions) -> None
     fail = 0
     skip = 0
 
-    for index, song in enumerate(results):
-        result = download_song(
-            page,
-            context,
-            song,
-            options.source,
-            options.version,
-            target_dir,
-            index + 1,
-            len(results),
-            download_lyric=options.download_lyric,
-            download_cover=options.download_cover,
-            bitrate=options.bitrate,
-        )
-        if result == "success":
-            success += 1
-        elif result == "skip":
-            skip += 1
-        else:
-            fail += 1
-        if index < len(results) - 1:
-            time.sleep(1)
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        console=console,
+        disable=not show_progress,
+    ) as progress:
+        task_id = progress.add_task(f"准备下载 {len(results)} 首", total=len(results))
+        for index, song in enumerate(results):
+            progress.update(
+                task_id,
+                description=f"第 {index + 1}/{len(results)} 首: {song.get('name', '?')}",
+            )
+            result = download_song(
+                page,
+                context,
+                song,
+                options.source,
+                options.version,
+                target_dir,
+                index + 1,
+                len(results),
+                download_lyric=options.download_lyric,
+                download_cover=options.download_cover,
+                bitrate=options.bitrate,
+            )
+            if result == "success":
+                success += 1
+            elif result == "skip":
+                skip += 1
+            else:
+                fail += 1
+            progress.advance(task_id)
+            if index < len(results) - 1:
+                time.sleep(1)
 
     console.print(
         f"\n下载完成: 成功 {success} 首 / 失败 {fail} 首 / 跳过 {skip} 首",
@@ -373,7 +409,7 @@ def interactive_mode(
         options = build_interactive_options(cmd, args, state, version, save_dir)
         if options is None:
             continue
-        do_search_and_download(page, context, options)
+        do_search_and_download(page, context, options, show_progress=False)
         console.print()
 
 
@@ -432,8 +468,7 @@ def _resolve_user_data_dir(args: argparse.Namespace, script_dir: str) -> str:
     """根据 CLI 参数决定 user_data_dir。
 
     用户显式 --user-data-dir 时用用户路径；否则统一用脚本同级的
-    .chrome-profile/（与系统 Chrome 隔离）。--no-isolated-profile 仅为
-    保留参数兼容，实际行为和默认一致。
+    .chrome-profile/（与系统 Chrome 隔离）。
     """
     if args.user_data_dir:
         return os.path.abspath(args.user_data_dir)
