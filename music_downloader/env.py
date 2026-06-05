@@ -65,6 +65,7 @@ def run_environment_checks(
         check_module("playwright"),
         check_module("mutagen"),
         check_module("rich"),
+        check_module("rich_argparse", "rich-argparse"),
     ]
     checker = chrome_checker or check_chrome_launcher
     checks.append(checker())

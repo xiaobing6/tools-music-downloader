@@ -17,6 +17,7 @@ dependencies = [
     "playwright>=1.45",
     "mutagen>=1.47",
     "rich>=13",
+    "rich-argparse>=1.8",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
