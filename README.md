@@ -157,7 +157,7 @@ python -m py_compile music_download.py
 
 ## 打包 EXE
 
-本项目推荐使用 Nuitka 打包 Windows 可执行文件。打包后的 exe 会包含 Python 运行时和 Python 依赖，但仍然使用用户系统里已安装的 Google Chrome，不会把 Playwright 浏览器一起打包进去。
+本项目推荐使用 Nuitka 打包 Windows 可执行程序：打包生成的 EXE 内置 Python 运行环境与全部 Python 依赖；Playwright 依赖的 Chrome 浏览器不随程序打包，程序运行时复用用户本机已安装的谷歌 Chrome。
 
 安装构建依赖：
 
@@ -209,8 +209,6 @@ dist/music_download.dist/music_download.exe
 .\dist\music_download.dist\music_download.exe --check-env
 ```
 
-如果目标机器缺少 Visual C++ 运行库，请安装 Microsoft Visual C++ Redistributable for Visual Studio 2015-2022。Nuitka 会尽量打包可用运行库，但在部分构建环境下仍可能需要目标机器预装。
-
 ## 注意事项
 
 - 下载的歌曲仅供个人学习交流使用，请尊重版权。
@@ -241,10 +239,6 @@ dist/music_download.dist/music_download.exe
 **Q: 为什么用隔离的 `.chrome-profile/`？**
 
 避免读取你已登录的系统 Chrome profile（避免 session 污染和 SingletonLock 冲突）。如果你**确实**要复用系统 profile 的状态，用 `--user-data-dir "%LOCALAPPDATA%\Google\Chrome\User Data"`，但要清楚这会让工具读到你的 Google 账号登录态。
-
-**Q: 跨盘移动文件失败 (`os.replace` 报错)？**
-
-把 `-o` 输出目录指到和系统盘（一般是 C 盘）相同盘符下。Windows 上 `os.replace` 跨盘符不支持。
 
 **Q: 如何查看所有参数？**
 

@@ -1,6 +1,4 @@
 -r requirements.txt
-# 不钉上界：Nuitka 4.x 仍兼容我们这套用法（playwright plugin + anti-bloat + onefile）
-# 4.x 同时把 ordered-set / zstandard 拉到了更新的版本，所以这里也不锁。
 nuitka>=2.5
 ordered-set>=4.1
 zstandard>=0.23
