@@ -20,7 +20,7 @@ def display_table(data: list[dict[str, Any]], keyword: str) -> None:
         ("#", {"justify": "right", "style": "cyan", "width": 4, "no_wrap": True}),
         ("歌名", {"style": "bold", "max_width": 36, "overflow": "fold"}),
         ("歌手", {"max_width": 28, "overflow": "fold"}),
-        ("专辑", {"max_width": 28, "overflow": "fold"}),
+        ("专辑", {"max_width": 36, "overflow": "fold"}),
         ("时长", {"justify": "right", "width": 8, "no_wrap": True}),
         ("来源", {"width": 10, "no_wrap": True}),
         ("ID", {"style": "dim", "width": 16, "no_wrap": True}),
