@@ -81,7 +81,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         解析后的 argparse.Namespace。
     """
     parser = argparse.ArgumentParser(
-        prog="music_download.py",
         description="music.gdstudio.org 音乐搜索与下载工具",
         formatter_class=_HelpFormatter,
         usage="%(prog)s [-k KEYWORD] [options]",
