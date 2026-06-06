@@ -1,3 +1,5 @@
+"""终端输出：构建 rich Console 或纯文本回退。"""
+
 import sys
 from contextlib import suppress
 from typing import Any
@@ -26,6 +28,8 @@ def _force_utf8_stdout() -> None:
 
 
 class PlainConsole:
+    """rich 不可用时的纯文本回退，仅提供 print/rule 接口。"""
+
     def print(self, *objects: Any, style: str | None = None, **kwargs: Any) -> None:
         print(*objects)
 

@@ -1,3 +1,5 @@
+"""命令行参数解析、交互模式与主流程。"""
+
 from __future__ import annotations
 
 import argparse
@@ -59,6 +61,7 @@ class InteractiveCommand:
 
 
 def positive_int(value: str) -> int:
+    """argparse 类型函数：验证值为正整数。"""
     try:
         parsed = int(value)
     except ValueError as exc:
@@ -69,6 +72,14 @@ def positive_int(value: str) -> int:
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """解析命令行参数。
+
+    Args:
+        argv: 参数列表，默认使用 sys.argv[1:]。
+
+    Returns:
+        解析后的 argparse.Namespace。
+    """
     parser = argparse.ArgumentParser(
         prog="music_download.py",
         description="music.gdstudio.org 音乐搜索与下载工具",
@@ -168,6 +179,16 @@ def make_run_options(
     script_dir: str,
     version: str,
 ) -> RunOptions:
+    """将 argparse 结果转换为 RunOptions 数据类。
+
+    Args:
+        args: parse_args 的返回值。
+        script_dir: 脚本所在目录，用于拼接默认下载路径。
+        version: mkPlayer 版本号，用于 API 签名。
+
+    Returns:
+        包含完整运行参数的 RunOptions 实例。
+    """
     save_dir = os.path.abspath(
         args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
     )
@@ -430,6 +451,7 @@ def interactive_mode(
 
 
 def import_playwright() -> tuple[Any, Any]:
+    """延迟导入 playwright，失败时打印提示并返回 (None, None)。"""
     try:
         from playwright.sync_api import Error as PlaywrightError
         from playwright.sync_api import sync_playwright
@@ -447,6 +469,16 @@ def fetch_player_version(
     fallback: str = FALLBACK_VERSION,
     override: str | None = None,
 ) -> str:
+    """获取 mkPlayer.version，优先使用手动覆盖值，其次从页面提取，最后使用回退值。
+
+    Args:
+        page: Playwright Page 对象。
+        fallback: 页面提取失败时的回退版本号。
+        override: 用户通过 --mk-version 手动指定的版本号。
+
+    Returns:
+        最终使用的版本号字符串。
+    """
     if override:
         return override
     version = page.evaluate("typeof mkPlayer !== 'undefined' ? mkPlayer.version : ''")
@@ -492,6 +524,14 @@ def _resolve_user_data_dir(args: argparse.Namespace, script_dir: str) -> str:
 
 
 def run_with_browser(args: argparse.Namespace) -> int:
+    """主流程：启动浏览器、通过 Cloudflare 验证、执行搜索/下载或交互模式。
+
+    Args:
+        args: parse_args 的返回值。
+
+    Returns:
+        退出码，0 表示成功，非 0 表示失败。
+    """
     sync_playwright, playwright_error = import_playwright()
     if sync_playwright is None:
         return 1
@@ -577,6 +617,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    """程序入口：解析参数后执行环境检查或主流程。"""
     args = parse_args(argv)
     if args.check_env:
         sys.exit(check_environment())

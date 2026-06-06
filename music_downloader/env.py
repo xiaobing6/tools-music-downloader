@@ -1,3 +1,5 @@
+"""本地环境检查：Python 版本、依赖模块、Google Chrome 可用性。"""
+
 import contextlib
 import importlib.util
 import sys
@@ -10,6 +12,8 @@ from .console import PlainConsole, RichTable, console
 
 @dataclass
 class EnvironmentCheck:
+    """单项环境检查结果。"""
+
     name: str
     ok: bool
     detail: str
@@ -18,6 +22,7 @@ class EnvironmentCheck:
 def check_python_version(
     version_info: tuple[int, int, int] = sys.version_info[:3],
 ) -> EnvironmentCheck:
+    """检查 Python 版本是否 >= 3.10。"""
     ok = version_info >= (3, 10, 0)
     version = ".".join(str(part) for part in version_info)
     detail = f"Python {version}" if ok else f"需要 Python 3.10+，当前为 Python {version}"
@@ -25,6 +30,7 @@ def check_python_version(
 
 
 def check_module(module_name: str, package_name: str | None = None) -> EnvironmentCheck:
+    """检查指定 Python 模块是否已安装。"""
     package = package_name or module_name
     if importlib.util.find_spec(module_name) is None:
         return EnvironmentCheck(package, False, "未安装，请运行: pip install -r requirements.txt")
@@ -34,6 +40,14 @@ def check_module(module_name: str, package_name: str | None = None) -> Environme
 def check_chrome_launcher(
     sync_playwright_factory: Callable[[], Any] | None = None,
 ) -> EnvironmentCheck:
+    """尝试通过 Playwright channel='chrome' 启动 Google Chrome。
+
+    Args:
+        sync_playwright_factory: 可选的 sync_playwright 工厂函数，用于测试注入。
+
+    Returns:
+        检查结果，包含是否可启动及错误信息。
+    """
     try:
         if sync_playwright_factory is None:
             from playwright.sync_api import sync_playwright
@@ -60,6 +74,7 @@ def check_chrome_launcher(
 def run_environment_checks(
     chrome_checker: Callable[[], EnvironmentCheck] | None = None,
 ) -> list[EnvironmentCheck]:
+    """依次执行所有环境检查并返回结果列表。"""
     checks = [
         check_python_version(),
         check_module("playwright"),
@@ -73,6 +88,7 @@ def run_environment_checks(
 
 
 def render_environment_checks(checks: list[EnvironmentCheck]) -> None:
+    """将环境检查结果渲染为表格或纯文本输出。"""
     if RichTable is None:
         # Use a PlainConsole so the output goes straight to sys.stdout
         # (and is therefore captured by tests via capsys).
@@ -96,6 +112,7 @@ def render_environment_checks(checks: list[EnvironmentCheck]) -> None:
 
 
 def check_environment() -> int:
+    """执行完整环境检查并输出结果，全部通过返回 0 否则返回 1。"""
     checks = run_environment_checks()
     render_environment_checks(checks)
     return 0 if all(check.ok for check in checks) else 1

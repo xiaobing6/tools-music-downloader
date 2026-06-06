@@ -1,3 +1,5 @@
+"""MP3/FLAC 音频文件元数据（ID3 / Vorbis Comment）写入。"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,6 +18,7 @@ def embed_metadata(
     lyric_text: str = "",
     bitrate: str = "320",
 ) -> None:
+    """根据文件类型写入元数据，FLAC 走 embed_flac_tags，其余走 embed_id3_tags。"""
     if bitrate == "flac" or filepath.lower().endswith(".flac"):
         return embed_flac_tags(
             filepath,
@@ -46,6 +49,7 @@ def embed_id3_tags(
     cover_mime: str = "image/jpeg",
     lyric_text: str = "",
 ) -> None:
+    """向 MP3 文件写入 ID3v2 标签（标题、歌手、专辑、曲目号、封面、歌词）。"""
     try:
         from mutagen.id3 import APIC, TALB, TIT2, TPE1, TRCK, USLT
         from mutagen.mp3 import MP3
@@ -110,6 +114,7 @@ def embed_flac_tags(
     cover_mime: str = "image/jpeg",
     lyric_text: str = "",
 ) -> None:
+    """向 FLAC 文件写入 Vorbis Comment 标签和封面图片。"""
     try:
         from mutagen.flac import FLAC, Picture
     except ImportError:

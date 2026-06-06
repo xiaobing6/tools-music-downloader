@@ -1,3 +1,5 @@
+"""运行选项数据类。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
