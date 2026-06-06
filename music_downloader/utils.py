@@ -1,3 +1,5 @@
+"""通用工具函数：URL 编码、文件名清理、歌曲字段格式化等。"""
+
 from __future__ import annotations
 
 import os
@@ -33,10 +35,12 @@ WINDOWS_RESERVED_NAMES = {
 
 
 def url_encode(value: str) -> str:
+    """对字符串做 URL 编码，不保留安全字符。"""
     return urllib.parse.quote(value, safe="")
 
 
 def format_duration(seconds: int | float | None) -> str:
+    """将秒数格式化为 m:ss，无效值返回 --:--。"""
     if not seconds or seconds <= 0:
         return "--:--"
     minutes, secs = divmod(int(seconds), 60)
@@ -44,6 +48,15 @@ def format_duration(seconds: int | float | None) -> str:
 
 
 def sanitize_filename(name: str, max_length: int = 180) -> str:
+    """清理文件名中的非法字符并截断超长名称。
+
+    Args:
+        name: 原始文件名。
+        max_length: 文件名最大长度（含扩展名）。
+
+    Returns:
+        清理后的安全文件名。
+    """
     cleaned = re.sub(r'[\\/:*?"<>|]', "_", name)
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" .")
     if not cleaned:
@@ -60,6 +73,7 @@ def sanitize_filename(name: str, max_length: int = 180) -> str:
 
 
 def get_artist_str(song: dict[str, Any]) -> str:
+    """从歌曲字典中提取歌手名，列表类型用逗号拼接。"""
     artist = song.get("artist", "未知")
     if isinstance(artist, list):
         return ", ".join(str(item) for item in artist)

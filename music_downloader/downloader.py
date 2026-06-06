@@ -1,3 +1,5 @@
+"""音频下载：重试、临时文件、原子重命名与元数据附加。"""
+
 import contextlib
 import os
 import random
@@ -31,10 +33,15 @@ def _retry_backoff() -> float:
 
 
 def get_output_extension(bitrate: str) -> str:
+    """根据音质返回文件扩展名，flac 返回 .flac，其余返回 .mp3。"""
     return ".flac" if bitrate == "flac" else ".mp3"
 
 
 def build_output_path(save_dir: str, song: dict, bitrate: str) -> str:
+    """根据歌曲信息和音质构建输出文件路径。
+
+    文件名格式: [id] artist - name.ext
+    """
     artist = get_artist_str(song)
     name = str(song.get("name", "未知"))
     song_id = str(song.get("id", ""))

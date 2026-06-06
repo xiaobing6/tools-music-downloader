@@ -1,3 +1,5 @@
+"""API 签名计算、Cloudflare 验证与接口请求。"""
+
 import hashlib
 import json
 import math
@@ -50,6 +52,7 @@ def refresh_cloudflare(page: Any) -> bool:
 
 
 def fetch_api(page: Any, body: str) -> tuple[int, str]:
+    """通过页面上下文向 /api.php 发送 POST 请求，返回 (状态码, 响应文本)。"""
     result = page.evaluate(
         """async (body) => {
             const resp = await fetch('/api.php', {
@@ -69,6 +72,7 @@ def fetch_api(page: Any, body: str) -> tuple[int, str]:
 
 
 def get_timestamp(page: Any) -> str:
+    """从站点 /time 接口获取服务器时间戳。"""
     return page.evaluate(
         """async () => {
             const resp = await fetch('/time');
@@ -78,6 +82,7 @@ def get_timestamp(page: Any) -> str:
 
 
 def _load_json_response(result_text: str, error_message: str) -> Any:
+    """解析 JSON 响应文本，失败时打印错误并返回 None。"""
     try:
         return json.loads(result_text)
     except json.JSONDecodeError:

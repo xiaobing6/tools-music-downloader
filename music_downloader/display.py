@@ -1,3 +1,5 @@
+"""搜索结果展示：表格、列表、JSON 三种输出格式。"""
+
 import json
 from typing import Any
 
@@ -6,6 +8,7 @@ from .utils import normalize_song
 
 
 def display_table(data: list[dict[str, Any]], keyword: str) -> None:
+    """以 rich 表格展示搜索结果，rich 不可用时回退到列表格式。"""
     if RichTable is None:
         display_list(data, keyword)
         return
@@ -41,6 +44,7 @@ def display_table(data: list[dict[str, Any]], keyword: str) -> None:
 
 
 def display_list(data: list[dict[str, Any]], keyword: str) -> None:
+    """以纯文本列表展示搜索结果。"""
     # When rich is unavailable we render with PlainConsole so the output
     # goes directly to sys.stdout (and is therefore captured by
     # capsys in tests).
@@ -59,6 +63,7 @@ def display_list(data: list[dict[str, Any]], keyword: str) -> None:
 
 
 def display_results(data: list[dict[str, Any]], keyword: str, output_format: str = "table") -> None:
+    """根据 output_format 选择展示方式：table / list / json。"""
     if output_format == "json":
         print(json.dumps(data, ensure_ascii=False, indent=2))
     elif output_format == "list":
