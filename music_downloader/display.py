@@ -18,12 +18,12 @@ def display_table(data: list[dict[str, Any]], keyword: str) -> None:
     # 各列宽度上限 + 溢出策略：歌名/歌手/专辑是中文长字段，限制 + 折行
     column_specs: list = [
         ("#", {"justify": "right", "style": "cyan", "width": 4, "no_wrap": True}),
-        ("歌名", {"style": "bold", "max_width": 36, "overflow": "fold"}),
-        ("歌手", {"max_width": 28, "overflow": "fold"}),
-        ("专辑", {"max_width": 36, "overflow": "fold"}),
+        ("歌名", {"style": "bold", "max_width": 48, "overflow": "ellipsis", "no_wrap": True}),
+        ("歌手", {"max_width": 36, "overflow": "ellipsis", "no_wrap": True}),
+        ("专辑", {"max_width": 48, "overflow": "ellipsis", "no_wrap": True}),
         ("时长", {"justify": "right", "width": 8, "no_wrap": True}),
         ("来源", {"width": 10, "no_wrap": True}),
-        ("ID", {"style": "dim", "width": 16, "no_wrap": True}),
+        ("ID", {"style": "dim", "width": 10, "no_wrap": True}),
     ]
     for header, kwargs in column_specs:
         table.add_column(header, **kwargs)
