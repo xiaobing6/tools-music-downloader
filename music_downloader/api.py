@@ -137,7 +137,11 @@ def search_with_pagination(
     api_type = SEARCH_TYPE_MAP.get(search_type, "search")
 
     while remaining > 0:
-        count = min(remaining, MAX_PER_PAGE)
+        # 始终用 MAX_PER_PAGE 作为单页请求量。
+        # 如果最后一页用 min(remaining, MAX_PER_PAGE) 会把 count 缩小，
+        # 服务端按 offset = (pages - 1) * count 计算偏移时就会错位，
+        # 返回前面页的数据，造成重复（被去重后总数变少）。
+        count = MAX_PER_PAGE
         if total_pages > 1:
             console.print(
                 f"      第 {current_page}/{total_pages} 页: 请求 {count} 条...",
