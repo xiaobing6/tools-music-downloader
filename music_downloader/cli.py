@@ -164,30 +164,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help="自定义 Chrome 用户数据目录 (默认在脚本同级 .chrome-profile/, 与系统 Chrome 隔离)",
     )
-    advanced_group.add_argument(
-        "--mk-version",
-        default=None,
-        help=f"手动指定 mkPlayer 版本号, 覆盖页面抓取失败时的默认值 {FALLBACK_VERSION}",
-    )
-
     return parser.parse_args(argv)
 
 
-def make_run_options(
-    args: argparse.Namespace,
-    script_dir: str,
-    version: str,
-) -> RunOptions:
-    """将 argparse 结果转换为 RunOptions 数据类。
-
-    Args:
-        args: parse_args 的返回值。
-        script_dir: 脚本所在目录，用于拼接默认下载路径。
-        version: mkPlayer 版本号，用于 API 签名。
-
-    Returns:
-        包含完整运行参数的 RunOptions 实例。
-    """
+def make_run_options(args: argparse.Namespace, script_dir: str) -> RunOptions:
+    """将 argparse 结果转换为 RunOptions 数据类。"""
     save_dir = os.path.abspath(
         args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
     )
@@ -203,7 +184,6 @@ def make_run_options(
         download_lyric=not args.no_lyric,
         download_cover=not args.no_cover,
         bitrate=args.bitrate,
-        version=version,
     )
 
 
@@ -224,7 +204,6 @@ def do_search_and_download(
         options.source,
         options.search_type,
         options.number,
-        options.version,
     )
 
     if not results:
@@ -301,7 +280,6 @@ def do_search_and_download(
                 context,
                 song,
                 options.source,
-                options.version,
                 target_dir,
                 index + 1,
                 len(results),
@@ -355,7 +333,6 @@ def build_interactive_options(
     cmd: InteractiveCommand,
     base: argparse.Namespace,
     state: dict,
-    version: str,
     save_dir: str,
 ) -> RunOptions | None:
     """根据 interactive 内部状态和命令构造 RunOptions。
@@ -382,14 +359,12 @@ def build_interactive_options(
         download_lyric=not base.no_lyric,
         download_cover=not base.no_cover,
         bitrate=base.bitrate,
-        version=version,
     )
 
 
 def interactive_mode(
     page: Any,
     context: Any,
-    version: str,
     args: argparse.Namespace,
     script_dir: str,
 ) -> None:
@@ -442,7 +417,7 @@ def interactive_mode(
                 console.print("  ✗ 无效数量，请输入正整数", style="red")
             continue
 
-        options = build_interactive_options(cmd, args, state, version, save_dir)
+        options = build_interactive_options(cmd, args, state, save_dir)
         if options is None:
             continue
         do_search_and_download(page, context, options, show_progress=False)
@@ -466,20 +441,8 @@ def import_playwright() -> tuple[Any, Any]:
 def fetch_player_version(
     page: Any,
     fallback: str = FALLBACK_VERSION,
-    override: str | None = None,
 ) -> str:
-    """获取 mkPlayer.version，优先使用手动覆盖值，其次从页面提取，最后使用回退值。
-
-    Args:
-        page: Playwright Page 对象。
-        fallback: 页面提取失败时的回退版本号。
-        override: 用户通过 --mk-version 手动指定的版本号。
-
-    Returns:
-        最终使用的版本号字符串。
-    """
-    if override:
-        return override
+    """从页面获取 mkPlayer.version，失败时使用回退值。"""
     version = page.evaluate("typeof mkPlayer !== 'undefined' ? mkPlayer.version : ''")
     if not version:
         console.print(
@@ -597,13 +560,13 @@ def run_with_browser(args: argparse.Namespace) -> int:
                 )
                 return 1
 
-            version = fetch_player_version(page, override=args.mk_version)
+            version = fetch_player_version(page)
             console.print(f"  ✓ 版本: {version}", style="green")
 
-            options = make_run_options(args, script_dir, version)
+            options = make_run_options(args, script_dir)
 
             if args.interactive:
-                interactive_mode(page, context, version, args, script_dir)
+                interactive_mode(page, context, args, script_dir)
             else:
                 do_search_and_download(page, context, options)
     finally:

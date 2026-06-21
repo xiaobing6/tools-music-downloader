@@ -145,7 +145,6 @@ def _attach_metadata(
     page: Any,
     context: Any,
     source: str,
-    version: str,
     bitrate: str,
 ) -> bool:
     """拉歌词/封面并写入元数据。成功返回 True；失败返回 False 并清理残缺文件。"""
@@ -153,9 +152,9 @@ def _attach_metadata(
     cover_mime = "image/jpeg"
     lyric_text = ""
     if download_lyric:
-        lyric_text = get_lyric(page, song, source, version)
+        lyric_text = get_lyric(page, song, source)
     if download_cover:
-        pic_url = get_pic_url(page, song, source, version)
+        pic_url = get_pic_url(page, song, source)
         if pic_url:
             try:
                 cover_resp = context.request.get(pic_url, timeout=COVER_TIMEOUT_MS)
@@ -192,7 +191,6 @@ def download_song(
     context: Any,
     song: dict,
     source: str,
-    version: str,
     save_dir: str,
     index: int = 0,
     total: int = 0,
@@ -214,7 +212,7 @@ def download_song(
         if attempt > 1:
             console.print(f"  重新获取播放链接: {name}...", style="cyan")
 
-        play_url = get_play_url(page, song, source, version, bitrate)
+        play_url = get_play_url(page, song, source, bitrate)
         if not play_url:
             console.print("  ✗ 未获取到播放链接", style="red")
             if attempt >= DOWNLOAD_RETRIES:
@@ -236,7 +234,6 @@ def download_song(
                 page=page,
                 context=context,
                 source=source,
-                version=version,
                 bitrate=bitrate,
             )
             return "success" if ok else "fail"

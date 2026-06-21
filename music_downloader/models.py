@@ -19,4 +19,3 @@ class RunOptions:
     download_lyric: bool
     download_cover: bool
     bitrate: str
-    version: str
