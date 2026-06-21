@@ -93,7 +93,7 @@ python -m music_downloader -h
 | `--check-env` | 检查依赖和系统 Chrome，不访问音乐站点 | - |
 | `-i / --interactive` | 交互模式 | - |
 | `--user-data-dir` | 自定义 Chrome 用户数据目录；默认在脚本同级 `.chrome-profile/`，与系统 Chrome 隔离 | - |
-| `--mk-version` | 手动指定 mkPlayer 版本号，覆盖 `FALLBACK_VERSION`（默认 `2026.5.10`） | - |
+| `--mk-version` | 手动指定 mkPlayer 版本号，覆盖 `FALLBACK_VERSION`（默认 `2026.06.16`） | - |
 
 ## 支持的音乐源
 
@@ -229,7 +229,6 @@ dist/music_download.dist/music_download.exe
 
 **Q: 提示 HTTP 401 (签名验证失败) 怎么办？**
 
-- 站点更新了 `mkPlayer.version` 而代码里 `FALLBACK_VERSION` 没跟上 → 升级到最新版；如果最新版也不可用，运行 `python music_download.py -k "x" --mk-version 2026.x.y` 手动指定版本号。
 - 站点**整体**更换了签名算法 → 请到 [issues](https://github.com/xiaobing6/tools-music-downloader/issues) 反馈。
 
 **Q: 为什么 Cloudflare 每次启动都要重新过？**

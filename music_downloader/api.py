@@ -1,6 +1,5 @@
 """API 签名计算、Cloudflare 验证与接口请求。"""
 
-import hashlib
 import json
 import math
 from typing import Any
@@ -8,7 +7,6 @@ from typing import Any
 from .config import (
     API_RETRY_ATTEMPTS,
     CF_RETRY_ATTEMPTS,
-    HOSTNAME,
     MAX_PER_PAGE,
     PAGE_NAV_TIMEOUT_MS,
     SEARCH_TYPE_MAP,
@@ -17,13 +15,19 @@ from .console import console
 from .utils import url_encode
 
 
-def compute_signature(hostname: str, version: str, timestamp: str, search_id: str) -> str:
-    if not version:
-        raise ValueError("version is required for signature")
-    padded_version = "".join(part.zfill(2) for part in version.split("."))
-    ts_first9 = str(timestamp)[:9]
-    signing_string = f"{hostname}|{padded_version}|{ts_first9}|{search_id}"
-    return hashlib.md5(signing_string.encode()).hexdigest()[-8:].upper()
+def compute_signature(page: Any, search_id: str) -> str:
+    """复用站点前端的 crc32 函数计算签名。
+
+    站点把签名算法封装在页面 JS 中，自行实现容易因混淆/变更而失效，
+    因此直接通过 page.evaluate 调用前端 `crc32(urlEncode(...))` 的等价逻辑。
+    调用方应传入已经过 `url_encode` 编码后的标识字符串。
+    """
+    return page.evaluate(
+        """(searchId) => {
+            return crc32(searchId);
+        }""",
+        search_id,
+    )
 
 
 def wait_for_cloudflare(page: Any, max_retries: int = CF_RETRY_ATTEMPTS) -> bool:
@@ -69,16 +73,6 @@ def fetch_api(page: Any, body: str) -> tuple[int, str]:
         body,
     )
     return result["status"], result["text"]
-
-
-def get_timestamp(page: Any) -> str:
-    """从站点 /time 接口获取服务器时间戳。"""
-    return page.evaluate(
-        """async () => {
-            const resp = await fetch('/time');
-            return await resp.text();
-        }"""
-    )
 
 
 def _load_json_response(result_text: str, error_message: str) -> Any:
@@ -148,8 +142,7 @@ def search_with_pagination(
                 style="dim",
             )
 
-        timestamp = get_timestamp(page)
-        signature = compute_signature(HOSTNAME, version, timestamp, encoded_name)
+        signature = compute_signature(page, encoded_name)
         body = (
             f"types={api_type}&count={count}&source={source}"
             f"&pages={current_page}&name={encoded_name}&s={signature}"
@@ -207,9 +200,8 @@ def get_play_url(page: Any, song: dict, source: str, version: str, bitrate: str 
     url_id = str(song.get("url_id", song.get("id", "")))
     if not url_id:
         return ""
-    timestamp = get_timestamp(page)
     encoded_id = url_encode(url_id)
-    signature = compute_signature(HOSTNAME, version, timestamp, encoded_id)
+    signature = compute_signature(page, encoded_id)
     body = f"types=url&id={encoded_id}&source={source}&br={bitrate}&s={signature}"
     return _signed_url_get(page, body, "播放链接")
 
@@ -218,9 +210,8 @@ def get_lyric(page: Any, song: dict, source: str, version: str) -> str:
     lyric_id = str(song.get("lyric_id", ""))
     if not lyric_id:
         return ""
-    timestamp = get_timestamp(page)
     encoded_id = url_encode(lyric_id)
-    signature = compute_signature(HOSTNAME, version, timestamp, encoded_id)
+    signature = compute_signature(page, encoded_id)
     body = f"types=lyric&id={encoded_id}&source={source}&s={signature}"
     status, result_text = fetch_with_cf_retry(page, body, "歌词")
     if status != 200:
@@ -235,8 +226,7 @@ def get_pic_url(page: Any, song: dict, source: str, version: str) -> str:
     pic_id = str(song.get("pic_id", ""))
     if not pic_id:
         return ""
-    timestamp = get_timestamp(page)
     encoded_id = url_encode(pic_id)
-    signature = compute_signature(HOSTNAME, version, timestamp, encoded_id)
+    signature = compute_signature(page, encoded_id)
     body = f"types=pic&id={encoded_id}&source={source}&s={signature}"
     return _signed_url_get(page, body, "封面图")
