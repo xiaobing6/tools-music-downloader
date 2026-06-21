@@ -47,9 +47,9 @@ scripts/build_exe.ps1         # Windows exe 构建脚本
 
 1. 启动 Playwright 浏览器，优先无头模式访问 `music.gdstudio.org`。
 2. 检查 `cf_clearance` cookie，失败后尝试打开可见 Chrome 窗口。
-3. 从页面提取 `mkPlayer.version`，用于签名计算。
+3. 从页面提取 `mkPlayer.version`，仅用于日志展示，不再参与签名。
 4. 通过 POST 调用 `/api.php`，签名由 `compute_signature` 生成。
-5. 签名算法：`MD5(hostname | 补零版本号 | timestamp[:9] | search_id)[-8:].upper()`。
+5. 签名算法不再在 Python 端复现，而是通过 `page.evaluate` 直接调用页面自身的 `crc32(search_id)` 函数，确保与站点当前逻辑保持一致。
 6. `get_play_url`/`get_lyric`/`get_pic_url` 三个 URL 类接口都走 `fetch_with_cf_retry` 共享的"签名 + Cloudflare 重试"逻辑。
 
 ### Chrome profile 隔离
@@ -63,7 +63,7 @@ scripts/build_exe.ps1         # Windows exe 构建脚本
 - **修改默认设置**：调整 `DEFAULT_KEYWORD`、`DEFAULT_SOURCE`、`DEFAULT_NUMBER`、`DEFAULT_BITRATE`。
 - **调整 ID3/FLAC 标签**：修改 `music_downloader/metadata.py`。
 - **修改下载行为**：修改 `music_downloader/downloader.py`。注意：metadata 写入失败会触发残缺文件清理并返回 fail，下次运行可重试——不要把"已存在即跳过"逻辑放到 `os.replace` 之前，否则残缺文件会永久卡住。
-- **API 签名变更**：修改 `music_downloader/api.py` 中的 `compute_signature`；同时把 `FALLBACK_VERSION` 和 README 的 401 排错指引一起改。
+- **API 签名变更**：签名由页面自身的 `crc32` 函数生成，一般不需要在 Python 端改动。若站点不再暴露 `crc32`，需同步调整 `music_downloader/api.py` 中的 `compute_signature`；并更新 README 的 401 排错指引。
 - **交互模式命令解析**：见 [cli.py](./music_downloader/cli.py) 的 `parse_interactive_command`。
 - **CLI 参数**：见 `cli.parse_args`，所有变更要同步更新 `README.md` 的参数表。
 

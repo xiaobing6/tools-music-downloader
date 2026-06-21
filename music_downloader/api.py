@@ -121,7 +121,6 @@ def search_with_pagination(
     source: str,
     search_type: str,
     total: int,
-    version: str,
 ) -> list[dict[str, Any]]:
     all_results: list[dict[str, Any]] = []
     remaining = total
@@ -196,7 +195,7 @@ def _signed_url_get(page: Any, body: str, resource_name: str) -> str:
     return data.get("url", "")
 
 
-def get_play_url(page: Any, song: dict, source: str, version: str, bitrate: str = "320") -> str:
+def get_play_url(page: Any, song: dict, source: str, bitrate: str = "320") -> str:
     url_id = str(song.get("url_id", song.get("id", "")))
     if not url_id:
         return ""
@@ -206,7 +205,7 @@ def get_play_url(page: Any, song: dict, source: str, version: str, bitrate: str 
     return _signed_url_get(page, body, "播放链接")
 
 
-def get_lyric(page: Any, song: dict, source: str, version: str) -> str:
+def get_lyric(page: Any, song: dict, source: str) -> str:
     lyric_id = str(song.get("lyric_id", ""))
     if not lyric_id:
         return ""
@@ -222,7 +221,7 @@ def get_lyric(page: Any, song: dict, source: str, version: str) -> str:
     return ""
 
 
-def get_pic_url(page: Any, song: dict, source: str, version: str) -> str:
+def get_pic_url(page: Any, song: dict, source: str) -> str:
     pic_id = str(song.get("pic_id", ""))
     if not pic_id:
         return ""
