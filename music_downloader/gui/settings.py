@@ -17,12 +17,21 @@ def _get_config_path() -> Path:
     return Path.home() / CONFIG_FILENAME
 
 
+def _get_default_output_dir() -> str:
+    """Default download dir mirrors CLI default: <project_root>/downloads."""
+    try:
+        base_dir = Path(__file__).resolve().parent.parent.parent
+    except Exception:
+        base_dir = Path.cwd()
+    return str(base_dir / "downloads")
+
+
 DEFAULT_CONFIG: dict[str, Any] = {
     "source": "netease",
     "search_type": "song",
     "bitrate": "320",
     "number": 20,
-    "output_dir": "",
+    "output_dir": _get_default_output_dir(),
     "download_cover": True,
     "download_lyric": True,
     "window_width": 960,
@@ -34,6 +43,7 @@ def load_config() -> dict[str, Any]:
     """Load config from disk, merging with defaults for missing keys."""
     path = _get_config_path()
     config = dict(DEFAULT_CONFIG)
+    config["output_dir"] = _get_default_output_dir()
     if path.exists():
         try:
             with open(path, encoding="utf-8") as f:
@@ -43,7 +53,7 @@ def load_config() -> dict[str, Any]:
         except (json.JSONDecodeError, OSError):
             pass
     if not config.get("output_dir"):
-        config["output_dir"] = str(Path.home() / "Downloads" / "MusicDownloader")
+        config["output_dir"] = _get_default_output_dir()
     return config
 
 
