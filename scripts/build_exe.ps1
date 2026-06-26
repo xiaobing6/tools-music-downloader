@@ -59,7 +59,8 @@ $commonArgs = @(
     "--windows-product-name=music_download",
     "--windows-file-version=$ProjectVersion",
     "--windows-company-name=tools-music-downloader",
-    "--windows-file-description=CLI music search and download tool"
+    "--windows-file-description=CLI music search and download tool",
+    "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static"
 )
 if ($isCi) {
     Write-Host "CI mode: enabling --assume-yes-for-downloads for toolchain setup." -ForegroundColor Yellow

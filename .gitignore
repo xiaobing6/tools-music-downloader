@@ -217,6 +217,7 @@ __marimo__/
 # Trae IDE workspace
 # Trae 的工作目录，含 plan/会话记录等本地状态，无需入库。
 .trae/
+.superpowers/
 
 # 操作系统垃圾文件
 # .DS_Store     macOS Finder
