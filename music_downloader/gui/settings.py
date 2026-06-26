@@ -7,6 +7,8 @@ Settings are stored as JSON in the user's home directory:
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -18,11 +20,16 @@ def _get_config_path() -> Path:
 
 
 def _get_default_output_dir() -> str:
-    """Default download dir mirrors CLI default: <project_root>/downloads."""
-    try:
+    """Default download dir mirrors CLI default: <project_root>/downloads.
+
+    Uses the same resolution logic as cli.py so the GUI and CLI defaults stay
+    in sync whether running from source or a Nuitka-compiled executable.
+    """
+    if "__compiled__" in globals():
+        base_dir = Path(os.path.dirname(os.path.abspath(sys.argv[0])))
+    else:
+        # __file__ is music_downloader/gui/settings.py; go up to project root.
         base_dir = Path(__file__).resolve().parent.parent.parent
-    except Exception:
-        base_dir = Path.cwd()
     return str(base_dir / "downloads")
 
 
