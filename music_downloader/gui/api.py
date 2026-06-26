@@ -92,11 +92,9 @@ class MusicApi:
         output_dir: str,
     ) -> str:
         if not output_dir:
-            config = load_config()
-            output_dir = config.get(
-                "output_dir", str(Path.home() / "Downloads" / "MusicDownloader")
-            )
-        os.makedirs(output_dir, exist_ok=True)
+            output_dir = load_config().get("output_dir", "")
+        if not output_dir:
+            output_dir = str(Path.home() / "Downloads" / "MusicDownloader")
         return self._bridge.start_download(
             songs=songs,
             source=source,
