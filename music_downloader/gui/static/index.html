@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>音乐下载器</title>
+  <title>Music Downloader</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div id="app" class="app-container">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1 class="app-title">🎵 音乐下载器</h1>
+        <h1 class="app-title">Music Downloader</h1>
       </div>
 
       <div class="sidebar-section">
         <div class="search-box">
-          <input type="text" id="searchInput" class="input-field" placeholder="搜索歌曲、歌手、专辑..." />
+          <input type="text" id="searchInput" class="input-field" placeholder="搜索歌曲、歌手、专辑..." autofocus />
           <button id="searchBtn" class="btn btn-primary btn-full">搜索</button>
         </div>
       </div>
@@ -52,19 +52,19 @@
         <label class="field-label">下载目录</label>
         <div class="dir-row">
           <input type="text" id="outputDirInput" class="input-field input-sm" readonly />
-          <button id="browseDirBtn" class="btn btn-sm">浏览</button>
+          <button id="browseDirBtn" class="btn btn-outline btn-sm">浏览</button>
         </div>
-        <button id="openDirBtn" class="btn btn-outline btn-full">📁 打开下载目录</button>
+        <button id="openDirBtn" class="btn btn-outline btn-full">打开下载目录</button>
       </div>
 
       <div class="sidebar-footer">
-        <button id="envCheckBtn" class="btn btn-ghost btn-full">🔍 环境检查</button>
+        <button id="envCheckBtn" class="btn btn-ghost btn-full">环境检查</button>
       </div>
     </aside>
 
     <main class="main-content">
       <div class="toolbar">
-        <button id="downloadSelectedBtn" class="btn btn-primary">⬇ 下载选中</button>
+        <button id="downloadSelectedBtn" class="btn btn-primary">下载选中</button>
         <button id="selectAllBtn" class="btn btn-outline">全选</button>
         <button id="deselectAllBtn" class="btn btn-outline">取消全选</button>
         <div class="toolbar-spacer"></div>
@@ -73,7 +73,7 @@
 
       <div id="resultList" class="result-list">
         <div class="empty-state">
-          <div class="empty-icon">🎵</div>
+          <div class="empty-icon">&#9835;</div>
           <p>输入关键词开始搜索</p>
         </div>
       </div>
@@ -91,7 +91,7 @@
 
       <div class="log-panel">
         <div class="log-header">
-          <span>📋 日志</span>
+          <span>日志</span>
           <button id="toggleLogBtn" class="btn btn-ghost btn-xs">折叠</button>
         </div>
         <div id="logContent" class="log-content"></div>

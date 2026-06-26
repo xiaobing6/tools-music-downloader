@@ -7,9 +7,12 @@
     selectedIndices: new Set(),
     currentTaskId: null,
     logCollapsed: false,
+    searching: false,
   };
 
   var $ = function(id) { return document.getElementById(id); };
+
+  // ── Log ──
 
   function log(msg, level) {
     level = level || 'info';
@@ -20,7 +23,13 @@
     entry.textContent = '[' + time + '] ' + msg;
     el.appendChild(entry);
     el.scrollTop = el.scrollHeight;
+    // Keep log buffer reasonable
+    while (el.children.length > 500) {
+      el.removeChild(el.firstChild);
+    }
   }
+
+  // ── Loading ──
 
   function showLoading(text) {
     $('loadingText').textContent = text || '加载中...';
@@ -30,6 +39,8 @@
   function hideLoading() {
     $('loadingOverlay').style.display = 'none';
   }
+
+  // ── Progress ──
 
   function setProgress(current, total, songName) {
     var pct = total > 0 ? Math.round((current / total) * 100) : 0;
@@ -51,6 +62,8 @@
     $('progressLabel').textContent = '准备下载...';
   }
 
+  // ── Sources ──
+
   function populateSources(sources) {
     var sel = $('sourceSelect');
     sel.innerHTML = '';
@@ -61,6 +74,8 @@
       sel.appendChild(opt);
     });
   }
+
+  // ── Config ──
 
   function applyConfig(config) {
     state.config = config;
@@ -91,6 +106,8 @@
     }
   }
 
+  // ── Song List Rendering ──
+
   function renderSongs(songs) {
     state.songs = songs;
     state.selectedIndices = new Set();
@@ -98,22 +115,25 @@
     list.innerHTML = '';
 
     if (!songs || songs.length === 0) {
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到结果</p></div>';
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9835;</div><p>未找到结果</p></div>';
       $('resultCount').textContent = '';
       return;
     }
 
     $('resultCount').textContent = '共 ' + songs.length + ' 首';
 
+    var fragment = document.createDocumentFragment();
+
     songs.forEach(function(song, idx) {
       var item = document.createElement('div');
       item.className = 'song-item';
       item.dataset.index = idx;
 
+      // Checkbox
       var check = document.createElement('input');
       check.type = 'checkbox';
       check.className = 'song-check';
-      check.checked = false;
+      check.setAttribute('aria-label', '选择 ' + (song.name || '未知'));
       check.addEventListener('change', function(e) {
         e.stopPropagation();
         if (e.target.checked) {
@@ -123,33 +143,63 @@
           state.selectedIndices.delete(idx);
           item.classList.remove('selected');
         }
+        updateSelectionUI();
       });
 
+      // Cover
       var cover = document.createElement('div');
       cover.className = 'song-cover';
-      cover.textContent = '🎵';
+      if (song.cover && song.cover.length > 10) {
+        var img = document.createElement('img');
+        img.src = song.cover;
+        img.alt = song.name || '';
+        img.loading = 'lazy';
+        img.onerror = function() { this.parentElement.textContent = '\u266B'; };
+        cover.appendChild(img);
+      } else {
+        cover.textContent = '\u266B';
+      }
 
+      // Info
       var info = document.createElement('div');
       info.className = 'song-info';
+
       var nameEl = document.createElement('div');
       nameEl.className = 'song-name';
       nameEl.textContent = song.name || '未知';
+
       if (song.source) {
         var tag = document.createElement('span');
         tag.className = 'source-tag';
         tag.textContent = song.source;
         nameEl.appendChild(tag);
       }
+
+      if (song.bitrate === 'flac' || song.bitrate === '999') {
+        var hires = document.createElement('span');
+        hires.className = 'hires-tag';
+        hires.textContent = 'Hi-Res';
+        nameEl.appendChild(hires);
+      }
+
       var meta = document.createElement('div');
       meta.className = 'song-meta';
-      meta.textContent = (song.artist || '未知') + ' · ' + (song.album || '未知') + ' · ' + (song.duration || '--:--');
+      var metaParts = [
+        song.artist || '未知',
+        song.album ? (' \xB7 ' + song.album) : '',
+        song.duration ? (' \xB7 ' + song.duration) : ''
+      ];
+      meta.textContent = metaParts.join('');
+
       info.appendChild(nameEl);
       info.appendChild(meta);
 
+      // Duration
       var dur = document.createElement('div');
       dur.className = 'song-duration';
-      dur.textContent = song.duration || '--:--';
+      dur.textContent = song.duration || '';
 
+      // Status
       var status = document.createElement('div');
       status.className = 'song-status';
       status.id = 'song-status-' + idx;
@@ -166,8 +216,23 @@
         check.dispatchEvent(new Event('change'));
       });
 
-      list.appendChild(item);
+      fragment.appendChild(item);
     });
+
+    list.appendChild(fragment);
+    updateSelectionUI();
+  }
+
+  function updateSelectionUI() {
+    var count = state.selectedIndices.size;
+    var btn = $('downloadSelectedBtn');
+    if (count > 0) {
+      btn.textContent = '下载选中 (' + count + ')';
+      btn.disabled = false;
+    } else {
+      btn.textContent = '下载选中';
+      btn.disabled = false;
+    }
   }
 
   function setSongStatus(idx, icon, cls) {
@@ -177,6 +242,8 @@
       el.className = 'song-status ' + (cls || '');
     }
   }
+
+  // ── Init ──
 
   async function init() {
     log('应用启动中...', 'info');
@@ -210,7 +277,10 @@
     }
 
     bindEvents();
+    $('searchInput').focus();
   }
+
+  // ── Events ──
 
   function bindEvents() {
     $('searchBtn').addEventListener('click', doSearch);
@@ -244,6 +314,11 @@
       $('envModal').style.display = 'none';
     });
 
+    // Click outside modal to close
+    $('envModal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+
     $('toggleLogBtn').addEventListener('click', function() {
       state.logCollapsed = !state.logCollapsed;
       var panel = document.querySelector('.log-panel');
@@ -251,13 +326,13 @@
       $('toggleLogBtn').textContent = state.logCollapsed ? '展开' : '折叠';
     });
 
-    $('sourceSelect').addEventListener('change', saveCurrentConfig);
-    $('typeSelect').addEventListener('change', saveCurrentConfig);
-    $('bitrateSelect').addEventListener('change', saveCurrentConfig);
-    $('numberInput').addEventListener('change', saveCurrentConfig);
-    $('coverCheck').addEventListener('change', saveCurrentConfig);
-    $('lyricCheck').addEventListener('change', saveCurrentConfig);
+    // Auto-save on setting changes
+    var autoSaveIds = ['sourceSelect', 'typeSelect', 'bitrateSelect', 'numberInput', 'coverCheck', 'lyricCheck'];
+    autoSaveIds.forEach(function(id) {
+      $(id).addEventListener('change', saveCurrentConfig);
+    });
 
+    // Python event listeners
     window.addEventListener('py-log', function(e) {
       log(e.detail.message, e.detail.level);
     });
@@ -269,23 +344,37 @@
         setProgress(0, d.total, '');
       } else if (d.type === 'progress') {
         setProgress(d.current, d.total, d.song_name);
-        setSongStatus(d.current, '⬇', 'status-downloading');
+        setSongStatus(d.current, '\u2B07', 'status-downloading');
       } else if (d.type === 'complete') {
-        setProgress(d.success + d.fail + d.skip, d.success + d.fail + d.skip, '');
-        setTimeout(function() { hideDownloadPanel(); }, 1500);
+        var total = d.success + d.fail + d.skip;
+        setProgress(total, total, '');
+        if (d.success === total) {
+          log('全部下载完成', 'success');
+        } else if (d.fail > 0) {
+          log('下载完成，' + d.fail + ' 首失败', 'warn');
+        }
+        setTimeout(function() { hideDownloadPanel(); }, 2000);
         state.currentTaskId = null;
       }
     });
   }
 
+  // ── Search ──
+
   async function doSearch() {
     var keyword = $('searchInput').value.trim();
     if (!keyword) {
       log('请输入搜索关键词', 'warn');
+      $('searchInput').focus();
       return;
     }
+    if (state.searching) return;
+    state.searching = true;
+
     saveCurrentConfig();
     showLoading('正在搜索...');
+    $('searchBtn').disabled = true;
+
     try {
       var source = $('sourceSelect').value;
       var type = $('typeSelect').value;
@@ -296,8 +385,12 @@
       log('搜索失败: ' + err, 'error');
     } finally {
       hideLoading();
+      $('searchBtn').disabled = false;
+      state.searching = false;
     }
   }
+
+  // ── Selection ──
 
   function selectAll() {
     state.songs.forEach(function(_, idx) {
@@ -308,6 +401,7 @@
       var cb = el.querySelector('.song-check');
       if (cb) cb.checked = true;
     });
+    updateSelectionUI();
   }
 
   function deselectAll() {
@@ -317,7 +411,10 @@
       var cb = el.querySelector('.song-check');
       if (cb) cb.checked = false;
     });
+    updateSelectionUI();
   }
+
+  // ── Download ──
 
   async function doDownloadSelected() {
     if (state.selectedIndices.size === 0) {
@@ -341,7 +438,7 @@
       );
       state.currentTaskId = taskId;
       indicesArr.forEach(function(idx) {
-        setSongStatus(idx, '⏳', '');
+        setSongStatus(idx, '\u231B', '');
       });
     } catch (err) {
       log('下载启动失败: ' + err, 'error');
@@ -355,6 +452,8 @@
     }
   }
 
+  // ── Environment Check ──
+
   async function showEnvCheck() {
     showLoading('检查环境...');
     try {
@@ -364,10 +463,11 @@
       results.forEach(function(r) {
         var item = document.createElement('div');
         item.className = 'env-item';
-        var statusText = r.ok ? '✓ 通过' : '✗ 失败';
-        var statusCls = r.ok ? 'env-status-ok' : 'env-status-fail';
-        item.innerHTML = '<div><div>' + r.name + '</div><div class="env-detail">' + r.detail + '</div></div>' +
-          '<span class="' + statusCls + '">' + statusText + '</span>';
+        item.innerHTML =
+          '<div><div style="font-weight:600">' + r.name + '</div>' +
+          '<div class="env-detail">' + r.detail + '</div></div>' +
+          '<span class="' + (r.ok ? 'env-status-ok' : 'env-status-fail') + '">' +
+          (r.ok ? '\u2713 通过' : '\u2717 失败') + '</span>';
         body.appendChild(item);
       });
       $('envModal').style.display = 'flex';
@@ -377,6 +477,8 @@
       hideLoading();
     }
   }
+
+  // ── Boot ──
 
   window.addEventListener('pywebviewready', init);
 })();
