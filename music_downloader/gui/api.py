@@ -43,8 +43,7 @@ class MusicApi:
             try:
                 payload = json.dumps(data, ensure_ascii=False)
                 js_code = (
-                    f"window.dispatchEvent(new CustomEvent('py-{event}', "
-                    f"{{detail: {payload}}}));"
+                    f"window.dispatchEvent(new CustomEvent('py-{event}', {{detail: {payload}}}));"
                 )
                 self._window.evaluate_js(js_code)
             except Exception:
@@ -111,9 +110,7 @@ class MusicApi:
         self._bridge.cancel_download(task_id)
 
     def open_download_dir(self, path: str = "") -> None:
-        target = path or load_config().get(
-            "output_dir", str(Path.home() / "Downloads")
-        )
+        target = path or load_config().get("output_dir", str(Path.home() / "Downloads"))
         if not os.path.exists(target):
             os.makedirs(target, exist_ok=True)
         try:

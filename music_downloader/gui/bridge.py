@@ -23,7 +23,7 @@ from music_downloader.config import (
     USER_AGENT,
 )
 from music_downloader.downloader import download_song
-from music_downloader.env import EnvironmentCheck, run_environment_checks
+from music_downloader.env import run_environment_checks
 from music_downloader.utils import normalize_song, sanitize_filename
 
 LogCallback = Callable[[str, str], None]
@@ -99,7 +99,9 @@ class BrowserSession:
                     headless=headless,
                     user_data_dir=user_data_dir,
                 )
-                self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
+                self._page = (
+                    self._context.pages[0] if self._context.pages else self._context.new_page()
+                )
                 self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
                 self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                 self._cf_passed = wait_for_cloudflare(self._page)
@@ -112,7 +114,9 @@ class BrowserSession:
                         headless=False,
                         user_data_dir=user_data_dir,
                     )
-                    self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
+                    self._page = (
+                        self._context.pages[0] if self._context.pages else self._context.new_page()
+                    )
                     self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                     self._cf_passed = wait_for_cloudflare(self._page)
                 if self._cf_passed:
@@ -190,9 +194,7 @@ class MusicBridge:
             f'搜索 "{keyword}" (来源: {source}, 类型: {search_type}, 数量: {number})...',
             "info",
         )
-        results = search_with_pagination(
-            self._session.page, keyword, source, search_type, number
-        )
+        results = search_with_pagination(self._session.page, keyword, source, search_type, number)
         seen: set = set()
         unique: list[dict[str, Any]] = []
         for song in results:
@@ -218,9 +220,13 @@ class MusicBridge:
         os.makedirs(target_dir, exist_ok=True)
 
         total = len(task.songs)
-        self._emit_progress({
-            "type": "start", "task_id": task.task_id, "total": total,
-        })
+        self._emit_progress(
+            {
+                "type": "start",
+                "task_id": task.task_id,
+                "total": total,
+            }
+        )
 
         for idx, song in enumerate(task.songs):
             if task.cancel_event.is_set():
@@ -228,10 +234,15 @@ class MusicBridge:
                 break
 
             name = str(song.get("name", "未知"))
-            self._emit_progress({
-                "type": "progress", "task_id": task.task_id,
-                "current": idx, "total": total, "song_name": name,
-            })
+            self._emit_progress(
+                {
+                    "type": "progress",
+                    "task_id": task.task_id,
+                    "current": idx,
+                    "total": total,
+                    "song_name": name,
+                }
+            )
 
             result = download_song(
                 page=self._session.page,
@@ -256,14 +267,16 @@ class MusicBridge:
                     + (".flac" if task.bitrate == "flac" else ".mp3"),
                 )
                 with self._history_lock:
-                    self._history.append({
-                        "name": name,
-                        "artist": artist,
-                        "source": task.source,
-                        "bitrate": task.bitrate,
-                        "path": filepath,
-                        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    })
+                    self._history.append(
+                        {
+                            "name": name,
+                            "artist": artist,
+                            "source": task.source,
+                            "bitrate": task.bitrate,
+                            "path": filepath,
+                            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        }
+                    )
             elif result == "skip":
                 task.skip += 1
                 self._emit_log(f"已存在，跳过: {name}", "warn")
@@ -274,10 +287,15 @@ class MusicBridge:
             if idx < total - 1:
                 time.sleep(INTER_SONG_DELAY_SEC)
 
-        self._emit_progress({
-            "type": "complete", "task_id": task.task_id,
-            "success": task.success, "fail": task.fail, "skip": task.skip,
-        })
+        self._emit_progress(
+            {
+                "type": "complete",
+                "task_id": task.task_id,
+                "success": task.success,
+                "fail": task.fail,
+                "skip": task.skip,
+            }
+        )
         self._emit_log(
             f"下载完成: 成功 {task.success} / 失败 {task.fail} / 跳过 {task.skip}",
             "success" if task.fail == 0 else "warn",

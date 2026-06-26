@@ -7,7 +7,6 @@ Settings are stored as JSON in the user's home directory:
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +36,7 @@ def load_config() -> dict[str, Any]:
     config = dict(DEFAULT_CONFIG)
     if path.exists():
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 saved = json.load(f)
             if isinstance(saved, dict):
                 config.update(saved)

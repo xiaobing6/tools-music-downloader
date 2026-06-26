@@ -5,6 +5,7 @@ Creates the pywebview window, loads the frontend, and starts the event loop.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
 from typing import Any
@@ -53,10 +54,8 @@ def run_gui() -> None:
     api.set_window(window)
 
     def on_closing(window: Any) -> None:
-        try:
+        with contextlib.suppress(Exception):
             api.shutdown()
-        except Exception:
-            pass
 
     window.events.closing += on_closing
 

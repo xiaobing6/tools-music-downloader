@@ -1,0 +1,124 @@
+<h2>选择主界面布局</h2>
+<p class="subtitle">桌面端窗口布局方案，考虑日常搜歌下载的使用习惯</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="min-height: 280px;">
+        <div class="mockup-header">方案 A：单栏式（简洁）</div>
+        <div class="mockup-body" style="padding: 10px; display: flex; flex-direction: column; gap: 8px; height: 240px;">
+          <div style="display: flex; gap: 8px;">
+            <input class="mock-input" placeholder="搜索歌曲/歌手/专辑..." style="flex: 1;">
+            <button class="mock-button" style="white-space: nowrap;">搜索</button>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <select class="mock-input" style="width: 100px;"><option>网易云</option></select>
+            <select class="mock-input" style="width: 80px;"><option>320kbps</option></select>
+            <select class="mock-input" style="width: 80px;"><option>单曲</option></select>
+            <input class="mock-input" placeholder="数量" style="width: 60px;" value="20">
+            <label style="display:flex;align-items:center;gap:2px;font-size:12px;"><input type="checkbox" checked>封面</label>
+            <label style="display:flex;align-items:center;gap:2px;font-size:12px;"><input type="checkbox" checked>歌词</label>
+          </div>
+          <div class="placeholder" style="flex: 1; display: flex; align-items: center; justify-content: center; color: #888; font-size: 13px;">
+            搜索结果列表（带封面缩略图、歌曲名、歌手、专辑、时长）
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="mock-button" style="background: #4f46e5; color: white;">下载选中</button>
+            <button class="mock-button">下载全部</button>
+            <div style="flex:1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+              <div style="width: 45%; height: 100%; background: #4f46e5; border-radius: 3px;"></div>
+            </div>
+            <span style="font-size: 12px; color: #666;">9/20</span>
+          </div>
+          <div style="height: 60px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 6px; font-size: 11px; color: #666; overflow-y: auto; font-family: monospace;">
+            > 正在搜索...<br>> 找到 20 首歌曲<br>> 第 1 首: 海阔天空 - Beyond ✓ 已下载
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A：单栏紧凑布局</h3>
+      <p>搜索栏在顶部，结果在中间，进度+日志在底部，窗口小巧，适合快速搜歌下载</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="min-height: 280px;">
+        <div class="mockup-header">方案 B：左右分栏（功能全）</div>
+        <div class="mockup-body" style="padding: 10px; display: flex; gap: 8px; height: 240px;">
+          <div style="width: 200px; display: flex; flex-direction: column; gap: 6px;">
+            <input class="mock-input" placeholder="搜索..." style="width: 100%;">
+            <button class="mock-button" style="width: 100%;">搜索</button>
+            <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">音乐源</div>
+            <select class="mock-input" style="width: 100%;"><option>网易云音乐</option></select>
+            <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">音质</div>
+            <select class="mock-input" style="width: 100%;"><option>320kbps</option></select>
+            <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">搜索类型</div>
+            <select class="mock-input" style="width: 100%;"><option>单曲</option></select>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" checked>下载封面</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:12px;"><input type="checkbox" checked>下载歌词</label>
+            <button class="mock-button" style="margin-top: auto;">打开下载目录</button>
+            <button class="mock-button">环境检查</button>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+            <div class="placeholder" style="flex: 1; display: flex; align-items: center; justify-content: center; color: #888; font-size: 13px;">
+              搜索结果列表（可多选）
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="mock-button" style="background: #4f46e5; color: white;">下载选中</button>
+              <button class="mock-button">全选</button>
+              <div style="flex:1; height: 6px; background: #e5e7eb; border-radius: 3px;">
+                <div style="width: 30%; height: 100%; background: #4f46e5; border-radius: 3px;"></div>
+              </div>
+            </div>
+            <div style="height: 50px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 4px; font-size: 11px; color: #666; overflow-y: auto; font-family: monospace;">
+              > 搜索完成，找到 20 首
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B：左右分栏布局（推荐）</h3>
+      <p>左侧固定设置面板，右侧结果+进度+日志，功能分区清晰，设置项常驻可见</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup" style="min-height: 280px;">
+        <div class="mockup-header">方案 C：标签页式（适合多任务）</div>
+        <div class="mockup-body" style="padding: 10px; display: flex; flex-direction: column; gap: 6px; height: 240px;">
+          <div style="display: flex; gap: 0; border-bottom: 2px solid #e5e7eb;">
+            <div style="padding: 6px 14px; font-size: 12px; font-weight: bold; color: #4f46e5; border-bottom: 2px solid #4f46e5; margin-bottom: -2px;">搜索下载</div>
+            <div style="padding: 6px 14px; font-size: 12px; color: #888;">下载历史</div>
+            <div style="padding: 6px 14px; font-size: 12px; color: #888;">设置</div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <input class="mock-input" placeholder="搜索..." style="flex: 1;">
+            <select class="mock-input" style="width: 90px;"><option>网易云</option></select>
+            <select class="mock-input" style="width: 80px;"><option>320kbps</option></select>
+            <button class="mock-button">搜索</button>
+          </div>
+          <div class="placeholder" style="flex: 1; display: flex; align-items: center; justify-content: center; color: #888; font-size: 13px;">
+            搜索结果列表
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button class="mock-button" style="background: #4f46e5; color: white;">下载选中</button>
+            <div style="flex:1; height: 6px; background: #e5e7eb; border-radius: 3px;">
+              <div style="width: 60%; height: 100%; background: #4f46e5; border-radius: 3px;"></div>
+            </div>
+          </div>
+          <div style="height: 40px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; padding: 4px; font-size: 11px; color: #666; overflow-y: auto; font-family: monospace;">
+            > 下载中...
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C：标签页布局</h3>
+      <p>搜索/历史/设置分成多个标签页，主界面更干净，下载历史和设置有独立空间</p>
+    </div>
+  </div>
+</div>
