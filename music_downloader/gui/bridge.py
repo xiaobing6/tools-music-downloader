@@ -64,6 +64,7 @@ class _PlaywrightThread:
         self._stop_event = threading.Event()
         self._ready = threading.Event()
         self._playwright: Any = None
+        self._playwright_cm: Any = None
         self._context: Any = None
         self._page: Any = None
         self._browser_ready = threading.Event()
@@ -135,17 +136,13 @@ class _PlaywrightThread:
             raise task.exception
         return task.result
 
-    def start_browser(
-        self, *, headless: bool = True, user_data_dir: str | None = None
-    ) -> bool:
+    def start_browser(self, *, headless: bool = True, user_data_dir: str | None = None) -> bool:
         """Start browser on the dedicated thread. Returns True if ready."""
         if self._browser_ready.is_set():
             return True
 
         if user_data_dir is None:
-            base_dir = os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            )
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             user_data_dir = os.path.join(base_dir, ".chrome-profile")
         os.makedirs(user_data_dir, exist_ok=True)
 
@@ -160,13 +157,9 @@ class _PlaywrightThread:
                 headless=final_headless,
                 user_agent=USER_AGENT,
             )
-            self._page = (
-                self._context.pages[0] if self._context.pages else self._context.new_page()
-            )
+            self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
             self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
-            self._page.goto(
-                BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS
-            )
+            self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
             cf_passed = wait_for_cloudflare(self._page)
             if not cf_passed and final_headless:
                 self._log("无头模式未通过验证，尝试有头模式...", "warn")
@@ -179,13 +172,9 @@ class _PlaywrightThread:
                     user_agent=USER_AGENT,
                 )
                 self._page = (
-                    self._context.pages[0]
-                    if self._context.pages
-                    else self._context.new_page()
+                    self._context.pages[0] if self._context.pages else self._context.new_page()
                 )
-                self._page.goto(
-                    BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS
-                )
+                self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                 cf_passed = wait_for_cloudflare(self._page)
             if cf_passed:
                 self._log("浏览器就绪，Cloudflare 验证通过", "success")
@@ -260,9 +249,7 @@ class MusicBridge:
         )
 
         def _do_search() -> list[dict[str, Any]]:
-            return search_with_pagination(
-                self._session.page, keyword, source, search_type, number
-            )
+            return search_with_pagination(self._session.page, keyword, source, search_type, number)
 
         results = self._session.submit(_do_search, timeout=120.0)
         seen: set = set()
@@ -297,9 +284,7 @@ class MusicBridge:
         if task.songs:
             first_artist = task.songs[0].get("artist", "下载")
             safe_dir_name = sanitize_filename(str(first_artist))
-        target_dir = (
-            os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
-        )
+        target_dir = os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
         try:
             os.makedirs(target_dir, exist_ok=True)
         except OSError as exc:
@@ -361,32 +346,63 @@ class MusicBridge:
 
             result = self._session.submit(_do_download, timeout=300.0)
 
+            # 原始索引用于前端状态更新
+            song_index = idx
+
             if result == "success":
                 task.success += 1
                 self._emit_log(f"下载完成: {name}", "success")
-                artist = str(song.get("artist", "未知"))
-                filepath = os.path.join(
-                    target_dir,
-                    f"[{song.get('id', '')}] {artist} - {name}"
-                    + (".flac" if task.bitrate == "flac" else ".mp3"),
-                )
+                # 用与 downloader 一致的逻辑重建路径，避免不一致
+                from music_downloader.downloader import build_output_path
+
+                filepath = build_output_path(target_dir, song, task.bitrate)
                 with self._history_lock:
                     self._history.append(
                         {
                             "name": name,
-                            "artist": artist,
+                            "artist": str(song.get("artist", "未知")),
                             "source": task.source,
                             "bitrate": task.bitrate,
                             "path": filepath,
                             "time": time.strftime("%Y-%m-%d %H:%M:%S"),
                         }
                     )
+                self._emit_progress(
+                    {
+                        "type": "song_done",
+                        "task_id": task.task_id,
+                        "index": song_index,
+                        "result": "success",
+                        "current": idx + 1,
+                        "total": total,
+                    }
+                )
             elif result == "skip":
                 task.skip += 1
                 self._emit_log(f"已存在，跳过: {name}", "warn")
+                self._emit_progress(
+                    {
+                        "type": "song_done",
+                        "task_id": task.task_id,
+                        "index": song_index,
+                        "result": "skip",
+                        "current": idx + 1,
+                        "total": total,
+                    }
+                )
             else:
                 task.fail += 1
                 self._emit_log(f"下载失败: {name}", "error")
+                self._emit_progress(
+                    {
+                        "type": "song_done",
+                        "task_id": task.task_id,
+                        "index": song_index,
+                        "result": "fail",
+                        "current": idx + 1,
+                        "total": total,
+                    }
+                )
 
             if idx < total - 1:
                 time.sleep(INTER_SONG_DELAY_SEC)

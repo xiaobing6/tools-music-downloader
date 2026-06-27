@@ -81,6 +81,7 @@ def run_environment_checks(
         check_module("mutagen"),
         check_module("rich"),
         check_module("rich_argparse", "rich-argparse"),
+        check_module("webview", "pywebview"),
     ]
     checker = chrome_checker or check_chrome_launcher
     checks.append(checker())

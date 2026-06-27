@@ -159,9 +159,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     advanced_group.add_argument(
         "-i", "--interactive", action="store_true", help="交互模式, 浏览器保持运行可反复搜索"
     )
-    advanced_group.add_argument(
-        "--gui", action="store_true", help="启动桌面图形界面"
-    )
+    advanced_group.add_argument("--gui", action="store_true", help="启动桌面图形界面")
     advanced_group.add_argument(
         "--user-data-dir",
         default=None,
@@ -591,6 +589,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     is_gui_mode = args.gui or (argv is None and len(sys.argv) <= 1)
     if is_gui_mode:
         from music_downloader.gui.app import run_gui
+
         run_gui()
         return
 

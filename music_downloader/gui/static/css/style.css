@@ -511,6 +511,10 @@ select.input-field {
   color: var(--success);
 }
 
+.status-skip {
+  color: var(--text-muted);
+}
+
 .status-fail {
   color: var(--danger);
 }

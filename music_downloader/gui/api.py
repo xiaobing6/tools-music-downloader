@@ -94,7 +94,7 @@ class MusicApi:
         if not output_dir:
             output_dir = load_config().get("output_dir", "")
         if not output_dir:
-            output_dir = str(Path.home() / "Downloads" / "MusicDownloader")
+            output_dir = DEFAULT_CONFIG["output_dir"]
         return self._bridge.start_download(
             songs=songs,
             source=source,

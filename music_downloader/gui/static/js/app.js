@@ -345,6 +345,11 @@
       } else if (d.type === 'progress') {
         setProgress(d.current, d.total, d.song_name);
         setSongStatus(d.current, '\u2B07', 'status-downloading');
+      } else if (d.type === 'song_done') {
+        var icon = d.result === 'success' ? '\u2713' : (d.result === 'skip' ? '\u2013' : '\u2717');
+        var cls = d.result === 'success' ? 'status-done' : (d.result === 'skip' ? 'status-skip' : 'status-fail');
+        setSongStatus(d.index, icon, cls);
+        setProgress(d.current, d.total, '');
       } else if (d.type === 'complete') {
         var total = d.success + d.fail + d.skip;
         setProgress(total, total, '');
