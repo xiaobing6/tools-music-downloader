@@ -1,14 +1,15 @@
 """Bridge layer between GUI and existing core modules.
 
-Wraps Playwright browser lifecycle, search, and download operations
-in a thread-safe manner suitable for GUI use. Long operations run on
-background threads and emit events via callbacks.
+All Playwright operations run on a dedicated background thread. This avoids
+the "cannot switch to a different thread" error that occurs when pywebview
+calls Python from different threads while using Playwright's sync API.
 """
 
 from __future__ import annotations
 
 import contextlib
 import os
+import queue
 import threading
 import time
 from collections.abc import Callable
@@ -45,89 +46,148 @@ class DownloadTask:
     skip: int = 0
 
 
-class BrowserSession:
-    """Manages Playwright browser lifecycle for GUI use."""
+class _Task:
+    def __init__(self, func: Callable[[], Any], future: threading.Event):
+        self.func = func
+        self.future = future
+        self.result: Any = None
+        self.exception: BaseException | None = None
+
+
+class _PlaywrightThread:
+    """Dedicated thread that owns the Playwright browser instance."""
 
     def __init__(self, on_log: LogCallback | None = None):
-        self._playwright_cm = None
-        self._playwright = None
-        self._context = None
-        self._page = None
-        self._browser_ready = threading.Event()
-        self._lock = threading.Lock()
         self._on_log = on_log
-        self._cf_passed = False
+        self._queue: queue.Queue[_Task] = queue.Queue()
+        self._thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
+        self._ready = threading.Event()
+        self._playwright: Any = None
+        self._playwright_cm: Any = None
+        self._context: Any = None
+        self._page: Any = None
+        self._browser_ready = threading.Event()
 
     def _log(self, msg: str, level: str = "info") -> None:
         if self._on_log:
             self._on_log(msg, level)
 
-    def _open_browser(self, playwright: Any, *, headless: bool, user_data_dir: str) -> Any:
-        return playwright.chromium.launch_persistent_context(
-            user_data_dir=user_data_dir,
-            channel="chrome",
-            headless=headless,
-            user_agent=USER_AGENT,
-        )
+    def start(self) -> bool:
+        if self._thread is not None and self._thread.is_alive():
+            return True
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+        self._ready.wait(timeout=5.0)
+        return self._thread.is_alive()
 
-    def start(self, headless: bool = True, user_data_dir: str | None = None) -> bool:
-        """Start browser and pass Cloudflare. Returns True if ready."""
+    def _run(self) -> None:
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            self._log("缺少 playwright 依赖，请运行 pip install -r requirements.txt", "error")
+            self._ready.set()
+            return
+
+        try:
+            self._playwright_cm = sync_playwright()
+            self._playwright = self._playwright_cm.start()
+        except Exception as exc:
+            self._log(f"Playwright 启动失败: {exc}", "error")
+            self._ready.set()
+            return
+
+        self._ready.set()
+
+        while not self._stop_event.is_set():
+            try:
+                task = self._queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
+            try:
+                task.result = task.func()
+            except BaseException as exc:
+                task.exception = exc
+            finally:
+                task.future.set()
+
+        # Cleanup on thread exit.
+        with contextlib.suppress(Exception):
+            if self._context is not None:
+                self._context.close()
+        with contextlib.suppress(Exception):
+            if self._playwright is not None:
+                self._playwright_cm.stop()
+        self._playwright = None
+        self._context = None
+        self._page = None
+        self._browser_ready.clear()
+
+    def submit(self, func: Callable[[], Any], timeout: float | None = None) -> Any:
+        """Submit a callable to run on the Playwright thread and block for result."""
+        if self._thread is None or not self._thread.is_alive():
+            raise RuntimeError("Playwright thread is not running")
+        event = threading.Event()
+        task = _Task(func, event)
+        self._queue.put(task)
+        if not event.wait(timeout=timeout):
+            raise TimeoutError("Playwright thread task timed out")
+        if task.exception is not None:
+            raise task.exception
+        return task.result
+
+    def start_browser(self, *, headless: bool = True, user_data_dir: str | None = None) -> bool:
+        """Start browser on the dedicated thread. Returns True if ready."""
         if self._browser_ready.is_set():
             return True
-        with self._lock:
-            if self._browser_ready.is_set():
-                return True
-            try:
-                from playwright.sync_api import sync_playwright
-            except ImportError:
-                self._log("缺少 playwright 依赖，请运行 pip install -r requirements.txt", "error")
-                return False
 
-            if user_data_dir is None:
-                base_dir = os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                )
-                user_data_dir = os.path.join(base_dir, ".chrome-profile")
-            os.makedirs(user_data_dir, exist_ok=True)
+        if user_data_dir is None:
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            user_data_dir = os.path.join(base_dir, ".chrome-profile")
+        os.makedirs(user_data_dir, exist_ok=True)
 
-            try:
-                self._playwright_cm = sync_playwright()
-                self._playwright = self._playwright_cm.start()
-                self._log("正在启动浏览器...", "info")
-                self._context = self._open_browser(
-                    self._playwright,
-                    headless=headless,
-                    user_data_dir=user_data_dir,
+        final_user_data_dir = user_data_dir
+        final_headless = headless
+
+        def _open() -> bool:
+            self._log("正在启动浏览器...", "info")
+            self._context = self._playwright.chromium.launch_persistent_context(
+                user_data_dir=final_user_data_dir,
+                channel="chrome",
+                headless=final_headless,
+                user_agent=USER_AGENT,
+            )
+            self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
+            self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
+            self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
+            cf_passed = wait_for_cloudflare(self._page)
+            if not cf_passed and final_headless:
+                self._log("无头模式未通过验证，尝试有头模式...", "warn")
+                with contextlib.suppress(Exception):
+                    self._context.close()
+                self._context = self._playwright.chromium.launch_persistent_context(
+                    user_data_dir=final_user_data_dir,
+                    channel="chrome",
+                    headless=False,
+                    user_agent=USER_AGENT,
                 )
                 self._page = (
                     self._context.pages[0] if self._context.pages else self._context.new_page()
                 )
-                self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
                 self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
-                self._cf_passed = wait_for_cloudflare(self._page)
-                if not self._cf_passed and headless:
-                    self._log("无头模式未通过验证，尝试有头模式...", "warn")
-                    with contextlib.suppress(Exception):
-                        self._context.close()
-                    self._context = self._open_browser(
-                        self._playwright,
-                        headless=False,
-                        user_data_dir=user_data_dir,
-                    )
-                    self._page = (
-                        self._context.pages[0] if self._context.pages else self._context.new_page()
-                    )
-                    self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
-                    self._cf_passed = wait_for_cloudflare(self._page)
-                if self._cf_passed:
-                    self._log("浏览器就绪，Cloudflare 验证通过", "success")
-                    self._browser_ready.set()
-                    return True
-                self._log("Cloudflare 验证未通过", "error")
-                return False
-            except Exception as exc:
-                self._log(f"浏览器启动失败: {exc}", "error")
-                return False
+                cf_passed = wait_for_cloudflare(self._page)
+            if cf_passed:
+                self._log("浏览器就绪，Cloudflare 验证通过", "success")
+                self._browser_ready.set()
+                return True
+            self._log("Cloudflare 验证未通过", "error")
+            return False
+
+        try:
+            return self.submit(_open, timeout=120.0)
+        except Exception as exc:
+            self._log(f"浏览器启动失败: {exc}", "error")
+            return False
 
     @property
     def page(self) -> Any:
@@ -142,18 +202,9 @@ class BrowserSession:
         return self._browser_ready.is_set()
 
     def stop(self) -> None:
-        with self._lock:
-            if self._context is not None:
-                with contextlib.suppress(Exception):
-                    self._context.close()
-                self._context = None
-            if self._playwright is not None:
-                with contextlib.suppress(Exception):
-                    self._playwright_cm.stop()
-                self._playwright = None
-                self._playwright_cm = None
-            self._browser_ready.clear()
-            self._cf_passed = False
+        self._stop_event.set()
+        if self._thread is not None and self._thread.is_alive():
+            self._thread.join(timeout=5.0)
 
 
 class MusicBridge:
@@ -166,7 +217,7 @@ class MusicBridge:
     ):
         self._on_log = on_log
         self._on_progress = on_progress
-        self._session = BrowserSession(on_log=self._emit_log)
+        self._session = _PlaywrightThread(on_log=self._emit_log)
         self._tasks: dict[str, DownloadTask] = {}
         self._task_counter = 0
         self._history: list[dict[str, Any]] = []
@@ -183,7 +234,9 @@ class MusicBridge:
     def ensure_browser(self) -> bool:
         if self._session.ready:
             return True
-        return self._session.start(headless=True)
+        if not self._session.start():
+            return False
+        return self._session.start_browser(headless=True)
 
     def search(
         self, keyword: str, source: str, search_type: str, number: int
@@ -194,7 +247,11 @@ class MusicBridge:
             f'搜索 "{keyword}" (来源: {source}, 类型: {search_type}, 数量: {number})...',
             "info",
         )
-        results = search_with_pagination(self._session.page, keyword, source, search_type, number)
+
+        def _do_search() -> list[dict[str, Any]]:
+            return search_with_pagination(self._session.page, keyword, source, search_type, number)
+
+        results = self._session.submit(_do_search, timeout=120.0)
         seen: set = set()
         unique: list[dict[str, Any]] = []
         for song in results:
@@ -209,15 +266,40 @@ class MusicBridge:
         return unique
 
     def _run_download(self, task: DownloadTask) -> None:
-        os.makedirs(task.output_dir, exist_ok=True)
+        output_dir = task.output_dir
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+        except OSError as exc:
+            self._emit_log(
+                f"无法创建下载目录 {output_dir} ({exc})，尝试使用项目 downloads/ 目录",
+                "warn",
+            )
+            output_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                "downloads",
+            )
+            os.makedirs(output_dir, exist_ok=True)
+
         safe_dir_name = ""
         if task.songs:
             first_artist = task.songs[0].get("artist", "下载")
             safe_dir_name = sanitize_filename(str(first_artist))
-        target_dir = (
-            os.path.join(task.output_dir, safe_dir_name) if safe_dir_name else task.output_dir
-        )
-        os.makedirs(target_dir, exist_ok=True)
+        target_dir = os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+        except OSError as exc:
+            self._emit_log(f"无法创建目标目录 {target_dir}: {exc}", "error")
+            self._emit_progress(
+                {
+                    "type": "complete",
+                    "task_id": task.task_id,
+                    "success": 0,
+                    "fail": len(task.songs),
+                    "skip": 0,
+                }
+            )
+            self._tasks.pop(task.task_id, None)
+            return
 
         total = len(task.songs)
         self._emit_progress(
@@ -244,45 +326,83 @@ class MusicBridge:
                 }
             )
 
-            result = download_song(
-                page=self._session.page,
-                context=self._session.context,
-                song=song,
-                source=task.source,
-                save_dir=target_dir,
-                index=idx + 1,
-                total=total,
-                download_lyric=task.download_lyric,
-                download_cover=task.download_cover,
-                bitrate=task.bitrate,
-            )
+            def _do_download(
+                _song: dict[str, Any] = song,
+                _idx: int = idx,
+                _total: int = total,
+            ) -> str:
+                return download_song(
+                    page=self._session.page,
+                    context=self._session.context,
+                    song=_song,
+                    source=task.source,
+                    save_dir=target_dir,
+                    index=_idx + 1,
+                    total=_total,
+                    download_lyric=task.download_lyric,
+                    download_cover=task.download_cover,
+                    bitrate=task.bitrate,
+                )
+
+            result = self._session.submit(_do_download, timeout=300.0)
+
+            # 原始索引用于前端状态更新
+            song_index = idx
 
             if result == "success":
                 task.success += 1
                 self._emit_log(f"下载完成: {name}", "success")
-                artist = str(song.get("artist", "未知"))
-                filepath = os.path.join(
-                    target_dir,
-                    f"[{song.get('id', '')}] {artist} - {name}"
-                    + (".flac" if task.bitrate == "flac" else ".mp3"),
-                )
+                # 用与 downloader 一致的逻辑重建路径，避免不一致
+                from music_downloader.downloader import build_output_path
+
+                filepath = build_output_path(target_dir, song, task.bitrate)
                 with self._history_lock:
                     self._history.append(
                         {
                             "name": name,
-                            "artist": artist,
+                            "artist": str(song.get("artist", "未知")),
                             "source": task.source,
                             "bitrate": task.bitrate,
                             "path": filepath,
                             "time": time.strftime("%Y-%m-%d %H:%M:%S"),
                         }
                     )
+                self._emit_progress(
+                    {
+                        "type": "song_done",
+                        "task_id": task.task_id,
+                        "index": song_index,
+                        "result": "success",
+                        "current": idx + 1,
+                        "total": total,
+                    }
+                )
             elif result == "skip":
                 task.skip += 1
                 self._emit_log(f"已存在，跳过: {name}", "warn")
+                self._emit_progress(
+                    {
+                        "type": "song_done",
+                        "task_id": task.task_id,
+                        "index": song_index,
+                        "result": "skip",
+                        "current": idx + 1,
+                        "total": total,
+                    }
+                )
             else:
                 task.fail += 1
                 self._emit_log(f"下载失败: {name}", "error")
+                self._emit_progress(
+                    {
+                        "type": "song_done",
+                        "task_id": task.task_id,
+                        "index": song_index,
+                        "result": "fail",
+                        "current": idx + 1,
+                        "total": total,
+                    }
+                )
 
             if idx < total - 1:
                 time.sleep(INTER_SONG_DELAY_SEC)

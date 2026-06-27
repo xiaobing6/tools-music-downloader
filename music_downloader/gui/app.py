@@ -8,7 +8,6 @@ from __future__ import annotations
 import contextlib
 import os
 import sys
-from typing import Any
 
 
 def _get_static_dir() -> str:
@@ -53,10 +52,11 @@ def run_gui() -> None:
     )
     api.set_window(window)
 
-    def on_closing(window: Any) -> None:
+    def on_closing() -> None:
         with contextlib.suppress(Exception):
             api.shutdown()
 
-    window.events.closing += on_closing
+    if window is not None:
+        window.events.closing += on_closing
 
     webview.start(debug=False)
