@@ -180,9 +180,7 @@ def _attach_metadata(
         bitrate=bitrate,
     )
     if not embedded:
-        # 删除残缺文件，避免下次被"已存在"逻辑永久跳过
-        cleanup_paths([filepath])
-        return False
+        console.print("  ⚠ 音频已下载，元数据写入失败已忽略", style="yellow")
     return True
 
 
