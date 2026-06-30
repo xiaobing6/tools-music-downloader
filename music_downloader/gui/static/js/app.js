@@ -5,6 +5,7 @@
     config: null,
     songs: [],
     selectedIndices: new Set(),
+    failedIndices: new Set(),
     currentTaskId: null,
     logCollapsed: false,
     searching: false,
@@ -111,12 +112,14 @@
   function renderSongs(songs) {
     state.songs = songs;
     state.selectedIndices = new Set();
+    state.failedIndices = new Set();
     var list = $('resultList');
     list.innerHTML = '';
 
     if (!songs || songs.length === 0) {
       list.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9835;</div><p>未找到结果</p></div>';
       $('resultCount').textContent = '';
+      updateRetryFailedUI();
       return;
     }
 
@@ -221,6 +224,7 @@
 
     list.appendChild(fragment);
     updateSelectionUI();
+    updateRetryFailedUI();
   }
 
   function updateSelectionUI() {
@@ -233,6 +237,14 @@
       btn.textContent = '下载选中';
       btn.disabled = false;
     }
+  }
+
+  function updateRetryFailedUI() {
+    var btn = $('retryFailedBtn');
+    if (!btn) return;
+    var count = state.failedIndices.size;
+    btn.disabled = count === 0;
+    btn.textContent = count > 0 ? ('重试失败 (' + count + ')') : '重试失败';
   }
 
   function setSongStatus(idx, icon, cls) {
@@ -289,6 +301,7 @@
     });
 
     $('downloadSelectedBtn').addEventListener('click', doDownloadSelected);
+    $('retryFailedBtn').addEventListener('click', retryFailed);
     $('selectAllBtn').addEventListener('click', selectAll);
     $('deselectAllBtn').addEventListener('click', deselectAll);
     $('cancelDownloadBtn').addEventListener('click', cancelDownload);
@@ -349,6 +362,12 @@
         var icon = d.result === 'success' ? '\u2713' : (d.result === 'skip' ? '\u2013' : '\u2717');
         var cls = d.result === 'success' ? 'status-done' : (d.result === 'skip' ? 'status-skip' : 'status-fail');
         setSongStatus(d.index, icon, cls);
+        if (d.result === 'fail') {
+          state.failedIndices.add(d.index);
+        } else {
+          state.failedIndices.delete(d.index);
+        }
+        updateRetryFailedUI();
         setProgress(d.current, d.total, '');
       } else if (d.type === 'complete') {
         var total = d.success + d.fail + d.skip;
@@ -428,7 +447,9 @@
     }
     var indicesArr = Array.from(state.selectedIndices);
     var selectedSongs = indicesArr.map(function(i) {
-      return state.songs[i];
+      var song = Object.assign({}, state.songs[i]);
+      song._gui_index = i;
+      return song;
     });
     var config = collectConfig();
     log('开始下载 ' + selectedSongs.length + ' 首歌曲...', 'info');
@@ -448,6 +469,12 @@
     } catch (err) {
       log('下载启动失败: ' + err, 'error');
     }
+  }
+
+  async function retryFailed() {
+    if (state.failedIndices.size === 0) return;
+    state.selectedIndices = new Set(state.failedIndices);
+    await doDownloadSelected();
   }
 
   function cancelDownload() {

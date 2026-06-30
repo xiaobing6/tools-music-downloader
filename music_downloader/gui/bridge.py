@@ -23,7 +23,7 @@ from music_downloader.config import (
     PAGE_NAV_TIMEOUT_MS,
     USER_AGENT,
 )
-from music_downloader.downloader import download_song
+from music_downloader.downloader import build_output_path, download_song
 from music_downloader.env import run_environment_checks
 from music_downloader.utils import normalize_song, sanitize_filename
 
@@ -347,15 +347,18 @@ class MusicBridge:
             result = self._session.submit(_do_download, timeout=300.0)
 
             # 原始索引用于前端状态更新
-            song_index = idx
+            try:
+                song_index = int(song.get("_gui_index", idx))
+            except (TypeError, ValueError):
+                song_index = idx
+
+            filepath = build_output_path(target_dir, song, task.bitrate)
+            reason = ""
 
             if result == "success":
                 task.success += 1
                 self._emit_log(f"下载完成: {name}", "success")
                 # 用与 downloader 一致的逻辑重建路径，避免不一致
-                from music_downloader.downloader import build_output_path
-
-                filepath = build_output_path(target_dir, song, task.bitrate)
                 with self._history_lock:
                     self._history.append(
                         {
@@ -373,6 +376,8 @@ class MusicBridge:
                         "task_id": task.task_id,
                         "index": song_index,
                         "result": "success",
+                        "reason": reason,
+                        "path": filepath,
                         "current": idx + 1,
                         "total": total,
                     }
@@ -386,12 +391,15 @@ class MusicBridge:
                         "task_id": task.task_id,
                         "index": song_index,
                         "result": "skip",
+                        "reason": reason,
+                        "path": filepath,
                         "current": idx + 1,
                         "total": total,
                     }
                 )
             else:
                 task.fail += 1
+                reason = "下载失败，请查看日志"
                 self._emit_log(f"下载失败: {name}", "error")
                 self._emit_progress(
                     {
@@ -399,6 +407,8 @@ class MusicBridge:
                         "task_id": task.task_id,
                         "index": song_index,
                         "result": "fail",
+                        "reason": reason,
+                        "path": filepath,
                         "current": idx + 1,
                         "total": total,
                     }
