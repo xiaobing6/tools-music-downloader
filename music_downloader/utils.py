@@ -2,36 +2,9 @@
 
 from __future__ import annotations
 
-import os
-import re
 import urllib.parse
 from collections.abc import Callable
 from typing import Any
-
-WINDOWS_RESERVED_NAMES = {
-    "CON",
-    "PRN",
-    "AUX",
-    "NUL",
-    "COM1",
-    "COM2",
-    "COM3",
-    "COM4",
-    "COM5",
-    "COM6",
-    "COM7",
-    "COM8",
-    "COM9",
-    "LPT1",
-    "LPT2",
-    "LPT3",
-    "LPT4",
-    "LPT5",
-    "LPT6",
-    "LPT7",
-    "LPT8",
-    "LPT9",
-}
 
 
 def url_encode(value: str) -> str:
@@ -57,19 +30,9 @@ def sanitize_filename(name: str, max_length: int = 180) -> str:
     Returns:
         清理后的安全文件名。
     """
-    cleaned = re.sub(r'[\\/:*?"<>|]', "_", name)
-    cleaned = re.sub(r"\s+", " ", cleaned).strip(" .")
-    if not cleaned:
-        cleaned = "download"
+    from music_downloader.infrastructure.files import safe_filename
 
-    stem, ext = os.path.splitext(cleaned)
-    if stem.upper() in WINDOWS_RESERVED_NAMES:
-        stem = f"_{stem}"
-
-    max_stem_length = max_length - len(ext)
-    if len(stem) > max_stem_length:
-        stem = stem[:max_stem_length].rstrip(" .")
-    return f"{stem}{ext}"
+    return safe_filename(name, max_length=max_length)
 
 
 def get_artist_str(song: dict[str, Any]) -> str:
@@ -91,19 +54,9 @@ def normalize_song(song: dict[str, Any]) -> dict[str, str]:
 
     文件名取自 id（用户可读）；下载走 url_id（get_play_url 内部 url_id or id）。
     """
-    artist = get_artist_str(song)
-    has_hires = song.get("has_hires", False)
-    return {
-        "name": str(song.get("name", "未知")) + (" [Hi-Res]" if has_hires else ""),
-        "artist": artist,
-        "album": str(song.get("album", "未知")),
-        "duration": format_duration(song.get("duration", 0)),
-        "source": str(song.get("source", "未知")),
-        "id": str(song.get("id", "")),
-        "url_id": str(song.get("url_id", "")),
-        "pic_id": str(song.get("pic_id", "")),
-        "lyric_id": str(song.get("lyric_id", "")),
-    }
+    from music_downloader.infrastructure.files import normalize_song_dict
+
+    return normalize_song_dict(song)
 
 
 def parse_selection(
