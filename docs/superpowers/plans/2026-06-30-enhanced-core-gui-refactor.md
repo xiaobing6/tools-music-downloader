@@ -55,6 +55,7 @@ Update `requirements.txt` so it contains exactly:
 playwright>=1.45
 mutagen>=1.47
 rich>=13
+rich-argparse>=1.8
 typer>=0.12
 pydantic>=2.7
 pywebview>=5.0
@@ -69,7 +70,7 @@ mypy>=1.10
 pytest>=8.2
 ```
 
-In `pyproject.toml`, update `[project].dependencies` to include `typer>=0.12` and `pydantic>=2.7`. Keep `rich-argparse>=1.8` during this task because the current `music_downloader/cli.py` still imports it. Remove `rich-argparse` in Task 11 after Typer is the public CLI entrypoint and no local imports remain.
+In `pyproject.toml`, update `[project].dependencies` to include `typer>=0.12`, `pydantic>=2.7`, and `pywebview>=5.0`. Keep `rich-argparse>=1.8` in both `requirements.txt` and `pyproject.toml` during this task because the current `music_downloader/cli.py` still imports it. Remove `rich-argparse` in Task 11 after Typer is the public CLI entrypoint and no local imports remain.
 
 - [ ] **Step 2: Add a pytest smoke test**
 
