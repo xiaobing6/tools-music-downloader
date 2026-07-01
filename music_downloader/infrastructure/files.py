@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from music_downloader.domain.enums import Bitrate
+from music_downloader.domain.formatting import format_duration, get_artist_str
 from music_downloader.domain.models import Song
-from music_downloader.utils import format_duration, get_artist_str
 
 WINDOWS_RESERVED_NAMES = {
     "CON",

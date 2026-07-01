@@ -16,7 +16,7 @@ from music_downloader.config import (
 from music_downloader.console import console
 from music_downloader.domain.enums import Bitrate, Source
 from music_downloader.domain.models import SearchOptions, Song
-from music_downloader.utils import url_encode
+from music_downloader.infrastructure.encoding import url_encode
 
 
 def _enum_value(value: Any) -> str:

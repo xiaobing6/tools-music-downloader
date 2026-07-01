@@ -16,7 +16,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from music_downloader.api import wait_for_cloudflare
 from music_downloader.config import (
     BASE_URL,
     INTER_SONG_DELAY_SEC,
@@ -25,11 +24,11 @@ from music_downloader.config import (
 )
 from music_downloader.domain.enums import SearchType, Source
 from music_downloader.domain.models import SearchOptions
-from music_downloader.downloader import build_output_path, download_song
-from music_downloader.env import run_environment_checks
-from music_downloader.infrastructure.gdstudio import GdStudioClient
+from music_downloader.infrastructure.downloader import build_output_path, download_song
+from music_downloader.infrastructure.environment import run_environment_checks
+from music_downloader.infrastructure.files import safe_filename
+from music_downloader.infrastructure.gdstudio import GdStudioClient, wait_for_cloudflare
 from music_downloader.services.search import SearchService
-from music_downloader.utils import sanitize_filename
 
 LogCallback = Callable[[str, str], None]
 ProgressCallback = Callable[[dict[str, Any]], None]
@@ -286,7 +285,7 @@ class MusicBridge:
         safe_dir_name = ""
         if task.songs:
             first_artist = task.songs[0].get("artist", "下载")
-            safe_dir_name = sanitize_filename(str(first_artist))
+            safe_dir_name = safe_filename(str(first_artist))
         target_dir = os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
         try:
             os.makedirs(target_dir, exist_ok=True)

@@ -94,13 +94,14 @@ CLI 默认下载到 `downloads/<关键词>/`。使用 `-o` 指定目录时，仍
 ```text
 music_download.py                 # 单一入口，源码运行和 exe 打包都使用它
 music_downloader/
-  adapters/cli/                   # Typer CLI 入口与 legacy CLI 兼容层
-  domain/                         # Pydantic 模型、枚举、业务异常
-  infrastructure/                 # 文件规则、环境检查、浏览器、GdStudio API、元数据适配
+  __main__.py                     # python -m music_downloader 入口
+  config.py                       # 常量、默认值、支持平台
+  console.py                      # rich/plain console 输出
+  adapters/cli/                   # Typer CLI 入口、legacy CLI 工作流、选择解析、输出
+  domain/                         # Pydantic 模型、枚举、格式化、业务异常
+  infrastructure/                 # 文件规则、环境检查、浏览器、GdStudio API、下载、元数据
   services/                       # CLI 和 GUI 共用的搜索/下载服务
   gui/                            # pywebview 桌面 GUI 与静态 HTML/CSS/JS
-  api.py/downloader.py/env.py     # 兼容旧导入路径的模块
-  cli.py                          # 兼容入口，委托到 adapters/cli/app.py
 scripts/build_exe.ps1             # Windows Nuitka 打包脚本
 tests/                            # pytest 测试
 ```

@@ -25,29 +25,28 @@
 ```text
 music_download.py                         # 单一入口：源码运行和 exe 打包都使用它
 music_downloader/__main__.py              # python -m music_downloader 入口
-music_downloader/cli.py                   # 兼容入口，委托到 adapters/cli/app.py
 music_downloader/adapters/cli/app.py      # Typer CLI 公开入口
 music_downloader/adapters/cli/legacy.py   # legacy CLI 编排兼容层
-music_downloader/adapters/cli/display.py  # CLI 输出兼容层
+music_downloader/adapters/cli/display.py  # CLI 输出
+music_downloader/adapters/cli/models.py   # CLI 运行选项
+music_downloader/adapters/cli/selection.py # CLI 选择解析
 music_downloader/domain/enums.py          # Source/SearchType/Bitrate/DownloadStatus 等枚举
 music_downloader/domain/models.py         # Song/SearchOptions/DownloadOptions/DownloadResult 等模型
+music_downloader/domain/formatting.py     # 纯格式化工具
 music_downloader/domain/errors.py         # 业务异常
 music_downloader/services/search.py       # CLI 和 GUI 共用搜索、去重、归一化
 music_downloader/services/download.py     # 共享下载服务抽象
-music_downloader/infrastructure/gdstudio.py    # 上游 API 客户端与兼容函数
+music_downloader/infrastructure/gdstudio.py    # 上游 API 客户端
 music_downloader/infrastructure/browser.py     # Playwright 浏览器会话
 music_downloader/infrastructure/environment.py # 环境检查
 music_downloader/infrastructure/files.py       # 文件命名、默认 downloads/、重复判断
+music_downloader/infrastructure/downloader.py  # legacy 下载、重试、临时文件、元数据附加
 music_downloader/infrastructure/metadata.py    # warning-oriented 元数据写入适配
+music_downloader/infrastructure/tags.py        # MP3/FLAC 标签写入
+music_downloader/infrastructure/encoding.py    # 上游 API 编码
 music_downloader/gui/                  # pywebview GUI
 music_downloader/gui/static/           # GUI 静态资源
-music_downloader/api.py                # 兼容旧导入路径
-music_downloader/downloader.py         # legacy 下载、重试、临时文件、元数据附加
-music_downloader/env.py                # 环境检查兼容入口
-music_downloader/display.py            # 输出兼容入口
-music_downloader/metadata.py           # MP3/FLAC 元数据写入
 music_downloader/config.py             # 常量、默认值、支持平台
-music_downloader/utils.py              # 通用工具函数
 tests/                                 # pytest 测试
 scripts/build_exe.ps1                  # Windows exe 构建脚本
 ```
@@ -90,9 +89,9 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - **新增音乐源**：修改 `music_downloader/config.py` 中的 `VALID_SOURCES`，并同步 `domain/enums.py` 的 `Source`。
 - **修改默认设置**：调整 `DEFAULT_KEYWORD`、`DEFAULT_SOURCE`、`DEFAULT_NUMBER`、`DEFAULT_BITRATE`。
 - **调整搜索逻辑**：优先修改 `music_downloader/services/search.py` 和 `music_downloader/infrastructure/gdstudio.py`。
-- **调整下载行为**：优先修改 `music_downloader/downloader.py` 或 `music_downloader/services/download.py`，保持“文件存在即跳过”和“元数据失败 warning-only”语义。
-- **调整文件命名/默认目录**：修改 `music_downloader/infrastructure/files.py`，并保持 `utils.py` 兼容包装。
-- **调整 ID3/FLAC 标签**：修改 `music_downloader/metadata.py` 或 `music_downloader/infrastructure/metadata.py`。
+- **调整下载行为**：优先修改 `music_downloader/infrastructure/downloader.py` 或 `music_downloader/services/download.py`，保持“文件存在即跳过”和“元数据失败 warning-only”语义。
+- **调整文件命名/默认目录**：修改 `music_downloader/infrastructure/files.py`。
+- **调整 ID3/FLAC 标签**：修改 `music_downloader/infrastructure/tags.py` 或 `music_downloader/infrastructure/metadata.py`。
 - **API 签名变更**：修改 `music_downloader/infrastructure/gdstudio.py` 的 `compute_signature`，并更新 README 的 401 排错说明。
 - **交互模式命令解析**：见 `music_downloader/adapters/cli/interactive.py` 和 `legacy.py`。
 - **CLI 参数**：见 `music_downloader/adapters/cli/app.py`，所有变更要同步更新 `README.md` 参数表。

@@ -20,7 +20,9 @@ from rich.progress import (
     TextColumn,
 )
 
-from music_downloader.api import wait_for_cloudflare
+from music_downloader.adapters.cli.display import display_results
+from music_downloader.adapters.cli.models import RunOptions
+from music_downloader.adapters.cli.selection import parse_selection
 from music_downloader.config import (
     BASE_URL,
     DEFAULT_BITRATE,
@@ -37,15 +39,13 @@ from music_downloader.config import (
     VALID_SOURCES,
 )
 from music_downloader.console import console
-from music_downloader.display import display_results
 from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
 from music_downloader.domain.models import DownloadOptions, SearchOptions
-from music_downloader.downloader import download_song
-from music_downloader.env import check_environment
-from music_downloader.infrastructure.gdstudio import GdStudioClient
-from music_downloader.models import RunOptions
+from music_downloader.infrastructure.downloader import download_song
+from music_downloader.infrastructure.environment import check_environment
+from music_downloader.infrastructure.files import safe_filename
+from music_downloader.infrastructure.gdstudio import GdStudioClient, wait_for_cloudflare
 from music_downloader.services.search import SearchService
-from music_downloader.utils import parse_selection, sanitize_filename
 
 # 交互模式命令字面量
 SET_SOURCE_PREFIX = "s "
@@ -247,7 +247,7 @@ def do_search_and_download(
             style="yellow",
         )
 
-    target_dir = os.path.join(options.output_dir, sanitize_filename(options.keyword))
+    target_dir = os.path.join(options.output_dir, safe_filename(options.keyword))
     os.makedirs(target_dir, exist_ok=True)
     download_options = DownloadOptions(
         source=Source(options.source),

@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from music_downloader.console import PlainConsole, RichTable, console
-from music_downloader.utils import normalize_song
+from music_downloader.infrastructure.files import normalize_song_dict
 
 
 def display_table(data: list[dict[str, Any]], keyword: str) -> None:
@@ -13,7 +13,7 @@ def display_table(data: list[dict[str, Any]], keyword: str) -> None:
         display_list(data, keyword)
         return
 
-    songs = [normalize_song(song) for song in data]
+    songs = [normalize_song_dict(song) for song in data]
     table = RichTable(title=f'搜索结果："{keyword}"', show_lines=False)
     # 各列宽度上限 + 溢出策略：歌名/歌手/专辑是中文长字段，限制 + 折行
     column_specs: list = [
@@ -51,7 +51,7 @@ def display_list(data: list[dict[str, Any]], keyword: str) -> None:
     sink = PlainConsole() if RichTable is None else console
     sink.rule(f'搜索结果："{keyword}"')
     for index, song in enumerate(data, 1):
-        normalized = normalize_song(song)
+        normalized = normalize_song_dict(song)
         sink.print(f"  {index:2d}. {normalized['name']}", style="bold")
         sink.print(
             "      歌手: {artist} | 专辑: {album} | 时长: {duration} | 来源: {source} | ID: {id}".format(

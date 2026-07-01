@@ -8,8 +8,7 @@ import time
 from collections.abc import Iterable
 from typing import Any
 
-from .api import get_lyric, get_pic_url, get_play_url
-from .config import (
+from music_downloader.config import (
     COVER_TIMEOUT_MS,
     DOWNLOAD_RETRIES,
     DOWNLOAD_RETRY_BACKOFF_SEC,
@@ -17,9 +16,11 @@ from .config import (
     PROXY_BASE_URL,
     REQUEST_TIMEOUT_MS,
 )
-from .console import console
-from .metadata import embed_metadata
-from .utils import get_artist_str, sanitize_filename
+from music_downloader.console import console
+from music_downloader.domain.formatting import get_artist_str
+from music_downloader.infrastructure.files import safe_filename
+from music_downloader.infrastructure.gdstudio import get_lyric, get_pic_url, get_play_url
+from music_downloader.infrastructure.tags import embed_metadata
 
 PathLike = str | os.PathLike[str]
 
@@ -46,7 +47,7 @@ def build_output_path(save_dir: str, song: dict, bitrate: str) -> str:
     name = str(song.get("name", "未知"))
     song_id = str(song.get("id", ""))
     extension = get_output_extension(bitrate)
-    filename = sanitize_filename(f"[{song_id}] {artist} - {name}{extension}")
+    filename = safe_filename(f"[{song_id}] {artist} - {name}{extension}")
     return os.path.join(save_dir, filename)
 
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from music_downloader.config import DEFAULT_BITRATE, DEFAULT_KEYWORD, DEFAULT_NUMBER, DEFAULT_SOURCE
 from music_downloader.domain.enums import Bitrate, DownloadStatus, OutputFormat, SearchType, Source
-from music_downloader.utils import format_duration, get_artist_str
+from music_downloader.domain.formatting import format_duration, get_artist_str
 
 
 class Song(BaseModel):

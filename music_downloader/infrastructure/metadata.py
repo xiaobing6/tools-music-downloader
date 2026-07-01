@@ -7,7 +7,7 @@ from pathlib import Path
 
 from music_downloader.domain.enums import Bitrate
 from music_downloader.domain.models import Song
-from music_downloader.metadata import embed_metadata
+from music_downloader.infrastructure.tags import embed_metadata
 
 EmbedFunc = Callable[..., None]
 

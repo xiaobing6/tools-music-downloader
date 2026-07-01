@@ -35,7 +35,7 @@ classifiers = [
 ]
 
 [project.scripts]
-music_download = "music_downloader.cli:main"
+music_download = "music_downloader.adapters.cli.app:main"
 
 [tool.ruff]
 line-length = 100
@@ -45,7 +45,7 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B", "SIM", "A", "C4", "T20"]
 # RUF 全量关闭：本项目大量中文文案/注释，全角标点（，。（）：；）属于合理用法，
 # 强行让 ruff 提示是误报。
-# T201 忽略：console.py 的 PlainConsole 和 display.py 的 JSON 输出需要裸 print。
+# T201 忽略：console.py 的 PlainConsole 和 adapters/cli/display.py 的 JSON 输出需要裸 print。
 ignore = ["E501", "T201"]
 
 [tool.mypy]
