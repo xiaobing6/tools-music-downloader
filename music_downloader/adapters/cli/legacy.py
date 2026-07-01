@@ -9,6 +9,7 @@ import sys
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from rich.progress import (
@@ -18,12 +19,11 @@ from rich.progress import (
     SpinnerColumn,
     TextColumn,
 )
-from rich_argparse import (
-    RawDescriptionRichHelpFormatter as _HelpFormatter,  # type: ignore[assignment]
-)
 
-from .api import search_with_pagination, wait_for_cloudflare
-from .config import (
+from music_downloader.adapters.cli.display import display_results
+from music_downloader.adapters.cli.models import RunOptions
+from music_downloader.adapters.cli.selection import parse_selection
+from music_downloader.config import (
     BASE_URL,
     DEFAULT_BITRATE,
     DEFAULT_KEYWORD,
@@ -38,12 +38,14 @@ from .config import (
     VALID_FORMATS,
     VALID_SOURCES,
 )
-from .console import console
-from .display import display_results
-from .downloader import download_song
-from .env import check_environment
-from .models import RunOptions
-from .utils import parse_selection, sanitize_filename
+from music_downloader.console import console
+from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
+from music_downloader.domain.models import DownloadOptions, SearchOptions
+from music_downloader.infrastructure.downloader import download_song
+from music_downloader.infrastructure.environment import check_environment
+from music_downloader.infrastructure.files import safe_filename
+from music_downloader.infrastructure.gdstudio import GdStudioClient, wait_for_cloudflare
+from music_downloader.services.search import SearchService
 
 # 交互模式命令字面量
 SET_SOURCE_PREFIX = "s "
@@ -82,7 +84,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description="music.gdstudio.org 音乐搜索与下载工具",
-        formatter_class=_HelpFormatter,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         usage="%(prog)s [-k KEYWORD] [options]",
         epilog="""示例:
   %(prog)s -k "周杰伦"                 # 搜索并下载
@@ -199,30 +201,20 @@ def do_search_and_download(
         f'搜索 "{options.keyword}" (来源: {options.source}, 类型: {options.search_type}, 数量: {options.number})...',
         style="bold cyan",
     )
-    results = search_with_pagination(
-        page,
-        options.keyword,
-        options.source,
-        options.search_type,
-        options.number,
+    client = GdStudioClient(page)
+    songs = SearchService(client).search(
+        SearchOptions(
+            keyword=options.keyword,
+            source=Source(options.source),
+            search_type=SearchType(options.search_type),
+            number=options.number,
+        )
     )
+    results = [song.to_legacy_dict() for song in songs]
 
     if not results:
         console.print("  未找到结果", style="yellow")
         return
-
-    # 按 id 去重（保序）
-    seen: set = set()
-    unique_results = []
-    for song in results:
-        sid = song.get("id", "")
-        if sid and sid not in seen:
-            seen.add(sid)
-            unique_results.append(song)
-    dropped = len(results) - len(unique_results)
-    if dropped:
-        console.print(f"  ⊘ 跳过 {dropped} 首重复结果", style="dim")
-    results = unique_results
 
     display_results(results, options.keyword, output_format=options.output_format)
 
@@ -255,8 +247,15 @@ def do_search_and_download(
             style="yellow",
         )
 
-    target_dir = os.path.join(options.output_dir, sanitize_filename(options.keyword))
+    target_dir = os.path.join(options.output_dir, safe_filename(options.keyword))
     os.makedirs(target_dir, exist_ok=True)
+    download_options = DownloadOptions(
+        source=Source(options.source),
+        bitrate=Bitrate(options.bitrate),
+        output_dir=Path(target_dir),
+        download_lyric=options.download_lyric,
+        download_cover=options.download_cover,
+    )
     console.print(f"\n开始下载 ({len(results)} 首) -> {target_dir}", style="bold")
     success = 0
     fail = 0
@@ -280,17 +279,21 @@ def do_search_and_download(
                 page,
                 context,
                 song,
-                options.source,
-                target_dir,
+                download_options.source.value,
+                str(download_options.output_dir),
                 index + 1,
                 len(results),
-                download_lyric=options.download_lyric,
-                download_cover=options.download_cover,
-                bitrate=options.bitrate,
+                download_lyric=download_options.download_lyric,
+                download_cover=download_options.download_cover,
+                bitrate=download_options.bitrate.value,
             )
-            if result == "success":
+            try:
+                status = DownloadStatus(result)
+            except ValueError:
+                status = DownloadStatus.FAIL
+            if status == DownloadStatus.SUCCESS:
                 success += 1
-            elif result == "skip":
+            elif status == DownloadStatus.SKIP:
                 skip += 1
             else:
                 fail += 1
@@ -579,7 +582,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: Sequence[str] | None = None) -> None:
+def legacy_main(argv: Sequence[str] | None = None) -> None:
     """程序入口：解析参数后执行环境检查、GUI 或 CLI 主流程。"""
     args = parse_args(argv)
     if args.check_env:

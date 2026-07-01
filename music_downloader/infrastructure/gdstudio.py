@@ -1,18 +1,51 @@
-"""API 签名计算、Cloudflare 验证与接口请求。"""
+"""GdStudio upstream API client and compatibility functions."""
+
+from __future__ import annotations
 
 import json
 import math
 from typing import Any
 
-from .config import (
+from music_downloader.config import (
     API_RETRY_ATTEMPTS,
     CF_RETRY_ATTEMPTS,
     MAX_PER_PAGE,
     PAGE_NAV_TIMEOUT_MS,
     SEARCH_TYPE_MAP,
 )
-from .console import console
-from .utils import url_encode
+from music_downloader.console import console
+from music_downloader.domain.enums import Bitrate, Source
+from music_downloader.domain.models import SearchOptions, Song
+from music_downloader.infrastructure.encoding import url_encode
+
+
+def _enum_value(value: Any) -> str:
+    return value.value if hasattr(value, "value") else str(value)
+
+
+class GdStudioClient:
+    def __init__(self, page: Any):
+        self.page = page
+
+    def search(self, options: SearchOptions) -> list[dict[str, Any]]:
+        return search_with_pagination(
+            self.page,
+            options.keyword,
+            options.source.value,
+            options.search_type.value,
+            options.number,
+        )
+
+    def get_play_url(self, song: Song, source: Source | str, bitrate: Bitrate | str) -> str:
+        return get_play_url(
+            self.page, song.to_legacy_dict(), _enum_value(source), _enum_value(bitrate)
+        )
+
+    def get_lyric(self, song: Song, source: Source | str) -> str:
+        return get_lyric(self.page, song.to_legacy_dict(), _enum_value(source))
+
+    def get_pic_url(self, song: Song, source: Source | str) -> str:
+        return get_pic_url(self.page, song.to_legacy_dict(), _enum_value(source))
 
 
 def compute_signature(page: Any, search_id: str) -> str:
@@ -195,7 +228,7 @@ def _signed_url_get(page: Any, body: str, resource_name: str) -> str:
     return data.get("url", "")
 
 
-def get_play_url(page: Any, song: dict, source: str, bitrate: str = "320") -> str:
+def get_play_url(page: Any, song: dict[str, Any], source: str, bitrate: str = "320") -> str:
     url_id = str(song.get("url_id", song.get("id", "")))
     if not url_id:
         return ""
@@ -205,7 +238,7 @@ def get_play_url(page: Any, song: dict, source: str, bitrate: str = "320") -> st
     return _signed_url_get(page, body, "播放链接")
 
 
-def get_lyric(page: Any, song: dict, source: str) -> str:
+def get_lyric(page: Any, song: dict[str, Any], source: str) -> str:
     lyric_id = str(song.get("lyric_id", ""))
     if not lyric_id:
         return ""
@@ -221,7 +254,7 @@ def get_lyric(page: Any, song: dict, source: str) -> str:
     return ""
 
 
-def get_pic_url(page: Any, song: dict, source: str) -> str:
+def get_pic_url(page: Any, song: dict[str, Any], source: str) -> str:
     pic_id = str(song.get("pic_id", ""))
     if not pic_id:
         return ""

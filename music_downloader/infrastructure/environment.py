@@ -1,5 +1,7 @@
 """本地环境检查：Python 版本、依赖模块、Google Chrome 可用性。"""
 
+from __future__ import annotations
+
 import contextlib
 import importlib.util
 import sys
@@ -7,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from .console import PlainConsole, RichTable, console
+from music_downloader.console import PlainConsole, RichTable, console
 
 
 @dataclass
@@ -80,7 +82,6 @@ def run_environment_checks(
         check_module("playwright"),
         check_module("mutagen"),
         check_module("rich"),
-        check_module("rich_argparse", "rich-argparse"),
         check_module("webview", "pywebview"),
     ]
     checker = chrome_checker or check_chrome_launcher

@@ -9,7 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
 from music_downloader.config import SEARCH_TYPE_MAP, VALID_BITRATES, VALID_FORMATS, VALID_SOURCES
+from music_downloader.domain.enums import Bitrate, SearchType, Source
+from music_downloader.domain.models import SearchOptions
 from music_downloader.gui.bridge import MusicBridge
 from music_downloader.gui.settings import DEFAULT_CONFIG, load_config, save_config
 
@@ -75,12 +79,20 @@ class MusicApi:
         self, keyword: str, source: str, search_type: str, number: int
     ) -> list[dict[str, Any]]:
         try:
-            num = int(number)
-            if num < 1:
-                num = DEFAULT_CONFIG["number"]
-        except (TypeError, ValueError):
-            num = DEFAULT_CONFIG["number"]
-        return self._bridge.search(keyword, source, search_type, num)
+            options = SearchOptions(
+                keyword=keyword.strip(),
+                source=Source(source),
+                search_type=SearchType(search_type),
+                number=int(number),
+            )
+        except (AttributeError, ValidationError, ValueError):
+            return []
+        return self._bridge.search(
+            options.keyword,
+            options.source.value,
+            options.search_type.value,
+            options.number,
+        )
 
     def start_download(
         self,
@@ -91,14 +103,19 @@ class MusicApi:
         download_cover: bool,
         output_dir: str,
     ) -> str:
+        try:
+            validated_source = Source(source)
+            validated_bitrate = Bitrate(bitrate)
+        except ValueError:
+            return ""
         if not output_dir:
             output_dir = load_config().get("output_dir", "")
         if not output_dir:
             output_dir = DEFAULT_CONFIG["output_dir"]
         return self._bridge.start_download(
             songs=songs,
-            source=source,
-            bitrate=bitrate,
+            source=validated_source.value,
+            bitrate=validated_bitrate.value,
             download_lyric=download_lyric,
             download_cover=download_cover,
             output_dir=output_dir,
