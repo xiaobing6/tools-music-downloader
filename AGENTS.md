@@ -7,7 +7,7 @@
 这是一个音乐搜索下载工具，数据来源为 `music.gdstudio.org`。项目同时提供：
 
 - 桌面 GUI：pywebview 加载静态 HTML/CSS/JS。
-- CLI：Typer 公开入口，保留 legacy CLI 工作流兼容层。
+- CLI：Typer 公开入口，和 GUI 同级放在 `music_downloader/cli/`。
 - 单一打包入口：`music_download.py`，生成的 exe 同时支持 GUI 和 CLI。
 
 底层通过 Playwright 启动系统已安装的 Google Chrome，访问站点并调用 API 搜索、下载音频文件，再使用 `mutagen` 尽力写入 MP3/FLAC 元数据。
@@ -25,11 +25,11 @@
 ```text
 music_download.py                         # 单一入口：源码运行和 exe 打包都使用它
 music_downloader/__main__.py              # python -m music_downloader 入口
-music_downloader/adapters/cli/app.py      # Typer CLI 公开入口
-music_downloader/adapters/cli/legacy.py   # legacy CLI 编排兼容层
-music_downloader/adapters/cli/display.py  # CLI 输出
-music_downloader/adapters/cli/models.py   # CLI 运行选项
-music_downloader/adapters/cli/selection.py # CLI 选择解析
+music_downloader/cli/app.py               # Typer CLI 公开入口
+music_downloader/cli/workflow.py          # CLI 搜索/下载/交互编排
+music_downloader/cli/display.py           # CLI 输出
+music_downloader/cli/models.py            # CLI 运行选项
+music_downloader/cli/selection.py         # CLI 选择解析
 music_downloader/domain/enums.py          # Source/SearchType/Bitrate/DownloadStatus 等枚举
 music_downloader/domain/models.py         # Song/SearchOptions/DownloadOptions/DownloadResult 等模型
 music_downloader/domain/formatting.py     # 纯格式化工具
@@ -40,7 +40,7 @@ music_downloader/infrastructure/gdstudio.py    # 上游 API 客户端
 music_downloader/infrastructure/browser.py     # Playwright 浏览器会话
 music_downloader/infrastructure/environment.py # 环境检查
 music_downloader/infrastructure/files.py       # 文件命名、默认 downloads/、重复判断
-music_downloader/infrastructure/downloader.py  # legacy 下载、重试、临时文件、元数据附加
+music_downloader/infrastructure/downloader.py  # 下载、重试、临时文件、元数据附加
 music_downloader/infrastructure/metadata.py    # warning-oriented 元数据写入适配
 music_downloader/infrastructure/tags.py        # MP3/FLAC 标签写入
 music_downloader/infrastructure/encoding.py    # 上游 API 编码
@@ -67,7 +67,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - `domain/` 放 Pydantic 模型、枚举和业务异常，不依赖 Playwright、pywebview 或 mutagen。
 - `services/` 放 CLI 和 GUI 共用的搜索、下载编排逻辑，优先使用 `Song`、`SearchOptions`、`DownloadOptions`、`DownloadResult`。
 - `infrastructure/` 放文件系统、浏览器、上游 API、环境检查、元数据等外部适配。
-- `adapters/cli/` 放 Typer CLI 和 legacy CLI 兼容工作流。
+- `cli/` 放 Typer CLI、交互命令解析和 CLI 搜索下载工作流，与 `gui/` 同级。
 - `gui/` 保持 pywebview 桌面应用形态，前端仍是静态 HTML/CSS/JS，不引入前端构建工具。
 
 ### Chrome profile 隔离
@@ -93,8 +93,8 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - **调整文件命名/默认目录**：修改 `music_downloader/infrastructure/files.py`。
 - **调整 ID3/FLAC 标签**：修改 `music_downloader/infrastructure/tags.py` 或 `music_downloader/infrastructure/metadata.py`。
 - **API 签名变更**：修改 `music_downloader/infrastructure/gdstudio.py` 的 `compute_signature`，并更新 README 的 401 排错说明。
-- **交互模式命令解析**：见 `music_downloader/adapters/cli/interactive.py` 和 `legacy.py`。
-- **CLI 参数**：见 `music_downloader/adapters/cli/app.py`，所有变更要同步更新 `README.md` 参数表。
+- **交互模式命令解析**：见 `music_downloader/cli/interactive.py` 和 `workflow.py`。
+- **CLI 参数**：见 `music_downloader/cli/app.py`，所有变更要同步更新 `README.md` 参数表。
 - **GUI 功能**：修改 `music_downloader/gui/api.py`、`bridge.py` 和 `gui/static/`；GUI 参数选择不应持久化到用户目录。
 - **打包资源**：GUI 静态资源仍在 `music_downloader/gui/static/`，构建脚本需保留 `--include-data-dir=music_downloader/gui/static=music_downloader/gui/static`。
 

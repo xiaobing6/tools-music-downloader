@@ -1,6 +1,6 @@
 """music_download 命令行入口。
 
-设置 PYTHONUTF8 环境变量后委托给 Typer CLI adapter。
+设置 PYTHONUTF8 环境变量后委托给 Typer CLI 应用。
 """
 
 # Force UTF-8 on Windows so rich / subprocess can print Chinese characters.
@@ -12,7 +12,7 @@ import os
 
 os.environ.setdefault("PYTHONUTF8", "1")
 
-from music_downloader.adapters.cli.app import main
+from music_downloader.cli.app import main
 
 if __name__ == "__main__":
     main()

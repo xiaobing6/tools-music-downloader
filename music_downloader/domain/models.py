@@ -65,7 +65,7 @@ class Song(BaseModel):
     def duration_text(self) -> str:
         return format_duration(self.duration)
 
-    def to_legacy_dict(self) -> dict[str, str]:
+    def to_result_dict(self) -> dict[str, str]:
         return {
             "name": self.display_name,
             "artist": self.artist,

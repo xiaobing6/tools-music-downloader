@@ -7,7 +7,7 @@ from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, S
 from music_downloader.domain.models import DownloadResult, SearchOptions, Song
 
 
-def test_song_accepts_legacy_api_dict() -> None:
+def test_song_accepts_api_dict() -> None:
     song = Song.from_api(
         {
             "id": 123,

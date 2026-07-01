@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 
-from music_downloader.adapters.cli.legacy import parse_args, run_with_browser
+from music_downloader.cli.workflow import parse_args, run_with_browser
 from music_downloader.config import DEFAULT_BITRATE, DEFAULT_KEYWORD, DEFAULT_NUMBER, DEFAULT_SOURCE
 from music_downloader.infrastructure.environment import check_environment
 
@@ -51,7 +51,7 @@ def main_command(
         run_gui()
         return
 
-    argv = _to_legacy_argv(
+    argv = _to_workflow_argv(
         keyword,
         source,
         number,
@@ -71,7 +71,7 @@ def main_command(
         raise typer.Exit(code)
 
 
-def _to_legacy_argv(
+def _to_workflow_argv(
     keyword: str,
     source: str,
     number: int,

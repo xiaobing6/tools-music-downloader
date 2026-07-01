@@ -52,5 +52,5 @@ def load_config() -> dict[str, Any]:
 
 
 def save_config(config: dict[str, Any]) -> None:
-    """Compatibility no-op: GUI settings reset to defaults on next launch."""
+    """No-op: GUI settings reset to defaults on next launch."""
     return None
