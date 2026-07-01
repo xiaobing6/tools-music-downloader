@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from music_downloader.config import BASE_URL, PAGE_NAV_TIMEOUT_MS, USER_AGENT
+from music_downloader.core.config import BASE_URL, PAGE_NAV_TIMEOUT_MS, USER_AGENT
 from music_downloader.domain.errors import BrowserStartupError, CloudflareError
 from music_downloader.infrastructure.gdstudio import wait_for_cloudflare
 

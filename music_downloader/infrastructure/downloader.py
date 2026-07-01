@@ -8,7 +8,7 @@ import time
 from collections.abc import Iterable
 from typing import Any
 
-from music_downloader.config import (
+from music_downloader.core.config import (
     COVER_TIMEOUT_MS,
     DOWNLOAD_RETRIES,
     DOWNLOAD_RETRY_BACKOFF_SEC,
@@ -16,7 +16,7 @@ from music_downloader.config import (
     PROXY_BASE_URL,
     REQUEST_TIMEOUT_MS,
 )
-from music_downloader.console import console
+from music_downloader.core.console import console
 from music_downloader.domain.formatting import get_artist_str
 from music_downloader.infrastructure.files import safe_filename
 from music_downloader.infrastructure.gdstudio import get_lyric, get_pic_url, get_play_url

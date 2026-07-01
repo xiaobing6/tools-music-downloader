@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from music_downloader.console import console
+from music_downloader.core.console import console
 from music_downloader.domain.formatting import get_artist_str
 
 

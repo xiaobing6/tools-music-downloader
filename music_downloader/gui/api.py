@@ -11,7 +11,12 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from music_downloader.config import SEARCH_TYPE_MAP, VALID_BITRATES, VALID_FORMATS, VALID_SOURCES
+from music_downloader.core.config import (
+    SEARCH_TYPE_MAP,
+    VALID_BITRATES,
+    VALID_FORMATS,
+    VALID_SOURCES,
+)
 from music_downloader.domain.enums import Bitrate, SearchType, Source
 from music_downloader.domain.models import SearchOptions
 from music_downloader.gui.bridge import MusicBridge

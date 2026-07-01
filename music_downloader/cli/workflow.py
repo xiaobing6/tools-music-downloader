@@ -23,7 +23,7 @@ from rich.progress import (
 from music_downloader.cli.display import display_results
 from music_downloader.cli.models import RunOptions
 from music_downloader.cli.selection import parse_selection
-from music_downloader.config import (
+from music_downloader.core.config import (
     BASE_URL,
     DEFAULT_BITRATE,
     DEFAULT_KEYWORD,
@@ -38,7 +38,7 @@ from music_downloader.config import (
     VALID_FORMATS,
     VALID_SOURCES,
 )
-from music_downloader.console import console
+from music_downloader.core.console import console
 from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
 from music_downloader.domain.models import DownloadOptions, SearchOptions
 from music_downloader.infrastructure.downloader import download_song

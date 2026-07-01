@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "tools-music-downloader"
 version = "0.1.0"
-description = "命令行音乐搜索下载工具，数据来源为 music.gdstudio.org"
+description = "桌面 GUI 和命令行音乐搜索下载工具，数据来源为 music.gdstudio.org"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -45,7 +45,7 @@ target-version = "py310"
 select = ["E", "F", "I", "UP", "B", "SIM", "A", "C4", "T20"]
 # RUF 全量关闭：本项目大量中文文案/注释，全角标点（，。（）：；）属于合理用法，
 # 强行让 ruff 提示是误报。
-# T201 忽略：console.py 的 PlainConsole 和 cli/display.py 的 JSON 输出需要裸 print。
+# T201 忽略：core/console.py 的 PlainConsole 和 cli/display.py 的 JSON 输出需要裸 print。
 ignore = ["E501", "T201"]
 
 [tool.mypy]

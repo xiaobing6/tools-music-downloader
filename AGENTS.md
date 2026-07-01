@@ -41,12 +41,13 @@ music_downloader/infrastructure/browser.py     # Playwright 浏览器会话
 music_downloader/infrastructure/environment.py # 环境检查
 music_downloader/infrastructure/files.py       # 文件命名、默认 downloads/、重复判断
 music_downloader/infrastructure/downloader.py  # 下载、重试、临时文件、元数据附加
-music_downloader/infrastructure/metadata.py    # warning-oriented 元数据写入适配
+music_downloader/infrastructure/metadata.py    # warning-oriented 元数据写入辅助
 music_downloader/infrastructure/tags.py        # MP3/FLAC 标签写入
 music_downloader/infrastructure/encoding.py    # 上游 API 编码
 music_downloader/gui/                  # pywebview GUI
 music_downloader/gui/static/           # GUI 静态资源
-music_downloader/config.py             # 常量、默认值、支持平台
+music_downloader/core/config.py        # 共享常量、默认值、支持平台
+music_downloader/core/console.py       # rich/plain console 输出
 tests/                                 # pytest 测试
 scripts/build_exe.ps1                  # Windows exe 构建脚本
 ```
@@ -66,7 +67,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 
 - `domain/` 放 Pydantic 模型、枚举和业务异常，不依赖 Playwright、pywebview 或 mutagen。
 - `services/` 放 CLI 和 GUI 共用的搜索、下载编排逻辑，优先使用 `Song`、`SearchOptions`、`DownloadOptions`、`DownloadResult`。
-- `infrastructure/` 放文件系统、浏览器、上游 API、环境检查、元数据等外部适配。
+- `infrastructure/` 放文件系统、浏览器、上游 API、环境检查、元数据等外部集成。
 - `cli/` 放 Typer CLI、交互命令解析和 CLI 搜索下载工作流，与 `gui/` 同级。
 - `gui/` 保持 pywebview 桌面应用形态，前端仍是静态 HTML/CSS/JS，不引入前端构建工具。
 
@@ -86,7 +87,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 
 ## 常见修改场景
 
-- **新增音乐源**：修改 `music_downloader/config.py` 中的 `VALID_SOURCES`，并同步 `domain/enums.py` 的 `Source`。
+- **新增音乐源**：修改 `music_downloader/core/config.py` 中的 `VALID_SOURCES`，并同步 `domain/enums.py` 的 `Source`。
 - **修改默认设置**：调整 `DEFAULT_KEYWORD`、`DEFAULT_SOURCE`、`DEFAULT_NUMBER`、`DEFAULT_BITRATE`。
 - **调整搜索逻辑**：优先修改 `music_downloader/services/search.py` 和 `music_downloader/infrastructure/gdstudio.py`。
 - **调整下载行为**：优先修改 `music_downloader/infrastructure/downloader.py` 或 `music_downloader/services/download.py`，保持“文件存在即跳过”和“元数据失败 warning-only”语义。
@@ -101,7 +102,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 ## 约定
 
 - Python 3.10+ 语法；用 PEP 604 `X | None`，避免 `Optional[X]`。
-- 业务日志统一走 `music_downloader.console.console.print`，不要用 `print` 直出；`gui/app.py` 找不到静态资源时的 stderr 提示除外。
+- 业务日志统一走 `music_downloader.core.console.console.print`，不要用 `print` 直出；`gui/app.py` 找不到静态资源时的 stderr 提示除外。
 - CLI 输出和文档使用中文。
 - 单测不要访问真实音乐站点；端到端功能验证靠 `music_download.py --check-env` 加一次本地真实搜索。
 - 下载目录 `downloads/`、Chrome profile `.chrome-profile/`、构建产物 `dist/` 已由 `.gitignore` 忽略。

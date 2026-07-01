@@ -1,4 +1,4 @@
-"""Interactive CLI command parsing compatibility exports."""
+"""Interactive CLI command parsing exports."""
 
 from music_downloader.cli.workflow import (
     InteractiveCommand,

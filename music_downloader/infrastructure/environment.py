@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from music_downloader.console import PlainConsole, RichTable, console
+from music_downloader.core.console import PlainConsole, RichTable, console
 
 
 @dataclass
