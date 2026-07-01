@@ -20,9 +20,9 @@ from rich.progress import (
     TextColumn,
 )
 
-from music_downloader.adapters.cli.display import display_results
-from music_downloader.adapters.cli.models import RunOptions
-from music_downloader.adapters.cli.selection import parse_selection
+from music_downloader.cli.display import display_results
+from music_downloader.cli.models import RunOptions
+from music_downloader.cli.selection import parse_selection
 from music_downloader.config import (
     BASE_URL,
     DEFAULT_BITRATE,
@@ -210,7 +210,7 @@ def do_search_and_download(
             number=options.number,
         )
     )
-    results = [song.to_legacy_dict() for song in songs]
+    results = [song.to_result_dict() for song in songs]
 
     if not results:
         console.print("  未找到结果", style="yellow")
@@ -582,7 +582,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
     return 0
 
 
-def legacy_main(argv: Sequence[str] | None = None) -> None:
+def workflow_main(argv: Sequence[str] | None = None) -> None:
     """程序入口：解析参数后执行环境检查、GUI 或 CLI 主流程。"""
     args = parse_args(argv)
     if args.check_env:

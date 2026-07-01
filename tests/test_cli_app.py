@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typer.testing import CliRunner
 
-from music_downloader.adapters.cli.app import app
-from music_downloader.adapters.cli.interactive import parse_interactive_command
+from music_downloader.cli.app import app
+from music_downloader.cli.interactive import parse_interactive_command
 
 
 def test_help_includes_existing_options() -> None:

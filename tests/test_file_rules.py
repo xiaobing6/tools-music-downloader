@@ -44,7 +44,7 @@ def test_output_exists_uses_final_path_only(tmp_path: Path) -> None:
     assert output_exists(path) is True
 
 
-def test_normalize_song_dict_keeps_legacy_display_shape() -> None:
+def test_normalize_song_dict_keeps_display_shape() -> None:
     data = normalize_song_dict({"id": "1", "name": "Song", "artist": ["A"], "duration": 61})
 
     assert data["name"] == "Song"

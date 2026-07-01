@@ -261,7 +261,7 @@ class MusicBridge:
                     number=number,
                 )
             )
-            return [song.to_legacy_dict() for song in songs]
+            return [song.to_result_dict() for song in songs]
 
         results = self._session.submit(_do_search, timeout=120.0)
         self._emit_log(f"找到 {len(results)} 首歌曲", "success")

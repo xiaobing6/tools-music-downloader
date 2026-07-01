@@ -1,4 +1,4 @@
-"""Warning-oriented metadata writing adapter."""
+"""Warning-oriented metadata writing helpers."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ class MetadataWriter:
         try:
             self._embed_func(
                 filepath=str(filepath),
-                song=song.to_legacy_dict(),
+                song=song.to_result_dict(),
                 index=index,
                 total=total,
                 cover_data=cover_data,

@@ -38,14 +38,14 @@ class GdStudioClient:
 
     def get_play_url(self, song: Song, source: Source | str, bitrate: Bitrate | str) -> str:
         return get_play_url(
-            self.page, song.to_legacy_dict(), _enum_value(source), _enum_value(bitrate)
+            self.page, song.to_result_dict(), _enum_value(source), _enum_value(bitrate)
         )
 
     def get_lyric(self, song: Song, source: Source | str) -> str:
-        return get_lyric(self.page, song.to_legacy_dict(), _enum_value(source))
+        return get_lyric(self.page, song.to_result_dict(), _enum_value(source))
 
     def get_pic_url(self, song: Song, source: Source | str) -> str:
-        return get_pic_url(self.page, song.to_legacy_dict(), _enum_value(source))
+        return get_pic_url(self.page, song.to_result_dict(), _enum_value(source))
 
 
 def compute_signature(page: Any, search_id: str) -> str:

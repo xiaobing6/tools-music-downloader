@@ -1,6 +1,6 @@
 """Interactive CLI command parsing compatibility exports."""
 
-from music_downloader.adapters.cli.legacy import (
+from music_downloader.cli.workflow import (
     InteractiveCommand,
     build_interactive_options,
     parse_interactive_command,
