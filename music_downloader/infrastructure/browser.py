@@ -24,7 +24,9 @@ def default_user_data_dir() -> Path:
 
 
 class BrowserSession:
-    def __init__(self, *, user_data_dir: str | os.PathLike[str] | None = None, headless: bool = True):
+    def __init__(
+        self, *, user_data_dir: str | os.PathLike[str] | None = None, headless: bool = True
+    ):
         self.user_data_dir = Path(user_data_dir) if user_data_dir else default_user_data_dir()
         self.headless = headless
         self._playwright_cm: Any = None

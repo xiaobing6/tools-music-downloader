@@ -16,16 +16,20 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from music_downloader.api import search_with_pagination, wait_for_cloudflare
+from music_downloader.api import wait_for_cloudflare
 from music_downloader.config import (
     BASE_URL,
     INTER_SONG_DELAY_SEC,
     PAGE_NAV_TIMEOUT_MS,
     USER_AGENT,
 )
+from music_downloader.domain.enums import SearchType, Source
+from music_downloader.domain.models import SearchOptions
 from music_downloader.downloader import build_output_path, download_song
 from music_downloader.env import run_environment_checks
-from music_downloader.utils import normalize_song, sanitize_filename
+from music_downloader.infrastructure.gdstudio import GdStudioClient
+from music_downloader.services.search import SearchService
+from music_downloader.utils import sanitize_filename
 
 LogCallback = Callable[[str, str], None]
 ProgressCallback = Callable[[dict[str, Any]], None]
@@ -249,21 +253,20 @@ class MusicBridge:
         )
 
         def _do_search() -> list[dict[str, Any]]:
-            return search_with_pagination(self._session.page, keyword, source, search_type, number)
+            client = GdStudioClient(self._session.page)
+            songs = SearchService(client).search(
+                SearchOptions(
+                    keyword=keyword,
+                    source=Source(source),
+                    search_type=SearchType(search_type),
+                    number=number,
+                )
+            )
+            return [song.to_legacy_dict() for song in songs]
 
         results = self._session.submit(_do_search, timeout=120.0)
-        seen: set = set()
-        unique: list[dict[str, Any]] = []
-        for song in results:
-            sid = song.get("id", "")
-            if sid and sid not in seen:
-                seen.add(sid)
-                unique.append(normalize_song(song))
-        dropped = len(results) - len(unique)
-        if dropped:
-            self._emit_log(f"跳过 {dropped} 首重复结果", "warn")
-        self._emit_log(f"找到 {len(unique)} 首歌曲", "success")
-        return unique
+        self._emit_log(f"找到 {len(results)} 首歌曲", "success")
+        return results
 
     def _run_download(self, task: DownloadTask) -> None:
         output_dir = task.output_dir

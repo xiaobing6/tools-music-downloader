@@ -59,7 +59,7 @@ $commonArgs = @(
     "--windows-product-name=music_download",
     "--windows-file-version=$ProjectVersion",
     "--windows-company-name=tools-music-downloader",
-    "--windows-file-description=CLI music search and download tool",
+    "--windows-file-description=Music downloader CLI and GUI tool",
     "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static"
 )
 if ($isCi) {

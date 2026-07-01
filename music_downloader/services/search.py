@@ -8,8 +8,7 @@ from music_downloader.domain.models import SearchOptions, Song
 
 
 class SearchClient(Protocol):
-    def search(self, options: SearchOptions) -> list[dict[str, Any]]:
-        ...
+    def search(self, options: SearchOptions) -> list[dict[str, Any]]: ...
 
 
 class SearchService:

@@ -23,7 +23,9 @@ def main_command(
     ctx: typer.Context,
     keyword: Annotated[str, typer.Option("-k", "--keyword", help="搜索关键词")] = DEFAULT_KEYWORD,
     source: Annotated[str, typer.Option("-s", "--source", help="音乐源")] = DEFAULT_SOURCE,
-    number: Annotated[int, typer.Option("-n", "--number", min=1, help="获取结果总数")] = DEFAULT_NUMBER,
+    number: Annotated[
+        int, typer.Option("-n", "--number", min=1, help="获取结果总数")
+    ] = DEFAULT_NUMBER,
     search_type: Annotated[str, typer.Option("-t", "--type", help="搜索类型")] = "song",
     output_dir: Annotated[str, typer.Option("-o", "--output", help="下载目录")] = "",
     output_format: Annotated[str, typer.Option("-f", "--format", help="输出格式")] = "table",
@@ -32,7 +34,9 @@ def main_command(
     select: Annotated[bool, typer.Option("--select", help="搜索后选择要下载的歌曲")] = False,
     no_lyric: Annotated[bool, typer.Option("--no-lyric", help="不下载歌词")] = False,
     no_cover: Annotated[bool, typer.Option("--no-cover", help="不嵌入封面")] = False,
-    check_env: Annotated[bool, typer.Option("--check-env", help="检查本地依赖和 Google Chrome")] = False,
+    check_env: Annotated[
+        bool, typer.Option("--check-env", help="检查本地依赖和 Google Chrome")
+    ] = False,
     interactive: Annotated[bool, typer.Option("-i", "--interactive", help="交互模式")] = False,
     gui: Annotated[bool, typer.Option("--gui", help="启动桌面图形界面")] = False,
     user_data_dir: Annotated[

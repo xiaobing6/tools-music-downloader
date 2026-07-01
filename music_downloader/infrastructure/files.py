@@ -67,9 +67,7 @@ def output_extension(bitrate: Bitrate | str) -> str:
 
 
 def build_output_path(root: str | os.PathLike[str], song: Song, bitrate: Bitrate | str) -> Path:
-    filename = safe_filename(
-        f"[{song.id}] {song.artist} - {song.name}{output_extension(bitrate)}"
-    )
+    filename = safe_filename(f"[{song.id}] {song.artist} - {song.name}{output_extension(bitrate)}")
     return Path(root) / filename
 
 

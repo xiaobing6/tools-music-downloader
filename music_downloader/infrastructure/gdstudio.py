@@ -37,7 +37,9 @@ class GdStudioClient:
         )
 
     def get_play_url(self, song: Song, source: Source | str, bitrate: Bitrate | str) -> str:
-        return get_play_url(self.page, song.to_legacy_dict(), _enum_value(source), _enum_value(bitrate))
+        return get_play_url(
+            self.page, song.to_legacy_dict(), _enum_value(source), _enum_value(bitrate)
+        )
 
     def get_lyric(self, song: Song, source: Source | str) -> str:
         return get_lyric(self.page, song.to_legacy_dict(), _enum_value(source))
