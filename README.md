@@ -95,8 +95,7 @@ CLI 默认下载到 `downloads/<关键词>/`。使用 `-o` 指定目录时，仍
 music_download.py                 # 单一入口，源码运行和 exe 打包都使用它
 music_downloader/
   __main__.py                     # python -m music_downloader 入口
-  config.py                       # 常量、默认值、支持平台
-  console.py                      # rich/plain console 输出
+  core/                           # 共享配置、默认值、rich/plain console 输出
   cli/                            # Typer CLI 入口、命令工作流、选择解析、输出
   domain/                         # Pydantic 模型、枚举、格式化、业务异常
   infrastructure/                 # 文件规则、环境检查、浏览器、GdStudio API、下载、元数据

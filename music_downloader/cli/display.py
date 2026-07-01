@@ -3,7 +3,7 @@
 import json
 from typing import Any
 
-from music_downloader.console import PlainConsole, RichTable, console
+from music_downloader.core.console import PlainConsole, RichTable, console
 from music_downloader.infrastructure.files import normalize_song_dict
 
 

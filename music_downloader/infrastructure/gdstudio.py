@@ -1,4 +1,4 @@
-"""GdStudio upstream API client and compatibility functions."""
+"""GdStudio upstream API client and request helpers."""
 
 from __future__ import annotations
 
@@ -6,14 +6,14 @@ import json
 import math
 from typing import Any
 
-from music_downloader.config import (
+from music_downloader.core.config import (
     API_RETRY_ATTEMPTS,
     CF_RETRY_ATTEMPTS,
     MAX_PER_PAGE,
     PAGE_NAV_TIMEOUT_MS,
     SEARCH_TYPE_MAP,
 )
-from music_downloader.console import console
+from music_downloader.core.console import console
 from music_downloader.domain.enums import Bitrate, Source
 from music_downloader.domain.models import SearchOptions, Song
 from music_downloader.infrastructure.encoding import url_encode

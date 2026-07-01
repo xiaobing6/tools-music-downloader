@@ -16,7 +16,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from music_downloader.config import (
+from music_downloader.core.config import (
     BASE_URL,
     INTER_SONG_DELAY_SEC,
     PAGE_NAV_TIMEOUT_MS,
