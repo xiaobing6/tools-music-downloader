@@ -36,7 +36,7 @@
 - `Flowbite Svelte` provides finished UI components for buttons, inputs, selects, modals,
   badges, progress bars, tables/lists, alerts, and tooltips.
 - `Tailwind CSS` supports Flowbite styling and focused custom layout rules.
-- `lucide-svelte` provides icons for commands such as search, download, retry, folder,
+- `@lucide/svelte` provides icons for commands such as search, download, retry, folder,
   settings, check, warning, cancel, and log controls.
 
 ## Directory Layout

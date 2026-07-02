@@ -6,7 +6,7 @@
 
 **Architecture:** pywebview remains the desktop shell and keeps exposing `MusicApi` to JavaScript. Vite builds Svelte source from `music_downloader/gui/frontend/` into `music_downloader/gui/static/`, which remains the runtime and Nuitka-packaged asset directory. The frontend uses typed wrappers around the existing pywebview API and listens to the existing `py-log` and `py-progress` custom events.
 
-**Tech Stack:** Python 3.10+, pywebview, Nuitka, Vite, Svelte, TypeScript, Flowbite Svelte, Tailwind CSS, lucide-svelte, pytest, ruff, mypy.
+**Tech Stack:** Python 3.10+, pywebview, Nuitka, Vite, Svelte, TypeScript, Flowbite Svelte, Tailwind CSS, @lucide/svelte, pytest, ruff, mypy.
 
 ---
 
@@ -87,7 +87,7 @@ Create `music_downloader/gui/frontend/package.json`:
     "@tailwindcss/vite": "latest",
     "flowbite": "latest",
     "flowbite-svelte": "latest",
-    "lucide-svelte": "latest",
+    "@lucide/svelte": "latest",
     "svelte": "latest",
     "svelte-check": "latest",
     "tailwindcss": "latest",
@@ -570,7 +570,7 @@ git commit -m "feat(gui): add typed frontend bridge contracts"
 ```svelte
 <script lang="ts">
   import { Button, Input } from "flowbite-svelte";
-  import { Search } from "lucide-svelte";
+  import { Search } from "@lucide/svelte";
 
   interface Props {
     keyword: string;
@@ -619,7 +619,7 @@ git commit -m "feat(gui): add typed frontend bridge contracts"
 ```svelte
 <script lang="ts">
   import { Button, Checkbox, Input, Label, Select } from "flowbite-svelte";
-  import { FolderOpen, HardDrive, ShieldCheck } from "lucide-svelte";
+  import { FolderOpen, HardDrive, ShieldCheck } from "@lucide/svelte";
   import type { GuiConfig, SelectItem, ValidOptions } from "../types";
   import { normalizeNumber, toSelectItems, toSimpleSelectItems, withConfigValue } from "../state";
 
@@ -758,7 +758,7 @@ git commit -m "feat(gui): add typed frontend bridge contracts"
 ```svelte
 <script lang="ts">
   import { Badge, Button, Checkbox } from "flowbite-svelte";
-  import { Check, Download, Minus, Music, X } from "lucide-svelte";
+  import { Check, Download, Minus, Music, X } from "@lucide/svelte";
   import EmptyState from "./EmptyState.svelte";
   import type { Song, SongStatus } from "../types";
 
@@ -879,7 +879,7 @@ Create `music_downloader/gui/frontend/src/lib/components/EmptyState.svelte`:
 
 ```svelte
 <script lang="ts">
-  import { Music } from "lucide-svelte";
+  import { Music } from "@lucide/svelte";
 </script>
 
 <div class="flex h-full flex-col items-center justify-center text-gray-400">
@@ -893,7 +893,7 @@ Create `music_downloader/gui/frontend/src/lib/components/DownloadProgress.svelte
 ```svelte
 <script lang="ts">
   import { Button, Progressbar } from "flowbite-svelte";
-  import { X } from "lucide-svelte";
+  import { X } from "@lucide/svelte";
   import type { DownloadProgressState } from "../types";
   import { progressPercent } from "../state";
 
@@ -1721,7 +1721,7 @@ In `README.md`, update the dependency paragraph to include Node.js for GUI sourc
 ```markdown
 运行依赖：`playwright`、`mutagen`、`rich`、`typer`、`pydantic`、`pywebview`。
 
-如果需要从源码重建 GUI 前端或打包 exe，还需要安装 Node.js 和 npm。GUI 前端使用 Vite、Svelte、TypeScript、Flowbite Svelte、Tailwind CSS 和 lucide-svelte，构建产物输出到 `music_downloader/gui/static/`。
+如果需要从源码重建 GUI 前端或打包 exe，还需要安装 Node.js 和 npm。GUI 前端使用 Vite、Svelte、TypeScript、Flowbite Svelte、Tailwind CSS 和 @lucide/svelte，构建产物输出到 `music_downloader/gui/static/`。
 ```
 
 - [ ] **Step 2: Add frontend build command**

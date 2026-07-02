@@ -15,7 +15,7 @@
     "@tailwindcss/vite": "latest",
     "flowbite": "latest",
     "flowbite-svelte": "latest",
-    "lucide-svelte": "latest",
+    "@lucide/svelte": "latest",
     "svelte": "latest",
     "svelte-check": "latest",
     "tailwindcss": "latest",
