@@ -31,7 +31,7 @@ export function selectedSongs(songs: Song[], selectedIndices: Set<number>): Song
 }
 
 export function progressPercent(current: number, total: number): string {
-  if (total <= 0) {
+  if (!Number.isFinite(current) || !Number.isFinite(total) || total <= 0) {
     return "0";
   }
   return String(Math.min(100, Math.max(0, Math.round((current / total) * 100))));

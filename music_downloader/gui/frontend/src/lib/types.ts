@@ -29,6 +29,10 @@ export interface ValidOptions {
 }
 
 export interface Song {
+  id?: string;
+  url_id?: string;
+  pic_id?: string;
+  lyric_id?: string;
   name?: string;
   artist?: string;
   album?: string;

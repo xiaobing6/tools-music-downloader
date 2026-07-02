@@ -1,5 +1,8 @@
 import type { ProgressDetail, PyLogDetail, PywebviewApi } from "./types";
 
+export const PYWEBVIEW_READY_TIMEOUT_MS = 15000;
+const PYWEBVIEW_NOT_READY_MESSAGE = "pywebview 未就绪，请在桌面窗口中运行";
+
 declare global {
   interface Window {
     pywebview?: {
@@ -11,24 +14,39 @@ declare global {
 export function getPywebviewApi(): PywebviewApi {
   const api = window.pywebview?.api;
   if (!api) {
-    throw new Error("pywebview 未就绪，请在桌面窗口中运行");
+    throw new Error(PYWEBVIEW_NOT_READY_MESSAGE);
   }
   return api;
 }
 
-export function waitForPywebview(): Promise<PywebviewApi> {
+export function waitForPywebview(timeoutMs = PYWEBVIEW_READY_TIMEOUT_MS): Promise<PywebviewApi> {
   if (window.pywebview?.api) {
     return Promise.resolve(window.pywebview.api);
   }
 
-  return new Promise((resolve) => {
-    window.addEventListener(
-      "pywebviewready",
-      () => {
+  return new Promise((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    const cleanup = () => {
+      window.removeEventListener("pywebviewready", listener);
+      clearTimeout(timer);
+    };
+
+    const listener = () => {
+      cleanup();
+      try {
         resolve(getPywebviewApi());
-      },
-      { once: true }
-    );
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    timer = setTimeout(() => {
+      cleanup();
+      reject(new Error(PYWEBVIEW_NOT_READY_MESSAGE));
+    }, timeoutMs);
+
+    window.addEventListener("pywebviewready", listener);
   });
 }
 
