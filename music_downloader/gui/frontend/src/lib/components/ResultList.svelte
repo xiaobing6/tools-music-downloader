@@ -76,13 +76,6 @@
     return labels[status.state];
   }
 
-  function handleRowKeydown(event: KeyboardEvent, index: number) {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-    event.preventDefault();
-    onToggle(index);
-  }
 </script>
 
 <section class="rounded-lg border border-slate-200 bg-white">
@@ -141,20 +134,15 @@
     <div class="divide-y divide-slate-100">
       {#each songs as song, index}
         {@const status = statusFor(index)}
-        <div
-          class="grid w-full cursor-pointer grid-cols-[auto_48px_1fr_auto] items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          role="button"
-          tabindex="0"
-          onclick={() => onToggle(index)}
-          onkeydown={(event) => handleRowKeydown(event, index)}
+        <label
+          class="grid w-full cursor-pointer grid-cols-[auto_48px_1fr_auto] items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
         >
           <input
             class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             type="checkbox"
             checked={hasIndex(selectedIndices, index)}
             aria-label={`选择 ${song.name ?? "歌曲"}`}
-            onclick={(event) => {
-              event.stopPropagation();
+            onchange={() => {
               onToggle(index);
             }}
           />
@@ -198,7 +186,7 @@
             </span>
           </span>
           <span class="whitespace-nowrap text-xs text-slate-500">{song.duration ?? ""}</span>
-        </div>
+        </label>
       {/each}
     </div>
   {/if}
