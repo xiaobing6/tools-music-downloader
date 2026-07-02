@@ -51,5 +51,7 @@
     <Search size={17} aria-hidden="true" />
     {searching ? "搜索中" : "搜索"}
   </button>
-  <span class="whitespace-nowrap text-sm text-slate-500">共 {resultCount} 首</span>
+  {#if resultCount > 0}
+    <span class="whitespace-nowrap text-sm text-slate-500">共 {resultCount} 首</span>
+  {/if}
 </form>

@@ -75,6 +75,14 @@
     };
     return labels[status.state];
   }
+
+  function handleRowKeydown(event: KeyboardEvent, index: number) {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    onToggle(index);
+  }
 </script>
 
 <section class="rounded-lg border border-slate-200 bg-white">
@@ -133,10 +141,12 @@
     <div class="divide-y divide-slate-100">
       {#each songs as song, index}
         {@const status = statusFor(index)}
-        <button
-          class="grid w-full grid-cols-[auto_48px_1fr_auto] items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
-          type="button"
+        <div
+          class="grid w-full cursor-pointer grid-cols-[auto_48px_1fr_auto] items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          role="button"
+          tabindex="0"
           onclick={() => onToggle(index)}
+          onkeydown={(event) => handleRowKeydown(event, index)}
         >
           <input
             class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
@@ -188,7 +198,7 @@
             </span>
           </span>
           <span class="whitespace-nowrap text-xs text-slate-500">{song.duration ?? ""}</span>
-        </button>
+        </div>
       {/each}
     </div>
   {/if}
