@@ -42,6 +42,7 @@
   let logCollapsed = $state(false);
   let environmentOpen = $state(false);
   let environmentChecks = $state<EnvironmentCheck[]>([]);
+  let activeDownloadIndices = $state<number[]>([]);
   let progress = $state<DownloadProgressState>({
     visible: false,
     current: 0,
@@ -122,6 +123,11 @@
     }
 
     if (detail.type === "progress") {
+      const activeIndex = activeDownloadIndices[detail.current - 1] ?? detail.current;
+      statuses = {
+        ...statuses,
+        [activeIndex]: { state: "downloading" }
+      };
       progress = {
         visible: true,
         current: detail.current,
@@ -167,7 +173,11 @@
       label: "下载完成"
     };
     currentTaskId = null;
-    addLog(`下载完成: 成功 ${detail.success} / 失败 ${detail.fail} / 跳过 ${detail.skip}`, "success");
+    activeDownloadIndices = [];
+    addLog(
+      `下载完成: 成功 ${detail.success} / 失败 ${detail.fail} / 跳过 ${detail.skip}`,
+      detail.fail > 0 ? "warn" : "success"
+    );
     clearHideProgressTimer();
     hideProgressTimer = setTimeout(() => {
       progress = { ...progress, visible: false };
@@ -182,8 +192,13 @@
     }
   }
 
-  function handleConfigChange(nextConfig: GuiConfig) {
+  async function handleConfigChange(nextConfig: GuiConfig) {
     config = nextConfig;
+    try {
+      await saveCurrentConfig();
+    } catch (error) {
+      addLog(`保存设置失败: ${errorMessage(error)}`, "error");
+    }
   }
 
   async function saveCurrentConfig(): Promise<boolean> {
@@ -253,6 +268,11 @@
       return;
     }
 
+    const downloadIndices = pickedSongs
+      .map((song) => song._gui_index)
+      .filter((index): index is number => typeof index === "number");
+    activeDownloadIndices = downloadIndices;
+
     try {
       const taskId = await api.start_download(
         pickedSongs,
@@ -272,6 +292,7 @@
       }
       statuses = nextStatuses;
     } catch (error) {
+      activeDownloadIndices = [];
       addLog(`下载启动失败: ${errorMessage(error)}`, "error");
     }
   }
