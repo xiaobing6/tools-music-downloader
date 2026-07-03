@@ -280,6 +280,7 @@
     try {
       await saveCurrentConfig();
       const results = await api.search(query, config.source, config.search_type, config.number);
+      browserReady = true;
       songs = results;
       selectedIndices = new Set();
       failedIndices = new Set();
