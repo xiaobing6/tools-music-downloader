@@ -43,6 +43,7 @@
   let environmentOpen = $state(false);
   let environmentChecks = $state<EnvironmentCheck[]>([]);
   let activeDownloadIndices = $state<number[]>([]);
+  let downloadStarting = $state(false);
   let progress = $state<DownloadProgressState>({
     visible: false,
     current: 0,
@@ -52,10 +53,14 @@
 
   let nextLogId = 1;
   let hideProgressTimer: ReturnType<typeof setTimeout> | null = null;
+  let activePreviousStatuses = new Map<number, SongStatus | undefined>();
   const MAX_LOG_ENTRIES = 500;
 
   let busy = $derived(initializing || searching);
-  let canDownload = $derived(browserReady && !busy && currentTaskId === null);
+  let downloadActive = $derived(
+    downloadStarting || currentTaskId !== null || activeDownloadIndices.length > 0
+  );
+  let canDownload = $derived(browserReady && !busy && !downloadActive);
 
   function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
@@ -123,6 +128,7 @@
         return;
       }
       currentTaskId = taskId;
+      downloadStarting = false;
       clearHideProgressTimer();
       progress = {
         visible: true,
@@ -177,14 +183,14 @@
     }
 
     const total = detail.success + detail.fail + detail.skip;
+    restoreUnfinishedActiveStatuses();
     progress = {
       visible: true,
       current: total,
       total,
       label: "下载完成"
     };
-    currentTaskId = null;
-    activeDownloadIndices = [];
+    clearActiveDownloadState();
     addLog(
       `下载完成: 成功 ${detail.success} / 失败 ${detail.fail} / 跳过 ${detail.skip}`,
       detail.fail > 0 ? "warn" : "success"
@@ -228,19 +234,35 @@
     return previousStatuses;
   }
 
-  function rollbackQueuedStatuses(previousStatuses: Map<number, SongStatus | undefined>) {
+  function restoreUnfinishedActiveStatuses() {
     const nextStatuses = { ...statuses };
-    for (const [index, previousStatus] of previousStatuses) {
-      if (nextStatuses[index]?.state !== "queued") {
+    let changed = false;
+
+    for (const index of activeDownloadIndices) {
+      const state = nextStatuses[index]?.state;
+      if (state !== "queued" && state !== "downloading") {
         continue;
       }
+
+      const previousStatus = activePreviousStatuses.get(index);
       if (previousStatus) {
         nextStatuses[index] = previousStatus;
       } else {
         delete nextStatuses[index];
       }
+      changed = true;
     }
-    statuses = nextStatuses;
+
+    if (changed) {
+      statuses = nextStatuses;
+    }
+  }
+
+  function clearActiveDownloadState() {
+    currentTaskId = null;
+    downloadStarting = false;
+    activeDownloadIndices = [];
+    activePreviousStatuses = new Map();
   }
 
   async function handleConfigChange(nextConfig: GuiConfig) {
@@ -318,6 +340,11 @@
       return;
     }
 
+    if (downloadActive) {
+      addLog("已有下载任务正在运行", "warn");
+      return;
+    }
+
     const pickedSongs = selectedSongs(songs, indices);
     if (pickedSongs.length === 0) {
       addLog("请先选择要下载的歌曲", "warn");
@@ -328,7 +355,8 @@
       .map((song) => song._gui_index)
       .filter((index): index is number => typeof index === "number");
     activeDownloadIndices = downloadIndices;
-    const previousStatuses = markQueued(downloadIndices);
+    activePreviousStatuses = markQueued(downloadIndices);
+    downloadStarting = true;
 
     try {
       const taskId = await api.start_download(
@@ -343,11 +371,13 @@
       if (!normalizedTaskId) {
         throw new Error("后端未返回下载任务 ID");
       }
-      currentTaskId = normalizedTaskId;
+      if (activeDownloadIndices.length > 0 && currentTaskId === null) {
+        currentTaskId = normalizedTaskId;
+      }
+      downloadStarting = false;
     } catch (error) {
-      currentTaskId = null;
-      activeDownloadIndices = [];
-      rollbackQueuedStatuses(previousStatuses);
+      restoreUnfinishedActiveStatuses();
+      clearActiveDownloadState();
       addLog(`下载启动失败: ${errorMessage(error)}`, "error");
     }
   }
@@ -455,7 +485,7 @@
       <SettingsPanel
         {config}
         {options}
-        disabled={busy || currentTaskId !== null}
+        disabled={busy || downloadActive}
         onConfigChange={handleConfigChange}
         onBrowseDirectory={browseDirectory}
         onOpenDirectory={openDirectory}
@@ -467,7 +497,7 @@
           <SearchBar
             {keyword}
             {searching}
-            disabled={initializing || currentTaskId !== null}
+            disabled={initializing || downloadActive}
             resultCount={songs.length}
             onKeyword={(value) => {
               keyword = value;
