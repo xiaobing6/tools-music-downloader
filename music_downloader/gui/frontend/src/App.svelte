@@ -123,7 +123,7 @@
     }
 
     if (detail.type === "progress") {
-      const activeIndex = activeDownloadIndices[detail.current - 1] ?? detail.current;
+      const activeIndex = activeDownloadIndices[detail.current] ?? detail.current;
       statuses = {
         ...statuses,
         [activeIndex]: { state: "downloading" }
