@@ -192,6 +192,14 @@
     }
   }
 
+  function shutdownApi() {
+    const pyApi = api;
+    if (!pyApi) {
+      return;
+    }
+    void pyApi.shutdown().catch(() => undefined);
+  }
+
   async function handleConfigChange(nextConfig: GuiConfig) {
     config = nextConfig;
     try {
@@ -382,6 +390,7 @@
       removeLogListener();
       removeProgressListener();
       clearHideProgressTimer();
+      shutdownApi();
     };
   });
 </script>
