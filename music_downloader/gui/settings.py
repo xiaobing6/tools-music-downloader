@@ -39,8 +39,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "output_dir": _get_default_output_dir(),
     "download_cover": True,
     "download_lyric": True,
-    "window_width": 960,
-    "window_height": 680,
+    "window_width": 1280,
+    "window_height": 800,
 }
 
 
