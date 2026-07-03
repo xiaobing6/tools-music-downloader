@@ -29,7 +29,7 @@ if (-not $SkipInstall) {
         throw "Failed to install build dependencies (exit $LASTEXITCODE)"
     }
 } else {
-    Write-Host "Skipping pip install (SkipInstall mode). Using already-installed tools." -ForegroundColor Yellow
+    Write-Host "Skipping dependency installs (SkipInstall mode). Using already-installed tools." -ForegroundColor Yellow
 }
 
 $frontendDir = Join-Path $ProjectRoot "music_downloader/gui/frontend"
