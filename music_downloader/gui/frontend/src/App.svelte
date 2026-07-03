@@ -107,7 +107,10 @@
   }
 
   function handleProgress(detail: ProgressDetail) {
-    if (detail.type !== "start" && (!currentTaskId || detail.task_id !== currentTaskId)) {
+    if (
+      detail.type !== "start" &&
+      (!currentTaskId || detail.task_id !== currentTaskId || activeDownloadIndices.length === 0)
+    ) {
       return;
     }
 
@@ -116,7 +119,7 @@
       if (!taskId || activeDownloadIndices.length === 0) {
         return;
       }
-      if (currentTaskId !== null && currentTaskId !== taskId) {
+      if (currentTaskId !== null) {
         return;
       }
       currentTaskId = taskId;
