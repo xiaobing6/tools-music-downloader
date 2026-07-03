@@ -10,7 +10,6 @@ import os
 import sys
 from pathlib import Path
 
-
 DEFAULT_WINDOW_SIZE = (1280, 800)
 MIN_WINDOW_SIZE = (1200, 750)
 
