@@ -34,31 +34,31 @@ if (-not $SkipInstall) {
 
 $frontendDir = Join-Path $ProjectRoot "music_downloader/gui/frontend"
 $staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"
-if (Test-Path $frontendDir) {
-    $npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
-    if (-not $npmCommand) {
-        throw "npm.cmd was not found. Install Node.js before building the GUI exe."
-    }
+if (-not (Test-Path $frontendDir)) {
+    throw "Frontend source directory is missing: $frontendDir"
+}
 
-    if (-not $SkipInstall) {
-        npm.cmd --prefix $frontendDir install
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to install frontend dependencies (exit $LASTEXITCODE)"
-        }
-    } elseif (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
-        throw "Frontend dependencies are missing. Run npm.cmd --prefix music_downloader/gui/frontend install, or build without -SkipInstall."
-    }
+$npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
+if (-not $npmCommand) {
+    throw "npm.cmd was not found. Install Node.js before building the GUI exe."
+}
 
-    npm.cmd --prefix $frontendDir run build
+if (-not $SkipInstall) {
+    npm.cmd --prefix $frontendDir install
     if ($LASTEXITCODE -ne 0) {
-        throw "Frontend build failed (exit $LASTEXITCODE)"
+        throw "Failed to install frontend dependencies (exit $LASTEXITCODE)"
     }
+} elseif (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
+    throw "Frontend dependencies are missing. Run npm.cmd --prefix music_downloader/gui/frontend install, or build without -SkipInstall."
+}
 
-    if (-not (Test-Path $staticIndex)) {
-        throw "Frontend build did not produce expected artifact: $staticIndex"
-    }
-} else {
-    Write-Host "No frontend source directory found. Using existing GUI static assets." -ForegroundColor Yellow
+npm.cmd --prefix $frontendDir run build
+if ($LASTEXITCODE -ne 0) {
+    throw "Frontend build failed (exit $LASTEXITCODE)"
+}
+
+if (-not (Test-Path $staticIndex)) {
+    throw "Frontend build did not produce expected artifact: $staticIndex"
 }
 
 $env:NUITKA_CACHE_DIR = Join-Path $ProjectRoot ".nuitka-cache"
