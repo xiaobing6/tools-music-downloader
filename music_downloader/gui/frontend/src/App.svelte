@@ -52,6 +52,7 @@
 
   let nextLogId = 1;
   let hideProgressTimer: ReturnType<typeof setTimeout> | null = null;
+  const MAX_LOG_ENTRIES = 500;
 
   let busy = $derived(initializing || searching);
   let canDownload = $derived(browserReady && !busy && currentTaskId === null);
@@ -69,7 +70,7 @@
         message,
         level
       }
-    ];
+    ].slice(-MAX_LOG_ENTRIES);
   }
 
   async function initialize() {
@@ -106,12 +107,19 @@
   }
 
   function handleProgress(detail: ProgressDetail) {
-    if (detail.type !== "start" && currentTaskId && detail.task_id !== currentTaskId) {
+    if (detail.type !== "start" && (!currentTaskId || detail.task_id !== currentTaskId)) {
       return;
     }
 
     if (detail.type === "start") {
-      currentTaskId = detail.task_id;
+      const taskId = detail.task_id.trim();
+      if (!taskId || activeDownloadIndices.length === 0) {
+        return;
+      }
+      if (currentTaskId !== null && currentTaskId !== taskId) {
+        return;
+      }
+      currentTaskId = taskId;
       clearHideProgressTimer();
       progress = {
         visible: true,
@@ -200,6 +208,38 @@
     void pyApi.shutdown().catch(() => undefined);
   }
 
+  function warnConfigSaveFailed() {
+    addLog("save_config 返回 false，设置未保存", "warn");
+  }
+
+  function markQueued(downloadIndices: number[]): Map<number, SongStatus | undefined> {
+    const previousStatuses = new Map<number, SongStatus | undefined>();
+    const nextStatuses = { ...statuses };
+    for (const index of downloadIndices) {
+      if (index >= 0 && index < songs.length) {
+        previousStatuses.set(index, statuses[index]);
+        nextStatuses[index] = { state: "queued" };
+      }
+    }
+    statuses = nextStatuses;
+    return previousStatuses;
+  }
+
+  function rollbackQueuedStatuses(previousStatuses: Map<number, SongStatus | undefined>) {
+    const nextStatuses = { ...statuses };
+    for (const [index, previousStatus] of previousStatuses) {
+      if (nextStatuses[index]?.state !== "queued") {
+        continue;
+      }
+      if (previousStatus) {
+        nextStatuses[index] = previousStatus;
+      } else {
+        delete nextStatuses[index];
+      }
+    }
+    statuses = nextStatuses;
+  }
+
   async function handleConfigChange(nextConfig: GuiConfig) {
     config = nextConfig;
     try {
@@ -213,7 +253,11 @@
     if (!api || !config) {
       return false;
     }
-    return api.save_config(config);
+    const saved = await api.save_config(config);
+    if (!saved) {
+      warnConfigSaveFailed();
+    }
+    return saved;
   }
 
   async function search() {
@@ -280,6 +324,7 @@
       .map((song) => song._gui_index)
       .filter((index): index is number => typeof index === "number");
     activeDownloadIndices = downloadIndices;
+    const previousStatuses = markQueued(downloadIndices);
 
     try {
       const taskId = await api.start_download(
@@ -290,17 +335,15 @@
         config.download_cover,
         config.output_dir
       );
-      currentTaskId = taskId;
-
-      const nextStatuses = { ...statuses };
-      for (const index of indices) {
-        if (index >= 0 && index < songs.length) {
-          nextStatuses[index] = { state: "queued" };
-        }
+      const normalizedTaskId = taskId.trim();
+      if (!normalizedTaskId) {
+        throw new Error("后端未返回下载任务 ID");
       }
-      statuses = nextStatuses;
+      currentTaskId = normalizedTaskId;
     } catch (error) {
+      currentTaskId = null;
       activeDownloadIndices = [];
+      rollbackQueuedStatuses(previousStatuses);
       addLog(`下载启动失败: ${errorMessage(error)}`, "error");
     }
   }
@@ -338,7 +381,7 @@
         return;
       }
       config = { ...config, output_dir: path };
-      await api.save_config(config);
+      await saveCurrentConfig();
       addLog(`下载目录已更新: ${path}`, "success");
     } catch (error) {
       addLog(`选择目录失败: ${errorMessage(error)}`, "error");
@@ -420,7 +463,7 @@
           <SearchBar
             {keyword}
             {searching}
-            disabled={!browserReady || initializing || currentTaskId !== null}
+            disabled={initializing || currentTaskId !== null}
             resultCount={songs.length}
             onKeyword={(value) => {
               keyword = value;
