@@ -334,7 +334,8 @@
         config.bitrate,
         config.download_lyric,
         config.download_cover,
-        config.output_dir
+        config.output_dir,
+        keyword.trim()
       );
       const normalizedTaskId = taskId.trim();
       if (!normalizedTaskId) {

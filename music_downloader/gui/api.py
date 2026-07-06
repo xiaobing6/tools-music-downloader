@@ -109,6 +109,7 @@ class MusicApi:
         download_lyric: bool,
         download_cover: bool,
         output_dir: str,
+        keyword: str = "",
     ) -> str:
         try:
             validated_source = Source(source)
@@ -126,6 +127,7 @@ class MusicApi:
             download_lyric=download_lyric,
             download_cover=download_cover,
             output_dir=output_dir,
+            keyword=keyword.strip(),
         )
 
     def cancel_download(self, task_id: str) -> None:
