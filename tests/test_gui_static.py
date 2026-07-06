@@ -71,3 +71,54 @@ def test_retry_failed_controls_exist_in_svelte_source() -> None:
     assert "async function retryFailed" in app
     assert "onclick={onRetryFailed}" in result_list
     assert "onRetryFailed={retryFailed}" in app
+
+
+def test_results_and_logs_share_resizable_bottom_layout() -> None:
+    app = (FRONTEND_SRC / "App.svelte").read_text(encoding="utf-8")
+    result_list = (FRONTEND_SRC / "lib/components/ResultList.svelte").read_text(encoding="utf-8")
+    empty_state = (FRONTEND_SRC / "lib/components/EmptyState.svelte").read_text(encoding="utf-8")
+    log_panel = (FRONTEND_SRC / "lib/components/LogPanel.svelte").read_text(encoding="utf-8")
+
+    assert "items-stretch" in app
+    assert 'class="min-h-0 flex-1 overflow-auto scrollbar-thin"' in app
+    assert 'class="flex h-full min-h-0 flex-col' in result_list
+    assert 'class="flex min-h-64 flex-1' in empty_state
+    assert "flex min-h-0 flex-1 flex-col" in log_panel
+    assert 'id="logContent" class="min-h-0 flex-1' in log_panel
+    assert "max-h-60" not in log_panel
+
+
+def test_gui_progress_stays_visible_after_completion() -> None:
+    app = (FRONTEND_SRC / "App.svelte").read_text(encoding="utf-8")
+    progress_panel = (FRONTEND_SRC / "lib/components/DownloadProgress.svelte").read_text(
+        encoding="utf-8"
+    )
+    types = (FRONTEND_SRC / "lib/types.ts").read_text(encoding="utf-8")
+
+    assert "hideProgressTimer" not in app
+    assert "setTimeout" not in app
+    assert "visible:" not in app
+    assert "visible: boolean" not in types
+    assert "{#if progress.visible}" not in progress_panel
+    assert '<section id="downloadPanel"' in progress_panel
+    assert "cancelable={downloadActive}" in app
+    assert "cancelable: boolean" in progress_panel
+    assert "{#if cancelable}" in progress_panel
+
+
+def test_gui_does_not_duplicate_backend_summary_logs() -> None:
+    app = (FRONTEND_SRC / "App.svelte").read_text(encoding="utf-8")
+    bridge = (ROOT / "music_downloader/gui/bridge.py").read_text(encoding="utf-8")
+
+    assert 'self._emit_log(f"找到 {len(results)} 首歌曲", "success")' in bridge
+    assert 'addLog(`找到 ${results.length} 首歌曲`, "success")' not in app
+    assert 'f"下载完成: 成功 {task.success} / 失败 {task.fail} / 跳过 {task.skip}"' in bridge
+    assert (
+        "`下载完成: 成功 ${detail.success} / 失败 ${detail.fail} / 跳过 ${detail.skip}`" not in app
+    )
+    assert 'self._log("浏览器就绪，Cloudflare 验证通过", "success")' in bridge
+    assert 'self._log("正在启动浏览器...", "info")' in bridge
+    assert 'self._log("Cloudflare 验证未通过", "error")' in bridge
+    assert 'addLog("正在初始化浏览器...", "info")' not in app
+    assert 'addLog("浏览器已就绪", "success")' not in app
+    assert 'addLog("浏览器初始化失败，请检查 Chrome 和网络环境", "error")' not in app
