@@ -13,13 +13,23 @@ from music_downloader.core.config import (
     DEFAULT_KEYWORD,
     DEFAULT_NUMBER,
     DEFAULT_SOURCE,
+    SEARCH_TYPE_MAP,
+    VALID_BITRATES,
+    VALID_FORMATS,
+    VALID_SOURCES,
 )
 from music_downloader.infrastructure.environment import check_environment
+
+
+def _value_list(values: list[str] | tuple[str, ...]) -> str:
+    return " / ".join(values)
+
 
 app = typer.Typer(
     add_completion=False,
     context_settings={"help_option_names": ["-h", "--help"]},
     help="music.gdstudio.org 音乐搜索与下载工具",
+    rich_markup_mode=None,
 )
 
 
@@ -27,14 +37,26 @@ app = typer.Typer(
 def main_command(
     ctx: typer.Context,
     keyword: Annotated[str, typer.Option("-k", "--keyword", help="搜索关键词")] = DEFAULT_KEYWORD,
-    source: Annotated[str, typer.Option("-s", "--source", help="音乐源")] = DEFAULT_SOURCE,
+    source: Annotated[
+        str,
+        typer.Option("-s", "--source", help=f"音乐源，可选: {_value_list(VALID_SOURCES)}"),
+    ] = DEFAULT_SOURCE,
     number: Annotated[
         int, typer.Option("-n", "--number", min=1, help="获取结果总数")
     ] = DEFAULT_NUMBER,
-    search_type: Annotated[str, typer.Option("-t", "--type", help="搜索类型")] = "song",
-    output_dir: Annotated[str, typer.Option("-o", "--output", help="下载目录")] = "",
-    output_format: Annotated[str, typer.Option("-f", "--format", help="输出格式")] = "table",
-    bitrate: Annotated[str, typer.Option("-b", "--bitrate", help="音质选择")] = DEFAULT_BITRATE,
+    search_type: Annotated[
+        str,
+        typer.Option("-t", "--type", help=f"搜索类型，可选: {_value_list(tuple(SEARCH_TYPE_MAP))}"),
+    ] = "song",
+    output_dir: Annotated[
+        str, typer.Option("-o", "--output", help="下载目录，默认使用项目 downloads/")
+    ] = "",
+    output_format: Annotated[
+        str, typer.Option("-f", "--format", help=f"输出格式，可选: {_value_list(VALID_FORMATS)}")
+    ] = "table",
+    bitrate: Annotated[
+        str, typer.Option("-b", "--bitrate", help=f"音质选择，可选: {_value_list(VALID_BITRATES)}")
+    ] = DEFAULT_BITRATE,
     search_only: Annotated[bool, typer.Option("--search-only", help="只搜索不下载")] = False,
     select: Annotated[bool, typer.Option("--select", help="搜索后选择要下载的歌曲")] = False,
     no_lyric: Annotated[bool, typer.Option("--no-lyric", help="不下载歌词")] = False,
@@ -45,7 +67,10 @@ def main_command(
     interactive: Annotated[bool, typer.Option("-i", "--interactive", help="交互模式")] = False,
     gui: Annotated[bool, typer.Option("--gui", help="启动桌面图形界面")] = False,
     user_data_dir: Annotated[
-        str | None, typer.Option("--user-data-dir", help="自定义 Chrome 用户数据目录")
+        str | None,
+        typer.Option(
+            "--user-data-dir", help="自定义 Chrome 用户数据目录，默认使用项目 .chrome-profile/"
+        ),
     ] = None,
 ) -> None:
     if check_env:
