@@ -94,6 +94,7 @@ $commonArgs = @(
     "--windows-file-version=$ProjectVersion",
     "--windows-company-name=tools-music-downloader",
     "--windows-file-description=Music downloader CLI and GUI tool",
+    "--windows-console-mode=hide",
     "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static"
 )
 if ($isCi) {

@@ -32,8 +32,8 @@ textarea {
 
 .app-shell {
   height: 100vh;
-  min-width: 1200px;
-  min-height: 750px;
+  min-width: 1266px;
+  min-height: 1013px;
 }
 
 .scrollbar-thin::-webkit-scrollbar {

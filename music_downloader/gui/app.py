@@ -10,8 +10,8 @@ import os
 import sys
 from pathlib import Path
 
-DEFAULT_WINDOW_SIZE = (1280, 800)
-MIN_WINDOW_SIZE = (1200, 750)
+DEFAULT_WINDOW_SIZE = (1266, 1013)
+MIN_WINDOW_SIZE = (1266, 1013)
 
 
 def _candidate_static_dirs(

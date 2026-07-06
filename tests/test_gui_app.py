@@ -51,8 +51,8 @@ def test_get_static_dir_returns_existing_candidate(tmp_path: Path) -> None:
 
 
 def test_window_size_constants_match_designed_minimum() -> None:
-    assert app.DEFAULT_WINDOW_SIZE == (1280, 800)
-    assert app.MIN_WINDOW_SIZE == (1200, 750)
+    assert app.DEFAULT_WINDOW_SIZE == (1266, 1013)
+    assert app.MIN_WINDOW_SIZE == (1266, 1013)
 
 
 def test_run_gui_uses_default_window_size(monkeypatch, tmp_path: Path) -> None:
@@ -84,16 +84,16 @@ def test_run_gui_uses_default_window_size(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         "music_downloader.gui.settings.load_config",
         lambda: {
-            "window_width": 1280,
-            "window_height": 800,
+            "window_width": 1266,
+            "window_height": 1013,
         },
     )
 
     app.run_gui()
 
-    assert captured["width"] == 1280
-    assert captured["height"] == 800
-    assert captured["min_size"] == (1200, 750)
+    assert captured["width"] == 1266
+    assert captured["height"] == 1013
+    assert captured["min_size"] == (1266, 1013)
 
 
 def test_run_gui_clamps_window_size_to_minimum(monkeypatch, tmp_path: Path) -> None:
@@ -129,6 +129,6 @@ def test_run_gui_clamps_window_size_to_minimum(monkeypatch, tmp_path: Path) -> N
 
     app.run_gui()
 
-    assert captured["width"] == 1200
-    assert captured["height"] == 750
-    assert captured["min_size"] == (1200, 750)
+    assert captured["width"] == 1266
+    assert captured["height"] == 1013
+    assert captured["min_size"] == (1266, 1013)

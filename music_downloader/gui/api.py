@@ -6,6 +6,8 @@ import json
 import os
 import subprocess
 import sys
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -135,7 +137,8 @@ class MusicApi:
             os.makedirs(target, exist_ok=True)
         try:
             if sys.platform == "win32":
-                os.startfile(target)  # type: ignore[attr-defined]
+                subprocess.Popen(["explorer", str(target)])
+                _center_explorer_window()
             elif sys.platform == "darwin":
                 subprocess.Popen(["open", target])
             else:
@@ -152,6 +155,7 @@ class MusicApi:
                     dialog_type = webview.FileDialog.FOLDER
                 except AttributeError:
                     dialog_type = webview.FOLDER_DIALOG
+                _start_center_folder_dialog(self._window)
                 paths = self._window.create_file_dialog(dialog_type=dialog_type)
                 if isinstance(paths, str):
                     return paths
@@ -165,10 +169,13 @@ class MusicApi:
             from tkinter import Tk, filedialog
 
             root = Tk()
-            root.withdraw()
-            root.attributes("-topmost", True)
-            path = filedialog.askdirectory(title="选择下载目录")
-            root.destroy()
+            try:
+                _center_tk_root(root)
+                root.withdraw()
+                root.attributes("-topmost", True)
+                path = filedialog.askdirectory(title="选择下载目录", parent=root)
+            finally:
+                root.destroy()
             return path if path else ""
         except Exception:
             return ""
@@ -194,3 +201,224 @@ _SOURCE_LABELS: dict[str, str] = {
     "joox": "Joox",
     "apple": "Apple Music",
 }
+
+_FOLDER_DIALOG_TITLE_PARTS = (
+    "\u9009\u62e9\u6587\u4ef6\u5939",
+    "Select Folder",
+    "Browse For Folder",
+)
+_FOLDER_DIALOG_CLASSES = {"#32770", "CabinetWClass"}
+
+
+def _center_tk_root(root: Any) -> None:
+    root.update_idletasks()
+    width = 1
+    height = 1
+    x = max(0, (int(root.winfo_screenwidth()) - width) // 2)
+    y = max(0, (int(root.winfo_screenheight()) - height) // 2)
+    root.geometry(f"{width}x{height}+{x}+{y}")
+
+
+def _start_center_folder_dialog(parent_window: Any | None) -> None:
+    if sys.platform != "win32":
+        return
+
+    thread = threading.Thread(
+        target=_center_folder_dialog_worker,
+        args=(parent_window,),
+        daemon=True,
+    )
+    thread.start()
+
+
+def _center_folder_dialog_worker(parent_window: Any | None, timeout: float = 2.0) -> None:
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        parent_rect = _window_rect_from_pywebview(parent_window)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            hwnd = _find_window_by_title_and_class(
+                user32,
+                ctypes,
+                wintypes,
+                _FOLDER_DIALOG_TITLE_PARTS,
+                _FOLDER_DIALOG_CLASSES,
+            )
+            if hwnd is not None and _center_window(
+                hwnd,
+                user32,
+                ctypes,
+                wintypes,
+                center_area=parent_rect,
+            ):
+                return
+            time.sleep(0.05)
+    except Exception:
+        return
+
+
+def _window_rect_from_pywebview(window: Any | None) -> tuple[int, int, int, int] | None:
+    if window is None:
+        return None
+
+    try:
+        x = int(window.x)
+        y = int(window.y)
+        width = int(window.width)
+        height = int(window.height)
+    except Exception:
+        return None
+
+    if width <= 0 or height <= 0:
+        return None
+    return (x, y, x + width, y + height)
+
+
+def _center_rect_in_work_area(
+    window_rect: tuple[int, int, int, int],
+    work_area: tuple[int, int, int, int],
+) -> tuple[int, int]:
+    window_left, window_top, window_right, window_bottom = window_rect
+    work_left, work_top, work_right, work_bottom = work_area
+    window_width = max(1, window_right - window_left)
+    window_height = max(1, window_bottom - window_top)
+    work_width = max(1, work_right - work_left)
+    work_height = max(1, work_bottom - work_top)
+
+    x = work_left + max(0, (work_width - window_width) // 2)
+    y = work_top + max(0, (work_height - window_height) // 2)
+    return x, y
+
+
+def _center_explorer_window(timeout: float = 1.5) -> None:
+    if sys.platform != "win32":
+        return
+
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            hwnd = _find_window_by_class(
+                user32,
+                ctypes,
+                wintypes,
+                {"CabinetWClass", "ExploreWClass"},
+            )
+            if hwnd is not None and _center_window(hwnd, user32, ctypes, wintypes):
+                return
+            time.sleep(0.05)
+    except Exception:
+        return
+
+
+def _find_window_by_class(
+    user32: Any,
+    ctypes_module: Any,
+    wintypes_module: Any,
+    class_names: set[str],
+) -> int | None:
+    matches: list[int] = []
+    enum_windows_proc = ctypes_module.WINFUNCTYPE(
+        wintypes_module.BOOL,
+        wintypes_module.HWND,
+        wintypes_module.LPARAM,
+    )
+
+    def callback(hwnd: int, _lparam: int) -> bool:
+        if not user32.IsWindowVisible(hwnd):
+            return True
+        class_name = ctypes_module.create_unicode_buffer(256)
+        user32.GetClassNameW(hwnd, class_name, len(class_name))
+        if class_name.value in class_names:
+            matches.append(hwnd)
+            return False
+        return True
+
+    user32.EnumWindows(enum_windows_proc(callback), 0)
+    return matches[0] if matches else None
+
+
+def _find_window_by_title_and_class(
+    user32: Any,
+    ctypes_module: Any,
+    wintypes_module: Any,
+    title_parts: tuple[str, ...],
+    class_names: set[str],
+) -> int | None:
+    matches: list[int] = []
+    enum_windows_proc = ctypes_module.WINFUNCTYPE(
+        wintypes_module.BOOL,
+        wintypes_module.HWND,
+        wintypes_module.LPARAM,
+    )
+
+    def callback(hwnd: int, _lparam: int) -> bool:
+        if not user32.IsWindowVisible(hwnd):
+            return True
+
+        class_name = ctypes_module.create_unicode_buffer(256)
+        user32.GetClassNameW(hwnd, class_name, len(class_name))
+        if class_names and class_name.value not in class_names:
+            return True
+
+        title_length = max(0, int(user32.GetWindowTextLengthW(hwnd)))
+        title = ctypes_module.create_unicode_buffer(title_length + 1)
+        user32.GetWindowTextW(hwnd, title, len(title))
+        if any(part in title.value for part in title_parts):
+            matches.append(hwnd)
+            return False
+        return True
+
+    user32.EnumWindows(enum_windows_proc(callback), 0)
+    return matches[0] if matches else None
+
+
+def _center_window(
+    hwnd: int,
+    user32: Any,
+    ctypes_module: Any,
+    wintypes_module: Any,
+    center_area: tuple[int, int, int, int] | None = None,
+) -> bool:
+    rect = wintypes_module.RECT()
+    if not user32.GetWindowRect(hwnd, ctypes_module.byref(rect)):
+        return False
+
+    work_area = wintypes_module.RECT()
+    spi_get_work_area = 0x0030
+    if user32.SystemParametersInfoW(spi_get_work_area, 0, ctypes_module.byref(work_area), 0):
+        work_rect = (work_area.left, work_area.top, work_area.right, work_area.bottom)
+    else:
+        work_rect = (0, 0, user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))
+
+    target_rect = center_area or work_rect
+    x, y = _center_rect_in_work_area(
+        (rect.left, rect.top, rect.right, rect.bottom),
+        target_rect,
+    )
+    window_width = max(1, rect.right - rect.left)
+    window_height = max(1, rect.bottom - rect.top)
+    work_left, work_top, work_right, work_bottom = work_rect
+    x = min(max(x, work_left), max(work_left, work_right - window_width))
+    y = min(max(y, work_top), max(work_top, work_bottom - window_height))
+
+    swp_nosize = 0x0001
+    swp_nozorder = 0x0004
+    swp_noactivate = 0x0010
+    return bool(
+        user32.SetWindowPos(
+            hwnd,
+            0,
+            x,
+            y,
+            0,
+            0,
+            swp_nosize | swp_nozorder | swp_noactivate,
+        )
+    )
