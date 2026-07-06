@@ -9,7 +9,9 @@ def test_build_script_runs_frontend_build_before_nuitka() -> None:
     script = (ROOT / "scripts/build_exe.ps1").read_text(encoding="utf-8")
 
     assert '$frontendDir = Join-Path $ProjectRoot "music_downloader/gui/frontend"' in script
-    assert '$staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"' in script
+    assert (
+        '$staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"' in script
+    )
     assert "Frontend source directory is missing" in script
     assert "Get-Command npm.cmd" in script
     assert "npm.cmd was not found" in script
