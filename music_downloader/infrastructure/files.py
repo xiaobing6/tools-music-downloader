@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from music_downloader.domain.enums import Bitrate
-from music_downloader.domain.formatting import format_duration, get_artist_str
+from music_downloader.domain.formatting import get_artist_str
 from music_downloader.domain.models import Song
 
 WINDOWS_RESERVED_NAMES = {
@@ -87,7 +87,7 @@ def normalize_song_dict(song: dict[str, Any]) -> dict[str, str]:
         "name": model.display_name,
         "artist": get_artist_str(song),
         "album": str(song.get("album", "未知")),
-        "duration": format_duration(song.get("duration", 0)),
+        "duration": model.duration_text,
         "source": str(song.get("source", "未知")),
         "id": model.id,
         "url_id": model.url_id,

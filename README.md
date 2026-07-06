@@ -16,11 +16,14 @@
 
 - Python 3.10+
 - 系统已安装 Google Chrome
+- 如需从源码重建 GUI 前端或打包 exe，需要安装 Node.js 和 npm
 - Windows / macOS / Linux
 
 运行依赖：`playwright`、`mutagen`、`rich`、`typer`、`pydantic`、`pywebview`。
 
 开发依赖：`ruff`、`mypy`、`pytest`。
+
+GUI 前端使用 Vite、Svelte、TypeScript、Flowbite Svelte、Tailwind CSS 和 `@lucide/svelte`，构建产物输出到 `music_downloader/gui/static/`，由 pywebview 加载。
 
 ## 安装
 
@@ -51,6 +54,8 @@ python music_download.py --gui
 ```
 
 GUI 默认下载根目录为项目目录下的 `downloads/`。中途可以临时修改来源、搜索类型、数量、音质、歌词、封面和下载目录，但下次启动仍恢复默认值。
+
+GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1200x750`。
 
 ## CLI 使用
 
@@ -100,7 +105,7 @@ music_downloader/
   domain/                         # Pydantic 模型、枚举、格式化、业务异常
   infrastructure/                 # 文件规则、环境检查、浏览器、GdStudio API、下载、元数据
   services/                       # CLI 和 GUI 共用的搜索/下载服务
-  gui/                            # pywebview 桌面 GUI 与静态 HTML/CSS/JS
+  gui/                            # pywebview 桌面 GUI、Vite/Svelte 前端源码与静态构建产物
 scripts/build_exe.ps1             # Windows Nuitka 打包脚本
 tests/                            # pytest 测试
 ```
@@ -111,6 +116,13 @@ tests/                            # pytest 测试
 
 ```bash
 pip install -r requirements-build.txt
+```
+
+如需单独重建 GUI 静态资源：
+
+```powershell
+npm.cmd --prefix music_downloader/gui/frontend install
+npm.cmd --prefix music_downloader/gui/frontend run build
 ```
 
 生成单文件 exe：
@@ -124,6 +136,8 @@ pip install -r requirements-build.txt
 ```powershell
 .\scripts\build_exe.ps1 -SkipInstall
 ```
+
+`-SkipInstall` 会跳过 Python 和前端依赖安装，但仍会执行前端构建；因此需要已经存在 `music_downloader/gui/frontend/node_modules/`。
 
 输出文件：
 
@@ -140,7 +154,7 @@ dist/music_download.exe
 .\dist\music_download.exe --check-env
 ```
 
-GUI 静态资源会由构建脚本打包进 exe；Chrome 不会被打包，运行时仍使用用户系统已安装的 Google Chrome。
+构建脚本会在 Nuitka 打包前自动运行 Vite 前端构建，并继续把 `music_downloader/gui/static/` 打包进 exe；`node_modules/` 只用于前端构建，不会被打包进 exe。Chrome 不会被打包，运行时仍使用用户系统已安装的 Google Chrome。
 
 ## 开发检查
 

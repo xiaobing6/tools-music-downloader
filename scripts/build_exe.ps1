@@ -29,7 +29,36 @@ if (-not $SkipInstall) {
         throw "Failed to install build dependencies (exit $LASTEXITCODE)"
     }
 } else {
-    Write-Host "Skipping pip install (SkipInstall mode). Using already-installed tools." -ForegroundColor Yellow
+    Write-Host "Skipping dependency installs (SkipInstall mode). Using already-installed tools." -ForegroundColor Yellow
+}
+
+$frontendDir = Join-Path $ProjectRoot "music_downloader/gui/frontend"
+$staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"
+if (-not (Test-Path $frontendDir)) {
+    throw "Frontend source directory is missing: $frontendDir"
+}
+
+$npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
+if (-not $npmCommand) {
+    throw "npm.cmd was not found. Install Node.js before building the GUI exe."
+}
+
+if (-not $SkipInstall) {
+    npm.cmd --prefix $frontendDir install
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to install frontend dependencies (exit $LASTEXITCODE)"
+    }
+} elseif (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
+    throw "Frontend dependencies are missing. Run npm.cmd --prefix music_downloader/gui/frontend install, or build without -SkipInstall."
+}
+
+npm.cmd --prefix $frontendDir run build
+if ($LASTEXITCODE -ne 0) {
+    throw "Frontend build failed (exit $LASTEXITCODE)"
+}
+
+if (-not (Test-Path $staticIndex)) {
+    throw "Frontend build did not produce expected artifact: $staticIndex"
 }
 
 $env:NUITKA_CACHE_DIR = Join-Path $ProjectRoot ".nuitka-cache"
@@ -50,6 +79,11 @@ if (Test-Path $distDir) {
 $isCi = ($env:CI -eq 'true') -or ($env:GITHUB_ACTIONS -eq 'true')
 
 $commonArgs = @(
+    "--disable-plugin=pywebview",
+    "--include-module=webview.platforms.winforms",
+    "--include-module=webview.platforms.win32",
+    "--include-module=webview.platforms.edgechromium",
+    "--include-module=webview.platforms.mshtml",
     "--playwright-include-browser=none",
     "--nofollow-import-to=playwright.async_api",
     "--output-dir=dist",

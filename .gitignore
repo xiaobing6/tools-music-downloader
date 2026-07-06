@@ -15,8 +15,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -118,6 +118,9 @@ ipython_config.py
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
+
+# Frontend dependencies
+music_downloader/gui/frontend/node_modules/
 
 # Celery stuff
 celerybeat-schedule

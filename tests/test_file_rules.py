@@ -52,5 +52,11 @@ def test_normalize_song_dict_keeps_display_shape() -> None:
     assert data["duration"] == "1:01"
 
 
+def test_normalize_song_dict_handles_placeholder_duration() -> None:
+    data = normalize_song_dict({"id": "1", "name": "Song", "artist": ["A"], "duration": "--:--"})
+
+    assert data["duration"] == "--:--"
+
+
 def test_safe_filename_handles_windows_reserved_name() -> None:
     assert safe_filename("CON.mp3") == "_CON.mp3"
