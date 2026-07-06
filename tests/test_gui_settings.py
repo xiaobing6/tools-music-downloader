@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+from types import ModuleType
+
 from music_downloader.gui.api import MusicApi
 from music_downloader.gui.settings import DEFAULT_CONFIG, load_config, save_config
 
@@ -40,3 +43,37 @@ def test_gui_download_rejects_invalid_options_before_bridge() -> None:
     api._bridge = _FailingBridge()  # type: ignore[assignment]
 
     assert api.start_download([], "netease", "invalid", True, True, "downloads") == ""
+
+
+def test_select_directory_uses_pywebview_folder_dialog(monkeypatch) -> None:
+    fake_webview = ModuleType("webview")
+    fake_tkinter = ModuleType("tkinter")
+
+    class FakeFileDialog:
+        FOLDER = 20
+
+    class FakeWindow:
+        def __init__(self) -> None:
+            self.calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+
+        def create_file_dialog(self, *args: object, **kwargs: object) -> tuple[str]:
+            self.calls.append((args, kwargs))
+            return (r"C:\Music",)
+
+    def failing_tk() -> object:
+        raise AssertionError("select_directory should use pywebview before tkinter")
+
+    fake_webview.FileDialog = FakeFileDialog  # type: ignore[attr-defined]
+    fake_tkinter.Tk = failing_tk  # type: ignore[attr-defined]
+    fake_tkinter.filedialog = object()  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "webview", fake_webview)
+    monkeypatch.setitem(sys.modules, "tkinter", fake_tkinter)
+
+    api = MusicApi()
+    window = FakeWindow()
+    api.set_window(window)
+
+    assert api.select_directory() == r"C:\Music"
+    args, kwargs = window.calls[0]
+    dialog_type = kwargs.get("dialog_type", args[0] if args else None)
+    assert dialog_type == FakeFileDialog.FOLDER

@@ -23,9 +23,13 @@
     warn: "yellow",
     error: "red"
   };
+
+  const expandedPanelClass =
+    "flex min-h-0 flex-1 flex-col rounded-lg border border-slate-200 bg-white";
+  const collapsedPanelClass = "shrink-0 rounded-lg border border-slate-200 bg-white";
 </script>
 
-<section class="rounded-lg border border-slate-200 bg-white">
+<section class={collapsed ? collapsedPanelClass : expandedPanelClass}>
   <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
     <div>
       <h2 class="text-sm font-semibold text-slate-950">运行日志</h2>
@@ -42,7 +46,7 @@
   </div>
 
   {#if !collapsed}
-    <div id="logContent" class="max-h-60 space-y-2 overflow-auto p-4">
+    <div id="logContent" class="min-h-0 flex-1 space-y-2 overflow-auto p-4 scrollbar-thin">
       {#each logs as log (log.id)}
         <div class="grid grid-cols-[72px_auto_1fr] items-start gap-2 text-xs">
           <span class="pt-0.5 text-slate-400">{log.time}</span>

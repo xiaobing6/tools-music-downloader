@@ -45,14 +45,12 @@
   let activeDownloadIndices = $state<number[]>([]);
   let downloadStarting = $state(false);
   let progress = $state<DownloadProgressState>({
-    visible: false,
     current: 0,
     total: 0,
     label: "准备下载..."
   });
 
   let nextLogId = 1;
-  let hideProgressTimer: ReturnType<typeof setTimeout> | null = null;
   let activePreviousStatuses = new Map<number, SongStatus | undefined>();
   const MAX_LOG_ENTRIES = 500;
 
@@ -93,15 +91,8 @@
       config = await pyApi.get_config();
 
       loadingText = "正在初始化浏览器...";
-      addLog("正在初始化浏览器...", "info");
       const result = await pyApi.init_browser();
       browserReady = result.ready;
-
-      if (result.ready) {
-        addLog("浏览器已就绪", "success");
-      } else {
-        addLog("浏览器初始化失败，请检查 Chrome 和网络环境", "error");
-      }
     } catch (error) {
       browserReady = false;
       addLog(`初始化失败: ${errorMessage(error)}`, "error");
@@ -129,9 +120,7 @@
       }
       currentTaskId = taskId;
       downloadStarting = false;
-      clearHideProgressTimer();
       progress = {
-        visible: true,
         current: 0,
         total: detail.total,
         label: "准备下载..."
@@ -146,7 +135,6 @@
         [activeIndex]: { state: "downloading" }
       };
       progress = {
-        visible: true,
         current: detail.current,
         total: detail.total,
         label: detail.song_name ? `下载中: ${detail.song_name}` : "下载中..."
@@ -174,7 +162,6 @@
       failedIndices = nextFailed;
 
       progress = {
-        visible: true,
         current: detail.current,
         total: detail.total,
         label: progress.label
@@ -185,28 +172,11 @@
     const total = detail.success + detail.fail + detail.skip;
     restoreUnfinishedActiveStatuses();
     progress = {
-      visible: true,
       current: total,
       total,
       label: "下载完成"
     };
     clearActiveDownloadState();
-    addLog(
-      `下载完成: 成功 ${detail.success} / 失败 ${detail.fail} / 跳过 ${detail.skip}`,
-      detail.fail > 0 ? "warn" : "success"
-    );
-    clearHideProgressTimer();
-    hideProgressTimer = setTimeout(() => {
-      progress = { ...progress, visible: false };
-      hideProgressTimer = null;
-    }, 2000);
-  }
-
-  function clearHideProgressTimer() {
-    if (hideProgressTimer) {
-      clearTimeout(hideProgressTimer);
-      hideProgressTimer = null;
-    }
   }
 
   function shutdownApi() {
@@ -307,7 +277,6 @@
       selectedIndices = new Set();
       failedIndices = new Set();
       statuses = {};
-      addLog(`找到 ${results.length} 首歌曲`, "success");
     } catch (error) {
       addLog(`搜索失败: ${errorMessage(error)}`, "error");
     } finally {
@@ -466,7 +435,6 @@
     return () => {
       removeLogListener();
       removeProgressListener();
-      clearHideProgressTimer();
       shutdownApi();
     };
   });
@@ -492,7 +460,7 @@
         onEnvironmentCheck={checkEnvironment}
       />
 
-      <main class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-4">
+      <main class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] items-stretch gap-4">
         <section class="flex min-h-0 flex-col gap-4">
           <SearchBar
             {keyword}
@@ -505,7 +473,7 @@
             onSearch={search}
           />
 
-          <div class="min-h-0 overflow-auto scrollbar-thin">
+          <div class="min-h-0 flex-1 overflow-auto scrollbar-thin">
             <ResultList
               {songs}
               {selectedIndices}
@@ -522,7 +490,7 @@
         </section>
 
         <aside class="flex min-h-0 flex-col gap-4">
-          <DownloadProgress {progress} onCancel={cancelDownload} />
+          <DownloadProgress {progress} cancelable={downloadActive} onCancel={cancelDownload} />
           <LogPanel
             {logs}
             collapsed={logCollapsed}

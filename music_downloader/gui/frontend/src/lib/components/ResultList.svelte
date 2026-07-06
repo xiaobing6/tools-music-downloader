@@ -78,8 +78,8 @@
 
 </script>
 
-<section class="rounded-lg border border-slate-200 bg-white">
-  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+<section class="flex h-full min-h-0 flex-col rounded-lg border border-slate-200 bg-white">
+  <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
     <div>
       <h2 class="text-base font-semibold text-slate-950">搜索结果</h2>
       <p class="mt-0.5 text-xs text-slate-500">已选择 {selectedCount} 首</p>
@@ -131,7 +131,7 @@
   {#if songs.length === 0}
     <EmptyState />
   {:else}
-    <div class="divide-y divide-slate-100">
+    <div class="min-h-0 flex-1 divide-y divide-slate-100">
       {#each songs as song, index}
         {@const status = statusFor(index)}
         <label

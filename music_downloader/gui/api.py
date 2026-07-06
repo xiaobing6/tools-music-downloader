@@ -144,6 +144,23 @@ class MusicApi:
             pass
 
     def select_directory(self) -> str:
+        if self._window is not None:
+            try:
+                import webview
+
+                try:
+                    dialog_type = webview.FileDialog.FOLDER
+                except AttributeError:
+                    dialog_type = webview.FOLDER_DIALOG
+                paths = self._window.create_file_dialog(dialog_type=dialog_type)
+                if isinstance(paths, str):
+                    return paths
+                if paths:
+                    return str(paths[0])
+                return ""
+            except Exception:
+                pass
+
         try:
             from tkinter import Tk, filedialog
 

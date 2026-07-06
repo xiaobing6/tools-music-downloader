@@ -96,7 +96,6 @@ export interface SongStatus {
 }
 
 export interface DownloadProgressState {
-  visible: boolean;
   current: number;
   total: number;
   label: string;

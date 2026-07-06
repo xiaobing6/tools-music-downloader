@@ -5,22 +5,23 @@
 
   interface Props {
     progress: DownloadProgressState;
+    cancelable: boolean;
     onCancel: () => void;
   }
 
-  let { progress, onCancel }: Props = $props();
+  let { progress, cancelable, onCancel }: Props = $props();
   let percent = $derived(progressPercent(progress.current, progress.total));
 </script>
 
-{#if progress.visible}
-  <section id="downloadPanel" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-    <div class="mb-3 flex items-center justify-between gap-3">
-      <div>
-        <p id="progressLabel" class="text-sm font-semibold text-blue-950">{progress.label}</p>
-        <p id="progressText" class="mt-0.5 text-xs text-blue-700">
-          {progress.current} / {progress.total}（{percent}%）
-        </p>
-      </div>
+<section id="downloadPanel" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+  <div class="mb-3 flex items-center justify-between gap-3">
+    <div>
+      <p id="progressLabel" class="text-sm font-semibold text-blue-950">{progress.label}</p>
+      <p id="progressText" class="mt-0.5 text-xs text-blue-700">
+        {progress.current} / {progress.total}（{percent}%）
+      </p>
+    </div>
+    {#if cancelable}
       <button
         id="cancelDownloadBtn"
         class="rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-800 hover:bg-blue-100"
@@ -29,7 +30,7 @@
       >
         取消
       </button>
-    </div>
-    <Progressbar progress={percent} color="blue" size="h-2.5" />
-  </section>
-{/if}
+    {/if}
+  </div>
+  <Progressbar progress={percent} color="blue" size="h-2.5" />
+</section>

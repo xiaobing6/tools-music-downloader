@@ -189,6 +189,11 @@ def make_run_options(args: argparse.Namespace, script_dir: str) -> RunOptions:
     )
 
 
+def _source_runtime_root(module_file: str | os.PathLike[str]) -> Path:
+    """Return the project root when running from source."""
+    return Path(module_file).resolve().parents[2]
+
+
 def do_search_and_download(
     page: Any,
     context: Any,
@@ -505,8 +510,7 @@ def run_with_browser(args: argparse.Namespace) -> int:
         # Nuitka 编译环境：sys.argv[0] 是用户执行的真实 EXE 路径
         script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     else:
-        # 源码环境：__file__ 是 cli.py 的路径，需要向上两层到项目根目录
-        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        script_dir = str(_source_runtime_root(__file__))
     user_data_dir = _resolve_user_data_dir(args, script_dir)
     os.makedirs(user_data_dir, exist_ok=True)
     console.print(f"  ✓ Chrome 用户数据目录: {user_data_dir}", style="dim")

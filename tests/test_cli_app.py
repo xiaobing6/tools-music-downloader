@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from typer.testing import CliRunner
 
+from music_downloader.cli import workflow
 from music_downloader.cli.app import app
 from music_downloader.cli.interactive import parse_interactive_command
 from music_downloader.core.config import (
@@ -57,3 +60,10 @@ def test_interactive_parser_keeps_existing_commands() -> None:
     assert parse_interactive_command("s netease").kind == "set_source"
     assert parse_interactive_command("n 10").kind == "set_number"
     assert parse_interactive_command("so").kind == "search_only"
+
+
+def test_source_runtime_root_matches_entrypoint_directory() -> None:
+    root = workflow._source_runtime_root(workflow.__file__)
+
+    assert root == Path(__file__).resolve().parents[1]
+    assert (root / "music_download.py").is_file()
