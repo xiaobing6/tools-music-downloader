@@ -159,9 +159,6 @@ class MusicApi:
     def check_environment(self) -> list[dict[str, Any]]:
         return self._bridge.check_environment()
 
-    def get_history(self) -> list[dict[str, Any]]:
-        return self._bridge.get_history()
-
     def shutdown(self) -> None:
         self._bridge.shutdown()
 

@@ -104,7 +104,7 @@ music_downloader/
   cli/                            # Typer CLI 入口、命令工作流、选择解析、输出
   domain/                         # Pydantic 模型、枚举、格式化、业务异常
   infrastructure/                 # 文件规则、环境检查、浏览器、GdStudio API、下载、元数据
-  services/                       # CLI 和 GUI 共用的搜索/下载服务
+  services/                       # CLI 和 GUI 共用的搜索服务
   gui/                            # pywebview 桌面 GUI、Vite/Svelte 前端源码与静态构建产物
 scripts/build_exe.ps1             # Windows Nuitka 打包脚本
 tests/                            # pytest 测试

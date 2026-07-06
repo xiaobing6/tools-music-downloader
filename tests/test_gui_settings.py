@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
-from music_downloader.gui import settings
 from music_downloader.gui.api import MusicApi
 from music_downloader.gui.settings import DEFAULT_CONFIG, load_config, save_config
 
@@ -23,12 +20,7 @@ def test_load_config_returns_defaults_each_time() -> None:
     assert config["output_dir"].endswith("downloads")
 
 
-def test_save_config_does_not_persist_user_choices(
-    tmp_path: Path,
-    monkeypatch,
-) -> None:
-    monkeypatch.setattr(settings, "_get_config_path", lambda: tmp_path / "config.json")
-
+def test_save_config_does_not_persist_user_choices() -> None:
     save_config({"source": "spotify", "number": 5})
     config = load_config()
 

@@ -42,7 +42,6 @@ from music_downloader.core.console import console
 from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
 from music_downloader.domain.models import DownloadOptions, SearchOptions
 from music_downloader.infrastructure.downloader import download_song
-from music_downloader.infrastructure.environment import check_environment
 from music_downloader.infrastructure.files import safe_filename
 from music_downloader.infrastructure.gdstudio import GdStudioClient, wait_for_cloudflare
 from music_downloader.services.search import SearchService
@@ -580,22 +579,3 @@ def run_with_browser(args: argparse.Namespace) -> int:
                 context.close()
 
     return 0
-
-
-def workflow_main(argv: Sequence[str] | None = None) -> None:
-    """程序入口：解析参数后执行环境检查、GUI 或 CLI 主流程。"""
-    args = parse_args(argv)
-    if args.check_env:
-        sys.exit(check_environment())
-
-    # GUI 模式：显式 --gui 标志，或无任何命令行参数时（双击 exe/直接运行脚本）
-    is_gui_mode = args.gui or (argv is None and len(sys.argv) <= 1)
-    if is_gui_mode:
-        from music_downloader.gui.app import run_gui
-
-        run_gui()
-        return
-
-    return_code = run_with_browser(args)
-    if return_code:
-        sys.exit(return_code)

@@ -2,46 +2,24 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from music_downloader.domain.enums import Bitrate
-from music_downloader.domain.models import Song
-from music_downloader.infrastructure.files import (
-    build_output_path,
-    default_download_root,
-    normalize_song_dict,
-    output_exists,
-    safe_filename,
-)
-
-
-def test_default_download_root_is_project_downloads() -> None:
-    root = default_download_root()
-
-    assert root.name == "downloads"
-    assert (root.parent / "music_download.py").exists()
+from music_downloader.infrastructure.downloader import build_output_path
+from music_downloader.infrastructure.files import normalize_song_dict, safe_filename
 
 
 def test_build_output_path_matches_existing_filename_rule(tmp_path: Path) -> None:
-    song = Song(id="42", name="Song:Name", artist="Artist", album="Album")
+    song = {"id": "42", "name": "Song:Name", "artist": "Artist", "album": "Album"}
 
-    path = build_output_path(tmp_path, song, Bitrate.MP3_320)
+    path = Path(build_output_path(str(tmp_path), song, "320"))
 
     assert path.name == "[42] Artist - Song_Name.mp3"
 
 
 def test_flac_extension(tmp_path: Path) -> None:
-    song = Song(id="42", name="Song", artist="Artist")
+    song = {"id": "42", "name": "Song", "artist": "Artist"}
 
-    path = build_output_path(tmp_path, song, Bitrate.FLAC)
+    path = Path(build_output_path(str(tmp_path), song, "flac"))
 
     assert path.suffix == ".flac"
-
-
-def test_output_exists_uses_final_path_only(tmp_path: Path) -> None:
-    song = Song(id="42", name="Song", artist="Artist")
-    path = build_output_path(tmp_path, song, Bitrate.MP3_320)
-    path.write_bytes(b"already here")
-
-    assert output_exists(path) is True
 
 
 def test_normalize_song_dict_keeps_display_shape() -> None:

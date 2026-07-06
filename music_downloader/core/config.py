@@ -1,7 +1,6 @@
 """全局常量、默认值和支持的平台列表。"""
 
 BASE_URL = "https://music.gdstudio.org"
-HOSTNAME = "music.gdstudio.org"
 PROXY_BASE_URL = "https://music-proxy.gdstudio.org"
 
 USER_AGENT = (

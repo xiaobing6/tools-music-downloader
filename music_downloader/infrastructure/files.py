@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import os
 import re
-from pathlib import Path
 from typing import Any
 
-from music_downloader.domain.enums import Bitrate
 from music_downloader.domain.formatting import get_artist_str
 from music_downloader.domain.models import Song
 
@@ -37,14 +35,6 @@ WINDOWS_RESERVED_NAMES = {
 }
 
 
-def project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def default_download_root() -> Path:
-    return project_root() / "downloads"
-
-
 def safe_filename(name: str, max_length: int = 180) -> str:
     cleaned = re.sub(r'[\\/:*?"<>|]', "_", name)
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" .")
@@ -59,26 +49,6 @@ def safe_filename(name: str, max_length: int = 180) -> str:
     if len(stem) > max_stem_length:
         stem = stem[:max_stem_length].rstrip(" .")
     return f"{stem}{ext}"
-
-
-def output_extension(bitrate: Bitrate | str) -> str:
-    value = bitrate.value if isinstance(bitrate, Bitrate) else str(bitrate)
-    return ".flac" if value == Bitrate.FLAC.value else ".mp3"
-
-
-def build_output_path(root: str | os.PathLike[str], song: Song, bitrate: Bitrate | str) -> Path:
-    filename = safe_filename(f"[{song.id}] {song.artist} - {song.name}{output_extension(bitrate)}")
-    return Path(root) / filename
-
-
-def output_exists(path: str | os.PathLike[str]) -> bool:
-    return Path(path).exists()
-
-
-def ensure_directory(path: str | os.PathLike[str]) -> Path:
-    target = Path(path)
-    target.mkdir(parents=True, exist_ok=True)
-    return target
 
 
 def normalize_song_dict(song: dict[str, Any]) -> dict[str, str]:

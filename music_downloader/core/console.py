@@ -30,7 +30,7 @@ def _force_utf8_stdout() -> None:
 class PlainConsole:
     """rich 不可用时的纯文本回退，仅提供 print/rule 接口。"""
 
-    def print(self, *objects: Any, style: str | None = None, **kwargs: Any) -> None:
+    def print(self, *objects: Any, **_kwargs: Any) -> None:
         print(*objects)
 
     def rule(self, title: str) -> None:
