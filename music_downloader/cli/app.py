@@ -7,7 +7,8 @@ from typing import Annotated
 
 import typer
 
-from music_downloader.cli.workflow import parse_args, run_with_browser
+from music_downloader.cli.models import RunOptions
+from music_downloader.cli.workflow import run_with_browser
 from music_downloader.core.config import (
     DEFAULT_BITRATE,
     DEFAULT_KEYWORD,
@@ -95,7 +96,7 @@ def main_command(
         run_gui()
         return
 
-    argv = _to_workflow_argv(
+    options = _build_run_options(
         keyword,
         source,
         number,
@@ -110,12 +111,18 @@ def main_command(
         interactive,
         user_data_dir,
     )
-    code = run_with_browser(parse_args(argv))
+    code = run_with_browser(options)
     if code:
         raise typer.Exit(code)
 
 
-def _to_workflow_argv(
+def _validate_choice(value: str, option_name: str, choices: list[str] | tuple[str, ...]) -> str:
+    if value not in choices:
+        raise typer.BadParameter(f"{option_name} 不支持 {value!r}，可选: {', '.join(choices)}")
+    return value
+
+
+def _build_run_options(
     keyword: str,
     source: str,
     number: int,
@@ -129,36 +136,22 @@ def _to_workflow_argv(
     no_cover: bool,
     interactive: bool,
     user_data_dir: str | None,
-) -> list[str]:
-    argv = [
-        "--keyword",
-        keyword,
-        "--source",
-        source,
-        "--number",
-        str(number),
-        "--type",
-        search_type,
-        "--format",
-        output_format,
-        "--bitrate",
-        bitrate,
-    ]
-    if output_dir:
-        argv += ["--output", output_dir]
-    if search_only:
-        argv.append("--search-only")
-    if select:
-        argv.append("--select")
-    if no_lyric:
-        argv.append("--no-lyric")
-    if no_cover:
-        argv.append("--no-cover")
-    if interactive:
-        argv.append("--interactive")
-    if user_data_dir:
-        argv += ["--user-data-dir", user_data_dir]
-    return argv
+) -> RunOptions:
+    return RunOptions(
+        keyword=keyword,
+        source=_validate_choice(source, "--source", VALID_SOURCES),
+        search_type=_validate_choice(search_type, "--type", tuple(SEARCH_TYPE_MAP)),
+        number=number,
+        output_dir=output_dir,
+        output_format=_validate_choice(output_format, "--format", VALID_FORMATS),
+        search_only=search_only,
+        select=select,
+        download_lyric=not no_lyric,
+        download_cover=not no_cover,
+        bitrate=_validate_choice(bitrate, "--bitrate", VALID_BITRATES),
+        interactive=interactive,
+        user_data_dir=user_data_dir,
+    )
 
 
 def main(argv: list[str] | None = None) -> None:

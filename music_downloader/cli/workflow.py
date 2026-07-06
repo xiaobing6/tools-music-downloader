@@ -1,14 +1,12 @@
-"""命令行参数解析、交互模式与主流程。"""
+"""交互模式与 CLI 主流程。"""
 
 from __future__ import annotations
 
-import argparse
 import contextlib
 import os
 import sys
 import time
-from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -25,17 +23,10 @@ from music_downloader.cli.models import RunOptions
 from music_downloader.cli.selection import parse_selection
 from music_downloader.core.config import (
     BASE_URL,
-    DEFAULT_BITRATE,
-    DEFAULT_KEYWORD,
-    DEFAULT_NUMBER,
-    DEFAULT_SOURCE,
     FALLBACK_VERSION,
     INTER_SONG_DELAY_SEC,
     PAGE_NAV_TIMEOUT_MS,
-    SEARCH_TYPE_MAP,
     USER_AGENT,
-    VALID_BITRATES,
-    VALID_FORMATS,
     VALID_SOURCES,
 )
 from music_downloader.core.console import console
@@ -62,131 +53,25 @@ class InteractiveCommand:
 
 
 def positive_int(value: str) -> int:
-    """argparse 类型函数：验证值为正整数。"""
+    """验证值为正整数。"""
     try:
         parsed = int(value)
     except ValueError as exc:
-        raise argparse.ArgumentTypeError("必须是大于 0 的整数") from exc
+        raise ValueError("必须是大于 0 的整数") from exc
     if parsed < 1:
-        raise argparse.ArgumentTypeError("必须是大于 0 的整数")
+        raise ValueError("必须是大于 0 的整数")
     return parsed
 
 
-def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """解析命令行参数。
-
-    Args:
-        argv: 参数列表，默认使用 sys.argv[1:]。
-
-    Returns:
-        解析后的 argparse.Namespace。
-    """
-    parser = argparse.ArgumentParser(
-        description="music.gdstudio.org 音乐搜索与下载工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        usage="%(prog)s [-k KEYWORD] [options]",
-        epilog="""示例:
-  %(prog)s -k "周杰伦"                 # 搜索并下载
-  %(prog)s -k "Beyond" -n 5            # 限制下载数量
-  %(prog)s -k "Beyond" -t album        # 搜索专辑
-  %(prog)s -k "Beyond" -o "D:\\Music"   # 指定下载目录
-  %(prog)s -k "Beyond" --search-only   # 仅搜索
-  %(prog)s --check-env                 # 检查环境
-  %(prog)s -i                          # 交互模式""",
-    )
-
-    # ── 搜索选项 ──
-    search_group = parser.add_argument_group("搜索选项")
-    search_group.add_argument(
-        "-k", "--keyword", default=DEFAULT_KEYWORD, help=f"搜索关键词 (默认: {DEFAULT_KEYWORD})"
-    )
-    search_group.add_argument(
-        "-s",
-        "--source",
-        default=DEFAULT_SOURCE,
-        choices=VALID_SOURCES,
-        help=f"音乐源 (默认: {DEFAULT_SOURCE})",
-    )
-    search_group.add_argument(
-        "-n",
-        "--number",
-        type=positive_int,
-        default=DEFAULT_NUMBER,
-        help=f"获取结果总数 (默认: {DEFAULT_NUMBER}, 自动分页)",
-    )
-    search_group.add_argument(
-        "-t",
-        "--type",
-        default="song",
-        choices=SEARCH_TYPE_MAP.keys(),
-        dest="search_type",
-        help="搜索类型: song/album/playlist (默认: song)",
-    )
-    search_group.add_argument(
-        "-f",
-        "--format",
-        default="table",
-        choices=VALID_FORMATS,
-        dest="output_format",
-        help="输出格式 (默认: table)",
-    )
-    search_group.add_argument("--search-only", action="store_true", help="只搜索不下载")
-    search_group.add_argument("--select", action="store_true", help="搜索后选择要下载的歌曲")
-
-    # ── 下载选项 ──
-    download_group = parser.add_argument_group("下载选项")
-    download_group.add_argument(
-        "-o",
-        "--output",
-        default="",
-        dest="output_dir",
-        help="下载目录 (默认: 脚本同级 downloads/, 会再自动按关键词建子目录)",
-    )
-    download_group.add_argument(
-        "-b",
-        "--bitrate",
-        default=DEFAULT_BITRATE,
-        choices=VALID_BITRATES,
-        help=f"音质选择: 128/192/320/flac (默认: {DEFAULT_BITRATE})",
-    )
-    download_group.add_argument("--no-lyric", action="store_true", help="不下载歌词 (默认下载)")
-    download_group.add_argument("--no-cover", action="store_true", help="不嵌入封面 (默认嵌入)")
-
-    # ── 高级选项 ──
-    advanced_group = parser.add_argument_group("高级选项")
-    advanced_group.add_argument(
-        "--check-env", action="store_true", help="检查本地依赖和 Google Chrome, 不访问音乐站点"
-    )
-    advanced_group.add_argument(
-        "-i", "--interactive", action="store_true", help="交互模式, 浏览器保持运行可反复搜索"
-    )
-    advanced_group.add_argument("--gui", action="store_true", help="启动桌面图形界面")
-    advanced_group.add_argument(
-        "--user-data-dir",
-        default=None,
-        help="自定义 Chrome 用户数据目录 (默认在脚本同级 .chrome-profile/, 与系统 Chrome 隔离)",
-    )
-    return parser.parse_args(argv)
+def _resolve_output_dir(output_dir: str, script_dir: str) -> str:
+    """根据运行位置解析下载根目录。"""
+    save_dir = os.path.abspath(output_dir if output_dir else os.path.join(script_dir, "downloads"))
+    return save_dir
 
 
-def make_run_options(args: argparse.Namespace, script_dir: str) -> RunOptions:
-    """将 argparse 结果转换为 RunOptions 数据类。"""
-    save_dir = os.path.abspath(
-        args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
-    )
-    return RunOptions(
-        keyword=args.keyword,
-        source=args.source,
-        search_type=args.search_type,
-        number=args.number,
-        output_dir=save_dir,
-        output_format=args.output_format,
-        search_only=args.search_only,
-        select=args.select,
-        download_lyric=not args.no_lyric,
-        download_cover=not args.no_cover,
-        bitrate=args.bitrate,
-    )
+def _resolve_run_options(options: RunOptions, script_dir: str) -> RunOptions:
+    """补全需要运行时根目录参与计算的配置。"""
+    return replace(options, output_dir=_resolve_output_dir(options.output_dir, script_dir))
 
 
 def _source_runtime_root(module_file: str | os.PathLike[str]) -> Path:
@@ -339,9 +224,8 @@ def parse_interactive_command(text: str) -> InteractiveCommand | None:
 
 def build_interactive_options(
     cmd: InteractiveCommand,
-    base: argparse.Namespace,
+    base: RunOptions,
     state: dict,
-    save_dir: str,
 ) -> RunOptions | None:
     """根据 interactive 内部状态和命令构造 RunOptions。
 
@@ -360,31 +244,28 @@ def build_interactive_options(
         source=state["source"],
         search_type=state["search_type"],
         number=state["number"],
-        output_dir=save_dir,
+        output_dir=base.output_dir,
         output_format=state["output_format"],
         search_only=cmd.kind == "search_only",
         select=False,
-        download_lyric=not base.no_lyric,
-        download_cover=not base.no_cover,
+        download_lyric=base.download_lyric,
+        download_cover=base.download_cover,
         bitrate=base.bitrate,
+        user_data_dir=base.user_data_dir,
     )
 
 
 def interactive_mode(
     page: Any,
     context: Any,
-    args: argparse.Namespace,
-    script_dir: str,
+    options: RunOptions,
 ) -> None:
     state = {
-        "source": args.source,
-        "search_type": args.search_type,
-        "number": args.number,
-        "output_format": args.output_format,
+        "source": options.source,
+        "search_type": options.search_type,
+        "number": options.number,
+        "output_format": options.output_format,
     }
-    save_dir = os.path.abspath(
-        args.output_dir if args.output_dir else os.path.join(script_dir, "downloads")
-    )
 
     console.print("\n=== 交互模式 ===", style="bold")
     console.print("输入关键词搜索并下载，输入 q 退出")
@@ -421,14 +302,14 @@ def interactive_mode(
             try:
                 state["number"] = positive_int(cmd.value)
                 console.print(f"  ✓ 数量已修改为: {state['number']}", style="green")
-            except argparse.ArgumentTypeError:
+            except ValueError:
                 console.print("  ✗ 无效数量，请输入正整数", style="red")
             continue
 
-        options = build_interactive_options(cmd, args, state, save_dir)
-        if options is None:
+        next_options = build_interactive_options(cmd, options, state)
+        if next_options is None:
             continue
-        do_search_and_download(page, context, options, show_progress=False)
+        do_search_and_download(page, context, next_options, show_progress=False)
         console.print()
 
 
@@ -482,22 +363,22 @@ def _open_browser(
     )
 
 
-def _resolve_user_data_dir(args: argparse.Namespace, script_dir: str) -> str:
+def _resolve_user_data_dir(user_data_dir: str | None, script_dir: str) -> str:
     """根据 CLI 参数决定 user_data_dir。
 
     用户显式 --user-data-dir 时用用户路径；否则统一用脚本同级的
     .chrome-profile/（与系统 Chrome 隔离）。
     """
-    if args.user_data_dir:
-        return os.path.abspath(args.user_data_dir)
+    if user_data_dir:
+        return os.path.abspath(user_data_dir)
     return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
 
 
-def run_with_browser(args: argparse.Namespace) -> int:
+def run_with_browser(options: RunOptions) -> int:
     """主流程：启动浏览器、通过 Cloudflare 验证、执行搜索/下载或交互模式。
 
     Args:
-        args: parse_args 的返回值。
+        options: Typer 入口构造的运行选项。
 
     Returns:
         退出码，0 表示成功，非 0 表示失败。
@@ -511,7 +392,8 @@ def run_with_browser(args: argparse.Namespace) -> int:
         script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     else:
         script_dir = str(_source_runtime_root(__file__))
-    user_data_dir = _resolve_user_data_dir(args, script_dir)
+    options = _resolve_run_options(options, script_dir)
+    user_data_dir = _resolve_user_data_dir(options.user_data_dir, script_dir)
     os.makedirs(user_data_dir, exist_ok=True)
     console.print(f"  ✓ Chrome 用户数据目录: {user_data_dir}", style="dim")
 
@@ -570,10 +452,8 @@ def run_with_browser(args: argparse.Namespace) -> int:
             version = fetch_player_version(page)
             console.print(f"  ✓ 版本: {version}", style="green")
 
-            options = make_run_options(args, script_dir)
-
-            if args.interactive:
-                interactive_mode(page, context, args, script_dir)
+            if options.interactive:
+                interactive_mode(page, context, options)
             else:
                 do_search_and_download(page, context, options)
     finally:
