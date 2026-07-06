@@ -29,6 +29,13 @@ def test_song_accepts_api_dict() -> None:
     assert song.duration_text == "2:05"
 
 
+def test_song_accepts_placeholder_duration() -> None:
+    song = Song.from_api({"id": "1", "name": "Track", "duration": "--:--"})
+
+    assert song.duration is None
+    assert song.duration_text == "--:--"
+
+
 def test_search_options_validate_values() -> None:
     options = SearchOptions(keyword="Beyond", source=Source.NETEASE, search_type=SearchType.SONG)
 

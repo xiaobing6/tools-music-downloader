@@ -47,6 +47,24 @@ class Song(BaseModel):
             return "未知"
         return str(value)
 
+    @field_validator("duration", mode="before")
+    @classmethod
+    def _coerce_duration(cls, value: Any) -> int | float | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            text = value.strip()
+            if not text or text == "--:--":
+                return None
+            try:
+                return int(text)
+            except ValueError:
+                try:
+                    return float(text)
+                except ValueError:
+                    return None
+        return value
+
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> Song:
         return cls(
