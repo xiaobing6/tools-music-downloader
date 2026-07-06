@@ -20,6 +20,11 @@ def test_build_script_runs_frontend_build_before_nuitka() -> None:
     assert "Frontend dependencies are missing" in script
     assert "Frontend build failed" in script
     assert "Frontend build did not produce expected artifact: $staticIndex" in script
+    assert "--disable-plugin=pywebview" in script
+    assert "--include-module=webview.platforms.winforms" in script
+    assert "--include-module=webview.platforms.win32" in script
+    assert "--include-module=webview.platforms.edgechromium" in script
+    assert "--include-module=webview.platforms.mshtml" in script
     assert "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static" in script
 
     frontend_build_position = script.index("npm.cmd --prefix $frontendDir run build")

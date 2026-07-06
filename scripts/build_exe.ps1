@@ -79,6 +79,11 @@ if (Test-Path $distDir) {
 $isCi = ($env:CI -eq 'true') -or ($env:GITHUB_ACTIONS -eq 'true')
 
 $commonArgs = @(
+    "--disable-plugin=pywebview",
+    "--include-module=webview.platforms.winforms",
+    "--include-module=webview.platforms.win32",
+    "--include-module=webview.platforms.edgechromium",
+    "--include-module=webview.platforms.mshtml",
     "--playwright-include-browser=none",
     "--nofollow-import-to=playwright.async_api",
     "--output-dir=dist",
