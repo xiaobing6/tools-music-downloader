@@ -43,6 +43,7 @@ class DownloadTask:
     download_lyric: bool
     download_cover: bool
     output_dir: str
+    keyword: str = ""
     cancel_event: threading.Event = field(default_factory=threading.Event)
     success: int = 0
     fail: int = 0
@@ -280,8 +281,8 @@ class MusicBridge:
             )
             os.makedirs(output_dir, exist_ok=True)
 
-        safe_dir_name = ""
-        if task.songs:
+        safe_dir_name = safe_filename(task.keyword.strip()) if task.keyword.strip() else ""
+        if not safe_dir_name and task.songs:
             first_artist = task.songs[0].get("artist", "下载")
             safe_dir_name = safe_filename(str(first_artist))
         target_dir = os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
@@ -428,6 +429,7 @@ class MusicBridge:
         download_lyric: bool,
         download_cover: bool,
         output_dir: str,
+        keyword: str = "",
     ) -> str:
         if not self.ensure_browser():
             return ""
@@ -441,6 +443,7 @@ class MusicBridge:
             download_lyric=download_lyric,
             download_cover=download_cover,
             output_dir=output_dir,
+            keyword=keyword,
         )
         self._tasks[task_id] = task
         thread = threading.Thread(target=self._run_download, args=(task,), daemon=True)

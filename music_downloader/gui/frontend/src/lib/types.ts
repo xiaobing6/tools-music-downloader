@@ -113,7 +113,8 @@ export interface PywebviewApi {
     bitrate: string,
     downloadLyric: boolean,
     downloadCover: boolean,
-    outputDir: string
+    outputDir: string,
+    keyword?: string
   ): Promise<string>;
   cancel_download(taskId: string): Promise<void>;
   open_download_dir(path?: string): Promise<void>;
