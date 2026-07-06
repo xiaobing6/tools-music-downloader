@@ -6,3 +6,8 @@
 *.txt text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+
+# Vite build output is committed for pywebview/Nuitka packaging, but it is
+# generated from music_downloader/gui/frontend and should not affect GitHub
+# language statistics.
+music_downloader/gui/static/** linguist-generated=true
