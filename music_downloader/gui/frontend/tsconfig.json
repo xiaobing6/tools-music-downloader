@@ -12,6 +12,6 @@
     "verbatimModuleSyntax": true,
     "strict": true
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "svelte.config.js"],
+  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "svelte.config.ts"],
   "references": []
 }
