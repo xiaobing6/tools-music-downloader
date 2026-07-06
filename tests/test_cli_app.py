@@ -44,6 +44,14 @@ def test_help_lists_supported_option_values() -> None:
     assert ".chrome-profile" in result.output
 
 
+def test_help_uses_rich_rendering() -> None:
+    result = CliRunner().invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "┌─ Options" in result.output
+    assert "mig…" not in result.output
+
+
 def test_interactive_parser_keeps_existing_commands() -> None:
     assert parse_interactive_command("q").kind == "quit"
     assert parse_interactive_command("s netease").kind == "set_source"

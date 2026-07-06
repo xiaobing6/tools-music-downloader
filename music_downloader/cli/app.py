@@ -25,11 +25,26 @@ def _value_list(values: list[str] | tuple[str, ...]) -> str:
     return " / ".join(values)
 
 
+HELP_EPILOG = "\n\n".join(
+    [
+        "可选值:",
+        f"--source   {_value_list(VALID_SOURCES)}",
+        f"--type     {_value_list(tuple(SEARCH_TYPE_MAP))}",
+        f"--format   {_value_list(VALID_FORMATS)}",
+        f"--bitrate  {_value_list(VALID_BITRATES)}",
+        "示例:",
+        'python music_download.py -k "周杰伦" --source migu --search-only',
+        'python music_download.py -k "Beyond" --type album --format list',
+    ]
+)
+
+
 app = typer.Typer(
     add_completion=False,
     context_settings={"help_option_names": ["-h", "--help"]},
     help="music.gdstudio.org 音乐搜索与下载工具",
-    rich_markup_mode=None,
+    epilog=HELP_EPILOG,
+    rich_markup_mode="rich",
 )
 
 
@@ -39,23 +54,23 @@ def main_command(
     keyword: Annotated[str, typer.Option("-k", "--keyword", help="搜索关键词")] = DEFAULT_KEYWORD,
     source: Annotated[
         str,
-        typer.Option("-s", "--source", help=f"音乐源，可选: {_value_list(VALID_SOURCES)}"),
+        typer.Option("-s", "--source", help="音乐源，完整列表见下方"),
     ] = DEFAULT_SOURCE,
     number: Annotated[
         int, typer.Option("-n", "--number", min=1, help="获取结果总数")
     ] = DEFAULT_NUMBER,
     search_type: Annotated[
         str,
-        typer.Option("-t", "--type", help=f"搜索类型，可选: {_value_list(tuple(SEARCH_TYPE_MAP))}"),
+        typer.Option("-t", "--type", help="搜索类型，完整列表见下方"),
     ] = "song",
     output_dir: Annotated[
         str, typer.Option("-o", "--output", help="下载目录，默认使用项目 downloads/")
     ] = "",
     output_format: Annotated[
-        str, typer.Option("-f", "--format", help=f"输出格式，可选: {_value_list(VALID_FORMATS)}")
+        str, typer.Option("-f", "--format", help="输出格式，完整列表见下方")
     ] = "table",
     bitrate: Annotated[
-        str, typer.Option("-b", "--bitrate", help=f"音质选择，可选: {_value_list(VALID_BITRATES)}")
+        str, typer.Option("-b", "--bitrate", help="音质选择，完整列表见下方")
     ] = DEFAULT_BITRATE,
     search_only: Annotated[bool, typer.Option("--search-only", help="只搜索不下载")] = False,
     select: Annotated[bool, typer.Option("--select", help="搜索后选择要下载的歌曲")] = False,

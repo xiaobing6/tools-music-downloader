@@ -128,7 +128,7 @@ user_data_dir: Annotated[
 ] = None,
 ```
 
-Also set `rich_markup_mode=None` on `typer.Typer(...)` so long option help wraps as plain text instead of being truncated with ellipses in the Rich help table.
+Keep Rich help rendering enabled on `typer.Typer(...)`, keep option-row help short, and put the complete supported value lists in `epilog` paragraphs. This preserves the colored Rich help table while avoiding ellipses in long option rows.
 
 - [x] **Step 5: Run focused tests**
 
