@@ -12,7 +12,7 @@
   let { open, checks, onClose }: Props = $props();
 </script>
 
-<Modal {open} title="环境检查" dismissable={false} size="lg">
+<Modal {open} title="环境检查" dismissable={false} placement="center" size="lg">
   <div id="envModalBody" class="space-y-3">
     {#each checks as check}
       <div class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-3">

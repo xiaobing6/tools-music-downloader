@@ -88,6 +88,21 @@ def test_results_and_logs_share_resizable_bottom_layout() -> None:
     assert "max-h-60" not in log_panel
 
 
+def test_app_shell_uses_window_minimum_size() -> None:
+    css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+
+    assert "min-width: 1266px;" in css
+    assert "min-height: 1013px;" in css
+    assert "min-width: 1200px;" not in css
+    assert "min-height: 750px;" not in css
+
+
+def test_environment_modal_is_centered() -> None:
+    modal = (FRONTEND_SRC / "lib/components/EnvironmentModal.svelte").read_text(encoding="utf-8")
+
+    assert 'placement="center"' in modal
+
+
 def test_gui_progress_stays_visible_after_completion() -> None:
     app = (FRONTEND_SRC / "App.svelte").read_text(encoding="utf-8")
     progress_panel = (FRONTEND_SRC / "lib/components/DownloadProgress.svelte").read_text(

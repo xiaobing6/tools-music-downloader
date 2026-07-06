@@ -25,6 +25,8 @@ def test_build_script_runs_frontend_build_before_nuitka() -> None:
     assert "--include-module=webview.platforms.win32" in script
     assert "--include-module=webview.platforms.edgechromium" in script
     assert "--include-module=webview.platforms.mshtml" in script
+    assert "--windows-console-mode=hide" in script
+    assert "--windows-console-mode=attach" not in script
     assert "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static" in script
 
     frontend_build_position = script.index("npm.cmd --prefix $frontendDir run build")
