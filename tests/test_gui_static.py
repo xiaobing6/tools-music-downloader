@@ -27,7 +27,7 @@ def _static_asset_path(reference: str) -> Path:
     parsed = urlparse(reference)
     assert parsed.scheme == ""
     assert parsed.netloc == ""
-    relative = unquote(parsed.path).lstrip("./")
+    relative = unquote(parsed.path)
     path = (STATIC / relative).resolve()
     assert path.is_relative_to(STATIC.resolve())
     return path
