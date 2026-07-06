@@ -154,7 +154,7 @@ dist/music_download.exe
 .\dist\music_download.exe --check-env
 ```
 
-构建脚本会在 Nuitka 打包前自动运行 Vite 前端构建，并继续把 `music_downloader/gui/static/` 打包进 exe；Chrome 不会被打包，运行时仍使用用户系统已安装的 Google Chrome。
+构建脚本会在 Nuitka 打包前自动运行 Vite 前端构建，并继续把 `music_downloader/gui/static/` 打包进 exe；`node_modules/` 只用于前端构建，不会被打包进 exe。Chrome 不会被打包，运行时仍使用用户系统已安装的 Google Chrome。
 
 ## 开发检查
 
