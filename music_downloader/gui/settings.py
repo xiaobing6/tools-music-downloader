@@ -10,12 +10,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-CONFIG_FILENAME = ".music_downloader_config.json"
-
-
-def _get_config_path() -> Path:
-    return Path.home() / CONFIG_FILENAME
-
 
 def _get_default_output_dir() -> str:
     """Default download dir mirrors CLI default: <project_root>/downloads.

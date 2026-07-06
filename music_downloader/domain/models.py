@@ -13,7 +13,7 @@ from music_downloader.core.config import (
     DEFAULT_NUMBER,
     DEFAULT_SOURCE,
 )
-from music_downloader.domain.enums import Bitrate, DownloadStatus, OutputFormat, SearchType, Source
+from music_downloader.domain.enums import Bitrate, SearchType, Source
 from music_downloader.domain.formatting import format_duration, get_artist_str
 
 
@@ -107,35 +107,11 @@ class SearchOptions(BaseModel):
     source: Source = Source(DEFAULT_SOURCE)
     search_type: SearchType = SearchType.SONG
     number: int = Field(default=DEFAULT_NUMBER, ge=1)
-    output_format: OutputFormat = OutputFormat.TABLE
 
 
 class DownloadOptions(BaseModel):
     source: Source = Source(DEFAULT_SOURCE)
     bitrate: Bitrate = Bitrate(DEFAULT_BITRATE)
     output_dir: Path
-    group_name: str = ""
     download_lyric: bool = True
     download_cover: bool = True
-
-
-class DownloadResult(BaseModel):
-    song: Song
-    status: DownloadStatus
-    path: str = ""
-    reason: str = ""
-    warnings: list[str] = Field(default_factory=list)
-    size_bytes: int = 0
-
-    @property
-    def ok(self) -> bool:
-        return self.status in {DownloadStatus.SUCCESS, DownloadStatus.SKIP}
-
-
-class AppSettings(BaseModel):
-    source: Source = Source(DEFAULT_SOURCE)
-    search_type: SearchType = SearchType.SONG
-    bitrate: Bitrate = Bitrate(DEFAULT_BITRATE)
-    number: int = Field(default=DEFAULT_NUMBER, ge=1)
-    download_cover: bool = True
-    download_lyric: bool = True

@@ -6,7 +6,7 @@
 
 这是一个音乐搜索下载工具，数据来源为 `music.gdstudio.org`。项目同时提供：
 
-- 桌面 GUI：pywebview 加载静态 HTML/CSS/JS。
+- 桌面 GUI：pywebview 加载 Vite/Svelte 构建出的静态资源。
 - CLI：Typer 公开入口，和 GUI 同级放在 `music_downloader/cli/`。
 - 单一打包入口：`music_download.py`，生成的 exe 同时支持 GUI 和 CLI。
 
@@ -31,17 +31,13 @@ music_downloader/cli/display.py           # CLI 输出
 music_downloader/cli/models.py            # CLI 运行选项
 music_downloader/cli/selection.py         # CLI 选择解析
 music_downloader/domain/enums.py          # Source/SearchType/Bitrate/DownloadStatus 等枚举
-music_downloader/domain/models.py         # Song/SearchOptions/DownloadOptions/DownloadResult 等模型
+music_downloader/domain/models.py         # Song/SearchOptions/DownloadOptions 等模型
 music_downloader/domain/formatting.py     # 纯格式化工具
-music_downloader/domain/errors.py         # 业务异常
 music_downloader/services/search.py       # CLI 和 GUI 共用搜索、去重、归一化
-music_downloader/services/download.py     # 共享下载服务抽象
 music_downloader/infrastructure/gdstudio.py    # 上游 API 客户端
-music_downloader/infrastructure/browser.py     # Playwright 浏览器会话
 music_downloader/infrastructure/environment.py # 环境检查
-music_downloader/infrastructure/files.py       # 文件命名、默认 downloads/、重复判断
+music_downloader/infrastructure/files.py       # 文件命名、搜索结果归一化
 music_downloader/infrastructure/downloader.py  # 下载、重试、临时文件、元数据附加
-music_downloader/infrastructure/metadata.py    # warning-oriented 元数据写入辅助
 music_downloader/infrastructure/tags.py        # MP3/FLAC 标签写入
 music_downloader/infrastructure/encoding.py    # 上游 API 编码
 music_downloader/gui/                  # pywebview GUI
@@ -66,10 +62,10 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 ### 分层约定
 
 - `domain/` 放 Pydantic 模型、枚举和业务异常，不依赖 Playwright、pywebview 或 mutagen。
-- `services/` 放 CLI 和 GUI 共用的搜索、下载编排逻辑，优先使用 `Song`、`SearchOptions`、`DownloadOptions`、`DownloadResult`。
-- `infrastructure/` 放文件系统、浏览器、上游 API、环境检查、元数据等外部集成。
+- `services/` 放 CLI 和 GUI 共用的搜索、去重和归一化逻辑，优先使用 `Song`、`SearchOptions`。
+- `infrastructure/` 放文件系统、上游 API、环境检查、下载、元数据标签等外部集成。
 - `cli/` 放 Typer CLI、交互命令解析和 CLI 搜索下载工作流，与 `gui/` 同级。
-- `gui/` 保持 pywebview 桌面应用形态，前端仍是静态 HTML/CSS/JS，不引入前端构建工具。
+- `gui/` 保持 pywebview 桌面应用形态，前端源码使用 Vite/Svelte，构建产物输出到 `music_downloader/gui/static/`。
 
 ### Chrome profile 隔离
 
@@ -90,9 +86,9 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - **新增音乐源**：修改 `music_downloader/core/config.py` 中的 `VALID_SOURCES`，并同步 `domain/enums.py` 的 `Source`。
 - **修改默认设置**：调整 `DEFAULT_KEYWORD`、`DEFAULT_SOURCE`、`DEFAULT_NUMBER`、`DEFAULT_BITRATE`。
 - **调整搜索逻辑**：优先修改 `music_downloader/services/search.py` 和 `music_downloader/infrastructure/gdstudio.py`。
-- **调整下载行为**：优先修改 `music_downloader/infrastructure/downloader.py` 或 `music_downloader/services/download.py`，保持“文件存在即跳过”和“元数据失败 warning-only”语义。
+- **调整下载行为**：优先修改 `music_downloader/infrastructure/downloader.py`，保持“文件存在即跳过”和“元数据失败 warning-only”语义。
 - **调整文件命名/默认目录**：修改 `music_downloader/infrastructure/files.py`。
-- **调整 ID3/FLAC 标签**：修改 `music_downloader/infrastructure/tags.py` 或 `music_downloader/infrastructure/metadata.py`。
+- **调整 ID3/FLAC 标签**：修改 `music_downloader/infrastructure/tags.py`。
 - **API 签名变更**：修改 `music_downloader/infrastructure/gdstudio.py` 的 `compute_signature`，并更新 README 的 401 排错说明。
 - **交互模式命令解析**：见 `music_downloader/cli/interactive.py` 和 `workflow.py`。
 - **CLI 参数**：见 `music_downloader/cli/app.py`，所有变更要同步更新 `README.md` 参数表。

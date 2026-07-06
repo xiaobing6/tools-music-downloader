@@ -120,6 +120,5 @@ export interface PywebviewApi {
   open_download_dir(path?: string): Promise<void>;
   select_directory(): Promise<string>;
   check_environment(): Promise<EnvironmentCheck[]>;
-  get_history(): Promise<Record<string, unknown>[]>;
   shutdown(): Promise<void>;
 }

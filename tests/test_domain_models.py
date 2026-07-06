@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
-from music_downloader.domain.models import DownloadResult, SearchOptions, Song
+from music_downloader.domain.enums import Bitrate, SearchType, Source
+from music_downloader.domain.models import SearchOptions, Song
 
 
 def test_song_accepts_api_dict() -> None:
@@ -46,18 +46,6 @@ def test_search_options_validate_values() -> None:
 def test_search_options_reject_invalid_number() -> None:
     with pytest.raises(ValidationError):
         SearchOptions(keyword="Beyond", number=0)
-
-
-def test_download_result_records_warning_success() -> None:
-    result = DownloadResult(
-        song=Song(id="1", name="Song"),
-        status=DownloadStatus.SUCCESS,
-        path="downloads/Song.mp3",
-        warnings=["ID3 标签写入失败"],
-    )
-
-    assert result.ok is True
-    assert result.warnings == ["ID3 标签写入失败"]
 
 
 def test_bitrate_values_match_cli() -> None:

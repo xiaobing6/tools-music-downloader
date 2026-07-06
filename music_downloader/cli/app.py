@@ -50,7 +50,6 @@ app = typer.Typer(
 
 @app.callback(invoke_without_command=True)
 def main_command(
-    ctx: typer.Context,
     keyword: Annotated[str, typer.Option("-k", "--keyword", help="搜索关键词")] = DEFAULT_KEYWORD,
     source: Annotated[
         str,

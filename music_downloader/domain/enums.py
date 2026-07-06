@@ -26,12 +26,6 @@ class SearchType(str, Enum):
     PLAYLIST = "playlist"
 
 
-class OutputFormat(str, Enum):
-    TABLE = "table"
-    JSON = "json"
-    LIST = "list"
-
-
 class Bitrate(str, Enum):
     MP3_128 = "128"
     MP3_192 = "192"
@@ -40,9 +34,6 @@ class Bitrate(str, Enum):
 
 
 class DownloadStatus(str, Enum):
-    PENDING = "pending"
-    RUNNING = "running"
     SUCCESS = "success"
     SKIP = "skip"
     FAIL = "fail"
-    CANCELLED = "cancelled"

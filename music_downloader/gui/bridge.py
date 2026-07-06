@@ -223,8 +223,6 @@ class MusicBridge:
         self._session = _PlaywrightThread(on_log=self._emit_log)
         self._tasks: dict[str, DownloadTask] = {}
         self._task_counter = 0
-        self._history: list[dict[str, Any]] = []
-        self._history_lock = threading.Lock()
 
     def _emit_log(self, msg: str, level: str = "info") -> None:
         if self._on_log:
@@ -360,18 +358,6 @@ class MusicBridge:
             if result == "success":
                 task.success += 1
                 self._emit_log(f"下载完成: {name}", "success")
-                # 用与 downloader 一致的逻辑重建路径，避免不一致
-                with self._history_lock:
-                    self._history.append(
-                        {
-                            "name": name,
-                            "artist": str(song.get("artist", "未知")),
-                            "source": task.source,
-                            "bitrate": task.bitrate,
-                            "path": filepath,
-                            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-                        }
-                    )
                 self._emit_progress(
                     {
                         "type": "song_done",
@@ -465,10 +451,6 @@ class MusicBridge:
         task = self._tasks.get(task_id)
         if task:
             task.cancel_event.set()
-
-    def get_history(self) -> list[dict[str, Any]]:
-        with self._history_lock:
-            return list(self._history)
 
     def check_environment(self) -> list[dict[str, Any]]:
         results = run_environment_checks()
