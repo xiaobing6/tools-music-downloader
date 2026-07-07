@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import sys
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 
-from music_downloader.cli.models import RunOptions
-from music_downloader.cli.workflow import run_with_browser
 from music_downloader.core.config import (
     DEFAULT_BITRATE,
     DEFAULT_KEYWORD,
@@ -19,7 +17,21 @@ from music_downloader.core.config import (
     VALID_FORMATS,
     VALID_SOURCES,
 )
-from music_downloader.infrastructure.environment import check_environment
+
+if TYPE_CHECKING:
+    from music_downloader.cli.models import RunOptions
+
+
+def run_with_browser(options: RunOptions) -> int:
+    from music_downloader.cli.workflow import run_with_browser as _run_with_browser
+
+    return _run_with_browser(options)
+
+
+def check_environment() -> int:
+    from music_downloader.infrastructure.environment import check_environment as _check_environment
+
+    return _check_environment()
 
 
 def _value_list(values: list[str] | tuple[str, ...]) -> str:
@@ -137,6 +149,8 @@ def _build_run_options(
     interactive: bool,
     user_data_dir: str | None,
 ) -> RunOptions:
+    from music_downloader.cli.models import RunOptions
+
     return RunOptions(
         keyword=keyword,
         source=_validate_choice(source, "--source", VALID_SOURCES),

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 from typer.testing import CliRunner
@@ -55,6 +57,31 @@ def test_help_uses_rich_rendering() -> None:
     assert result.exit_code == 0
     assert "┌─ Options" in result.output
     assert "mig…" not in result.output
+
+
+def test_cli_app_import_does_not_load_runtime_modules_for_help() -> None:
+    code = (
+        "import sys\n"
+        "import music_downloader.cli.app\n"
+        "runtime_modules = [\n"
+        "    'music_downloader.cli.workflow',\n"
+        "    'music_downloader.cli.models',\n"
+        "    'music_downloader.infrastructure.environment',\n"
+        "]\n"
+        "loaded = [name for name in runtime_modules if name in sys.modules]\n"
+        "print('\\n'.join(loaded))\n"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == ""
 
 
 def test_interactive_parser_keeps_existing_commands() -> None:
