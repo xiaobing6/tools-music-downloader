@@ -80,8 +80,9 @@ def test_results_and_logs_share_resizable_bottom_layout() -> None:
     log_panel = (FRONTEND_SRC / "lib/components/LogPanel.svelte").read_text(encoding="utf-8")
 
     assert "items-stretch" in app
-    assert 'class="min-h-0 flex-1 overflow-auto scrollbar-thin"' in app
+    assert 'class="min-h-0 flex-1 overflow-auto scrollbar-thin"' not in app
     assert 'class="flex h-full min-h-0 flex-col' in result_list
+    assert 'class="min-h-0 flex-1 divide-y divide-slate-100 overflow-auto scrollbar-thin"' in result_list
     assert 'class="flex min-h-64 flex-1' in empty_state
     assert "flex min-h-0 flex-1 flex-col" in log_panel
     assert 'id="logContent" class="min-h-0 flex-1' in log_panel
@@ -120,6 +121,31 @@ def test_gui_progress_stays_visible_after_completion() -> None:
     assert "cancelable={downloadActive}" in app
     assert "cancelable: boolean" in progress_panel
     assert "{#if cancelable}" in progress_panel
+
+
+def test_download_progress_long_labels_do_not_push_actions() -> None:
+    progress_panel = (FRONTEND_SRC / "lib/components/DownloadProgress.svelte").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'class="min-w-0"' in progress_panel
+    assert 'id="progressLabel" class="truncate' in progress_panel
+    assert 'id="cancelDownloadBtn"' in progress_panel
+    assert "shrink-0" in progress_panel
+
+
+def test_startup_screen_uses_viewport_relative_layout() -> None:
+    source = (FRONTEND_SRC / "lib/components/StartupScreen.svelte").read_text(encoding="utf-8")
+
+    assert "min-height: 100%;" in source
+    assert "display: flex;" in source
+    assert "width: min(610px, calc(100% - 40px));" in source
+    assert "width: min(420px, 100%);" in source
+    assert "padding: clamp(" in source
+    assert "height: clamp(" in source
+    assert "width: 610px;" not in source
+    assert "padding-top: 300px;" not in source
+    assert "width: 420px;" not in source
 
 
 def test_gui_does_not_duplicate_backend_summary_logs() -> None:
