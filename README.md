@@ -11,6 +11,7 @@
 - 元数据、封面或歌词写入失败不会删除已下载音频，也不会把歌曲判为失败。
 - 已存在的目标音频文件会直接跳过，重复判断只看最终文件是否存在。
 - GUI 每次启动都使用默认参数，不保存来源、搜索类型、数量、音质等用户选择。
+- GUI 启动时显示品牌启动页和阶段化进度条；启动细节写入运行日志，不直接显示在启动页上。
 
 ## 环境要求
 
@@ -23,7 +24,7 @@
 
 开发依赖：`ruff`、`mypy`、`pytest`。
 
-GUI 前端使用 Vite、Svelte、TypeScript、Flowbite Svelte、Tailwind CSS 和 `@lucide/svelte`，构建产物输出到 `music_downloader/gui/static/`，由 pywebview 加载。
+GUI 前端使用 Vite、Svelte、TypeScript、Flowbite Svelte、Tailwind CSS 和 `@lucide/svelte`，构建产物输出到 `music_downloader/gui/static/`，由 pywebview 加载。启动页由 `StartupScreen.svelte` 渲染，启动阶段文案和进度定义在 `src/lib/startup.ts`。
 
 ## 安装
 
@@ -56,6 +57,8 @@ python music_download.py --gui
 GUI 默认下载根目录为项目目录下的 `downloads/`。中途可以临时修改来源、搜索类型、数量、音质、歌词、封面和下载目录，但下次启动仍恢复默认值。
 
 GUI 默认窗口大小和最小窗口大小均为 `1266x1013`。
+
+GUI 启动时会先显示品牌启动页，依次展示“连接桌面接口”“加载基础配置”“准备浏览器”“验证访问环境”等阶段化进度。启动页不显示底层日志；如果初始化失败，会停留在启动页并提供“重试”按钮，详细原因可在进入主界面后的运行日志中查看。
 
 ## CLI 使用
 
@@ -165,6 +168,15 @@ python -m ruff format --check .
 python -m mypy music_downloader
 python -m py_compile music_download.py
 python music_download.py --check-env
+```
+
+修改 GUI 前端或启动页后，建议额外运行：
+
+```powershell
+cd music_downloader/gui/frontend
+node --test tests/startup.test.mjs
+npm.cmd run check
+npm.cmd run build
 ```
 
 端到端搜索会访问真实音乐站点，请在本地手动验证，不要写入 CI。
