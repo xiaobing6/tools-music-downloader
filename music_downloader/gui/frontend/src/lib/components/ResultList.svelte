@@ -131,7 +131,7 @@
   {#if songs.length === 0}
     <EmptyState />
   {:else}
-    <div class="min-h-0 flex-1 divide-y divide-slate-100">
+    <div class="min-h-0 flex-1 divide-y divide-slate-100 overflow-auto scrollbar-thin">
       {#each songs as song, index}
         {@const status = statusFor(index)}
         <label

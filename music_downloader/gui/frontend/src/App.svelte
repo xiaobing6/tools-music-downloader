@@ -507,7 +507,7 @@
             onSearch={search}
           />
 
-          <div class="min-h-0 flex-1 overflow-auto scrollbar-thin">
+          <div class="min-h-0 flex-1">
             <ResultList
               {songs}
               {selectedIndices}

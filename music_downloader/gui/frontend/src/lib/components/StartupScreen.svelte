@@ -74,6 +74,9 @@
 <style>
   .startup-hero {
     position: relative;
+    display: flex;
+    min-height: 100%;
+    justify-content: center;
     overflow: hidden;
     color: #111827;
     background:
@@ -95,9 +98,9 @@
   .startup-content {
     position: relative;
     z-index: 1;
-    width: 610px;
+    width: min(610px, calc(100% - 40px));
     margin: 0 auto;
-    padding-top: 300px;
+    padding: clamp(160px, 30vh, 300px) 0 clamp(48px, 8vh, 96px);
     text-align: center;
   }
 
@@ -106,15 +109,15 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 420px;
-    height: 164px;
+    width: min(420px, 100%);
+    height: clamp(132px, 17vh, 164px);
     margin: 0 auto;
   }
 
   .startup-mark {
     display: flex;
-    width: 156px;
-    height: 156px;
+    width: clamp(124px, 16vh, 156px);
+    height: clamp(124px, 16vh, 156px);
     align-items: center;
     justify-content: center;
     color: #2563eb;
@@ -129,19 +132,19 @@
 
   .startup-sound-bars {
     position: absolute;
-    top: 48px;
+    top: clamp(32px, 5vh, 48px);
     display: flex;
     align-items: center;
     gap: 20px;
   }
 
   .startup-sound-bars-left {
-    right: 276px;
+    right: calc(50% + clamp(76px, 9vh, 96px));
     transform: rotate(180deg);
   }
 
   .startup-sound-bars-right {
-    left: 276px;
+    left: calc(50% + clamp(76px, 9vh, 96px));
   }
 
   .startup-sound-bars span {
@@ -172,7 +175,7 @@
   }
 
   .startup-title {
-    margin: 36px 0 0;
+    margin: clamp(24px, 4vh, 36px) 0 0;
     color: #111827;
     font-size: 58px;
     font-weight: 800;
@@ -180,15 +183,15 @@
   }
 
   .startup-subtitle {
-    margin: 12px 0 0;
+    margin: clamp(8px, 1.4vh, 12px) 0 0;
     color: #536579;
     font-size: 29px;
     line-height: 1.35;
   }
 
   .startup-status {
-    width: 610px;
-    margin: 82px auto 0;
+    width: 100%;
+    margin: clamp(48px, 8.5vh, 82px) auto 0;
     text-align: left;
   }
 
@@ -269,7 +272,7 @@
     left: -8%;
     right: -8%;
     bottom: -40px;
-    height: 350px;
+    height: clamp(220px, 34vh, 350px);
     pointer-events: none;
     background:
       repeating-radial-gradient(
