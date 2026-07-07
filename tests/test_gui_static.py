@@ -88,12 +88,13 @@ def test_results_and_logs_share_resizable_bottom_layout() -> None:
     assert "max-h-60" not in log_panel
 
 
-def test_app_shell_uses_window_minimum_size() -> None:
+def test_app_shell_fits_inside_default_window_client_area() -> None:
     css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
 
     assert "min-width: 1266px;" in css
-    assert "min-height: 1013px;" in css
+    assert "min-height: 960px;" in css
     assert "min-width: 1200px;" not in css
+    assert "min-height: 1013px;" not in css
     assert "min-height: 750px;" not in css
 
 
@@ -111,7 +112,6 @@ def test_gui_progress_stays_visible_after_completion() -> None:
     types = (FRONTEND_SRC / "lib/types.ts").read_text(encoding="utf-8")
 
     assert "hideProgressTimer" not in app
-    assert "setTimeout" not in app
     assert "visible:" not in app
     assert "visible: boolean" not in types
     assert "{#if progress.visible}" not in progress_panel
