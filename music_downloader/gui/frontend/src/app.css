@@ -33,7 +33,7 @@ textarea {
 .app-shell {
   height: 100vh;
   min-width: 1266px;
-  min-height: 1013px;
+  min-height: 960px;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
