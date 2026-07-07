@@ -88,14 +88,15 @@ def test_results_and_logs_share_resizable_bottom_layout() -> None:
     assert "max-h-60" not in log_panel
 
 
-def test_app_shell_fits_inside_default_window_client_area() -> None:
+def test_app_shell_fills_pywebview_client_area_without_fixed_minimums() -> None:
     css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+    shell_block = css.split(".app-shell {", 1)[1].split("}", 1)[0]
 
-    assert "min-width: 1266px;" in css
-    assert "min-height: 960px;" in css
-    assert "min-width: 1200px;" not in css
-    assert "min-height: 1013px;" not in css
-    assert "min-height: 750px;" not in css
+    assert "width: 100%;" in shell_block
+    assert "height: 100%;" in shell_block
+    assert "min-width:" not in shell_block
+    assert "min-height:" not in shell_block
+    assert "height: 100vh;" not in shell_block
 
 
 def test_environment_modal_is_centered() -> None:
