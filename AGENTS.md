@@ -42,6 +42,9 @@ music_downloader/infrastructure/tags.py        # MP3/FLAC 标签写入
 music_downloader/infrastructure/encoding.py    # 上游 API 编码
 music_downloader/gui/                  # pywebview GUI 后端桥接
 music_downloader/gui/frontend/         # Vite/Svelte 前端源码
+music_downloader/gui/frontend/src/lib/startup.ts # GUI 启动阶段、文案和进度
+music_downloader/gui/frontend/src/lib/components/StartupScreen.svelte # GUI 品牌启动页
+music_downloader/gui/frontend/tests/startup.test.mjs # 启动页与启动文案测试
 music_downloader/gui/static/           # GUI 静态构建产物
 music_downloader/core/config.py        # 共享常量、默认值、支持平台
 music_downloader/core/console.py       # rich/plain console 输出
@@ -67,6 +70,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - `infrastructure/` 放文件系统、上游 API、环境检查、下载、元数据标签等外部集成。
 - `cli/` 放 Typer CLI、交互命令解析和 CLI 搜索下载工作流，与 `gui/` 同级。
 - `gui/` 保持 pywebview 桌面应用形态，前端源码使用 Vite/Svelte，构建产物输出到 `music_downloader/gui/static/`。
+- GUI 启动体验由 `App.svelte` 编排、`src/lib/startup.ts` 提供阶段模型、`StartupScreen.svelte` 渲染品牌启动页；不要把启动期浏览器、站点验证或调试细节直接展示在启动页上，详细信息继续进入运行日志。
 
 ### Chrome profile 隔离
 
@@ -94,6 +98,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - **交互模式命令解析**：见 `music_downloader/cli/interactive.py` 和 `workflow.py`。
 - **CLI 参数**：见 `music_downloader/cli/app.py`，所有变更要同步更新 `README.md` 参数表。
 - **GUI 功能**：修改 `music_downloader/gui/api.py`、`bridge.py` 和 `gui/frontend/src/`；构建产物输出到 `gui/static/`，不要直接手改静态构建产物；GUI 参数选择不应持久化到用户目录。
+- **GUI 启动页/启动阶段**：修改 `music_downloader/gui/frontend/src/lib/startup.ts`、`StartupScreen.svelte` 和 `App.svelte`；同步更新 `music_downloader/gui/frontend/tests/startup.test.mjs`、`README.md`，再运行前端构建刷新 `gui/static/`。
 - **打包资源**：GUI 静态资源仍在 `music_downloader/gui/static/`，构建脚本需保留 `--include-data-dir=music_downloader/gui/static=music_downloader/gui/static`。
 
 ## 约定
@@ -101,6 +106,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - Python 3.10+ 语法；用 PEP 604 `X | None`，避免 `Optional[X]`。
 - 业务日志统一走 `music_downloader.core.console.console.print`，不要用 `print` 直出；`gui/app.py` 找不到静态资源时的 stderr 提示除外。
 - CLI 输出和文档使用中文。
+- GUI 启动页文案保持用户友好，不直接出现 `Cloudflare`、`Playwright`、`Chrome`、堆栈、trace 等底层诊断词；这类信息只进入运行日志。
 - 单测不要访问真实音乐站点；端到端功能验证靠 `python music_download.py --check-env` 加一次本地真实搜索。
 - 下载目录 `downloads/`、Chrome profile `.chrome-profile/`、构建产物 `dist/` 已由 `.gitignore` 忽略。
 - 发版前跑：`ruff check .`、`ruff format --check .`、`mypy music_downloader`、`python -m py_compile music_download.py`、`python music_download.py --check-env`，再加一次真实搜索。
