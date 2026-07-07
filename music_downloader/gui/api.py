@@ -16,7 +16,6 @@ from pydantic import ValidationError
 from music_downloader.core.config import (
     SEARCH_TYPE_MAP,
     VALID_BITRATES,
-    VALID_FORMATS,
     VALID_SOURCES,
 )
 from music_downloader.domain.enums import Bitrate, SearchType, Source
@@ -75,7 +74,6 @@ class MusicApi:
             "sources": [{"value": s, "label": _SOURCE_LABELS.get(s, s)} for s in VALID_SOURCES],
             "bitrates": VALID_BITRATES,
             "search_types": list(SEARCH_TYPE_MAP.keys()),
-            "formats": VALID_FORMATS,
         }
 
     def init_browser(self) -> dict[str, Any]:

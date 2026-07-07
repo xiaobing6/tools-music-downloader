@@ -25,7 +25,6 @@ export interface ValidOptions {
   sources: OptionItem[];
   bitrates: string[];
   search_types: string[];
-  formats: string[];
 }
 
 export interface Song {

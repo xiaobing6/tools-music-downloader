@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- 支持网易云、QQ 音乐、酷我、咪咕、YouTube Music、Spotify、Tidal、Qobuz、Deezer 等音乐源。
+- 支持网易云、咪咕、酷我、YouTube Music、Tidal、Qobuz、Deezer、Spotify、QQ 音乐、喜马拉雅、Joox、Apple Music 等音乐源。
 - 支持单曲、专辑、歌单搜索，可指定结果数量并自动分页。
 - 支持 `128` / `192` / `320` / `flac` 音质；`flac` 会保存为 `.flac`。
 - 下载完成后尽力写入标题、艺术家、专辑、曲目编号、封面和歌词等元数据。
@@ -55,7 +55,7 @@ python music_download.py --gui
 
 GUI 默认下载根目录为项目目录下的 `downloads/`。中途可以临时修改来源、搜索类型、数量、音质、歌词、封面和下载目录，但下次启动仍恢复默认值。
 
-GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1200x750`。
+GUI 默认窗口大小和最小窗口大小均为 `1266x1013`。
 
 ## CLI 使用
 
@@ -79,11 +79,11 @@ CLI 默认下载到 `downloads/<关键词>/`。使用 `-o` 指定目录时，仍
 | 参数 | 说明 | 默认值 |
 |---|---|---|
 | `-k / --keyword` | 搜索关键词 | `Beyond` |
-| `-s / --source` | 音乐源 | `netease` |
+| `-s / --source` | 音乐源：`netease` / `migu` / `kuwo` / `ytmusic` / `tidal` / `qobuz` / `deezer` / `spotify` / `tencent` / `ximalaya` / `joox` / `apple` | `netease` |
 | `-n / --number` | 结果数量，必须是正整数 | `20` |
 | `-t / --type` | 搜索类型：`song` / `album` / `playlist` | `song` |
 | `-o / --output` | 下载目录 | `./downloads/` |
-| `-f / --format` | 输出格式：`table` / `list` / `json` | `table` |
+| `-f / --format` | 输出格式：`table` / `json` / `list` | `table` |
 | `-b / --bitrate` | 音质：`128` / `192` / `320` / `flac` | `320` |
 | `--search-only` | 只搜索，不下载 | - |
 | `--select` | 搜索后手动选择要下载的歌曲 | - |
@@ -178,6 +178,10 @@ python music_download.py --check-env
 **为什么 Cloudflare 有时需要重新验证？**
 
 `cf_clearance` 与 IP、UA、TLS 指纹和 Chrome profile 相关。工具默认使用项目目录下隔离的 `.chrome-profile/`，不会读取系统 Chrome profile。
+
+**遇到 HTTP 401 签名验证失败怎么办？**
+
+这通常表示站点版本或签名算法发生了变化。当前签名通过页面里的 `crc32` 计算；如果持续出现 401，请检查 `music_downloader/infrastructure/gdstudio.py` 中的 `compute_signature` 是否仍与站点前端一致。
 
 **下载成功但没有标签怎么办？**
 

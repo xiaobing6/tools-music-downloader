@@ -3,6 +3,13 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from music_downloader.core.config import (
+    DEFAULT_BITRATE,
+    DEFAULT_SOURCE,
+    SEARCH_TYPE_MAP,
+    VALID_BITRATES,
+    VALID_SOURCES,
+)
 from music_downloader.domain.enums import Bitrate, SearchType, Source
 from music_downloader.domain.models import SearchOptions, Song
 
@@ -50,3 +57,11 @@ def test_search_options_reject_invalid_number() -> None:
 
 def test_bitrate_values_match_cli() -> None:
     assert [item.value for item in Bitrate] == ["128", "192", "320", "flac"]
+
+
+def test_config_choices_match_domain_enums() -> None:
+    assert [item.value for item in Source] == VALID_SOURCES
+    assert [item.value for item in Bitrate] == VALID_BITRATES
+    assert list(SEARCH_TYPE_MAP) == [item.value for item in SearchType]
+    assert DEFAULT_SOURCE in VALID_SOURCES
+    assert DEFAULT_BITRATE in VALID_BITRATES
