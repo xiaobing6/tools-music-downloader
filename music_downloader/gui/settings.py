@@ -14,7 +14,7 @@ from typing import Any
 def _get_default_output_dir() -> str:
     """Default download dir mirrors CLI default: <project_root>/downloads.
 
-    Uses the same resolution logic as cli.py so the GUI and CLI defaults stay
+    Uses the same source/executable root logic as the CLI so GUI and CLI defaults stay
     in sync whether running from source or a Nuitka-compiled executable.
     """
     if "__compiled__" in globals():

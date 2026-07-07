@@ -48,6 +48,15 @@ def test_gui_download_rejects_invalid_options_before_bridge() -> None:
     assert api.start_download([], "netease", "invalid", True, True, "downloads") == ""
 
 
+def test_gui_valid_options_expose_gui_choices_only() -> None:
+    options = MusicApi().get_valid_options()
+
+    assert set(options) == {"sources", "bitrates", "search_types"}
+    assert options["bitrates"] == ["128", "192", "320", "flac"]
+    assert options["search_types"] == ["song", "album", "playlist"]
+    assert {"value": "netease", "label": "网易云音乐"} in options["sources"]
+
+
 def test_select_directory_uses_pywebview_folder_dialog(monkeypatch) -> None:
     fake_webview = ModuleType("webview")
     fake_tkinter = ModuleType("tkinter")

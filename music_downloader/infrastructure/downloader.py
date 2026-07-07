@@ -71,7 +71,7 @@ def _safe_embed_metadata(**kwargs: Any) -> bool:
     """在 downloader 内安全调用 embed_metadata。
 
     元数据写入失败会留下"无标签文件"且下次运行被"已存在"逻辑跳过。
-    失败时返回 False，由调用方决定是否删除产物。
+    失败时返回 False，但已下载音频保留，只记录 warning。
     """
     try:
         embed_metadata(**kwargs)
@@ -148,7 +148,7 @@ def _attach_metadata(
     source: str,
     bitrate: str,
 ) -> bool:
-    """拉歌词/封面并写入元数据。成功返回 True；失败返回 False 并清理残缺文件。"""
+    """拉歌词/封面并写入元数据。元数据失败只警告，不影响下载成功状态。"""
     cover_data = b""
     cover_mime = "image/jpeg"
     lyric_text = ""
