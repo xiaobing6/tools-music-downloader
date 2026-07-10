@@ -131,6 +131,14 @@ npm.cmd --prefix music_downloader/gui/frontend run build
 .\scripts\build_exe.ps1 -SkipInstall
 ```
 
+如果系统因 `Restricted` 执行策略拒绝直接运行 `.ps1`，可只为本次构建进程指定策略：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_exe.ps1
+```
+
+该参数仅对本次 PowerShell 进程生效，不会修改用户级或计算机级策略。受组织策略管理的设备请按组织批准的流程执行；不要通过 `Set-ExecutionPolicy` 修改用户级或计算机级策略。
+
 未指定 `-Mode` 时默认构建 onefile；standalone 保留完整的 `.dist` 布局。
 
 `-SkipInstall` 会跳过 Python 和前端依赖安装，但仍会执行前端构建；因此需要已经存在 `music_downloader/gui/frontend/node_modules/`。
