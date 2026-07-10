@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from enum import StrEnum
+
 import pytest
 from pydantic import ValidationError
 
@@ -10,7 +12,7 @@ from music_downloader.core.config import (
     VALID_BITRATES,
     VALID_SOURCES,
 )
-from music_downloader.domain.enums import Bitrate, SearchType, Source
+from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
 from music_downloader.domain.models import SearchOptions, Song
 
 
@@ -65,3 +67,8 @@ def test_config_choices_match_domain_enums() -> None:
     assert list(SEARCH_TYPE_MAP) == [item.value for item in SearchType]
     assert DEFAULT_SOURCE in VALID_SOURCES
     assert DEFAULT_BITRATE in VALID_BITRATES
+
+
+def test_string_domain_enums_use_python_string_enum() -> None:
+    for enum_type in (Source, SearchType, Bitrate, DownloadStatus):
+        assert issubclass(enum_type, StrEnum)

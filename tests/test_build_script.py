@@ -8,7 +8,9 @@ SCRIPT = (ROOT / "scripts/build_exe.ps1").read_text(encoding="utf-8")
 
 def test_build_script_runs_frontend_build_before_nuitka() -> None:
     assert '$frontendDir = Join-Path $ProjectRoot "music_downloader/gui/frontend"' in SCRIPT
-    assert '$staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"' in SCRIPT
+    assert (
+        '$staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"' in SCRIPT
+    )
     assert "Get-Command npm.cmd" in SCRIPT
     assert "npm.cmd --prefix $frontendDir ci" in SCRIPT
     assert "npm.cmd --prefix $frontendDir run build" in SCRIPT

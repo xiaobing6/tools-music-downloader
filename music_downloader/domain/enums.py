@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class Source(str, Enum):
+class Source(StrEnum):
     NETEASE = "netease"
     MIGU = "migu"
     KUWO = "kuwo"
@@ -20,20 +20,20 @@ class Source(str, Enum):
     APPLE = "apple"
 
 
-class SearchType(str, Enum):
+class SearchType(StrEnum):
     SONG = "song"
     ALBUM = "album"
     PLAYLIST = "playlist"
 
 
-class Bitrate(str, Enum):
+class Bitrate(StrEnum):
     MP3_128 = "128"
     MP3_192 = "192"
     MP3_320 = "320"
     FLAC = "flac"
 
 
-class DownloadStatus(str, Enum):
+class DownloadStatus(StrEnum):
     SUCCESS = "success"
     SKIP = "skip"
     FAIL = "fail"
