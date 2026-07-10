@@ -14,7 +14,7 @@
 
 ## 技术栈
 
-- **语言**：Python 3.10+
+- **语言**：Python 3.11+
 - **运行依赖**：`playwright>=1.45`、`mutagen>=1.47`、`rich>=13`、`typer>=0.12`、`pydantic>=2.7`、`pywebview>=5.0`
 - **开发依赖**：`ruff>=0.5`、`mypy>=1.10`、`pytest>=8.2`
 - **构建依赖**（见 `requirements-build.txt`）：`nuitka>=2.5`、`ordered-set>=4.1`、`zstandard>=0.23`
@@ -103,10 +103,13 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 
 ## 约定
 
-- Python 3.10+ 语法；用 PEP 604 `X | None`，避免 `Optional[X]`。
+- Python 3.11+ 语法和工具链基线；用 PEP 604 `X | None`，避免 `Optional[X]`。
 - 业务日志统一走 `music_downloader.core.console.console.print`，不要用 `print` 直出；`gui/app.py` 找不到静态资源时的 stderr 提示除外。
 - CLI 输出和文档使用中文。
 - GUI 启动页文案保持用户友好，不直接出现 `Cloudflare`、`Playwright`、`Chrome`、堆栈、trace 等底层诊断词；这类信息只进入运行日志。
 - 单测不要访问真实音乐站点；端到端功能验证靠 `python music_download.py --check-env` 加一次本地真实搜索。
 - 下载目录 `downloads/`、Chrome profile `.chrome-profile/`、构建产物 `dist/` 已由 `.gitignore` 忽略。
+- 修改 `scripts/build_exe.ps1` 时，保持 onefile 和 standalone 的产物语义不变。
+- 保持 staging/回滚、打包后 `--help` 冒烟测试和 `SHA256SUMS.txt` 生成逻辑。
+- 发版验证包含构建脚本测试，并至少执行一次 onefile `-SkipInstall` 构建。
 - 发版前跑：`ruff check .`、`ruff format --check .`、`mypy music_downloader`、`python -m py_compile music_download.py`、`python music_download.py --check-env`，再加一次真实搜索。
