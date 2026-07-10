@@ -131,6 +131,8 @@ npm.cmd --prefix music_downloader/gui/frontend run build
 .\scripts\build_exe.ps1 -SkipInstall
 ```
 
+未指定 `-Mode` 时默认构建 onefile；standalone 保留完整的 `.dist` 布局。
+
 `-SkipInstall` 会跳过 Python 和前端依赖安装，但仍会执行前端构建；因此需要已经存在 `music_downloader/gui/frontend/node_modules/`。
 
 不同模式的输出布局如下：
