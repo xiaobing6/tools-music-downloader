@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from enum import StrEnum
+from enum import Enum
 
 
-class Source(StrEnum):
+class Source(str, Enum):  # noqa: UP042 - preserve legacy string formatting
     NETEASE = "netease"
     MIGU = "migu"
     KUWO = "kuwo"
@@ -20,20 +20,20 @@ class Source(StrEnum):
     APPLE = "apple"
 
 
-class SearchType(StrEnum):
+class SearchType(str, Enum):  # noqa: UP042 - preserve legacy string formatting
     SONG = "song"
     ALBUM = "album"
     PLAYLIST = "playlist"
 
 
-class Bitrate(StrEnum):
+class Bitrate(str, Enum):  # noqa: UP042 - preserve legacy string formatting
     MP3_128 = "128"
     MP3_192 = "192"
     MP3_320 = "320"
     FLAC = "flac"
 
 
-class DownloadStatus(StrEnum):
+class DownloadStatus(str, Enum):  # noqa: UP042 - preserve legacy string formatting
     SUCCESS = "success"
     SKIP = "skip"
     FAIL = "fail"

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from enum import StrEnum
-
 import pytest
 from pydantic import ValidationError
 
@@ -69,6 +67,16 @@ def test_config_choices_match_domain_enums() -> None:
     assert DEFAULT_BITRATE in VALID_BITRATES
 
 
-def test_string_domain_enums_use_python_string_enum() -> None:
-    for enum_type in (Source, SearchType, Bitrate, DownloadStatus):
-        assert issubclass(enum_type, StrEnum)
+@pytest.mark.parametrize(
+    ("member", "expected"),
+    [
+        pytest.param(Source.NETEASE, "Source.NETEASE", id="source"),
+        pytest.param(SearchType.SONG, "SearchType.SONG", id="search-type"),
+        pytest.param(Bitrate.MP3_320, "Bitrate.MP3_320", id="bitrate"),
+        pytest.param(DownloadStatus.SUCCESS, "DownloadStatus.SUCCESS", id="download-status"),
+    ],
+)
+def test_string_domain_enums_preserve_legacy_formatting(member: object, expected: str) -> None:
+    assert str(member) == expected
+    assert f"{member}" == expected
+    assert format(member) == expected
