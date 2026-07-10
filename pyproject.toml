@@ -7,7 +7,7 @@ name = "tools-music-downloader"
 version = "0.1.0"
 description = "桌面 GUI 和命令行音乐搜索下载工具，数据来源为 music.gdstudio.org"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 keywords = ["music", "downloader", "netease", "playwright"]
 authors = [
@@ -28,7 +28,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Sound/Audio",
@@ -39,7 +38,7 @@ music_download = "music_downloader.cli.app:main"
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "A", "C4", "T20"]
@@ -49,7 +48,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "A", "C4", "T20"]
 ignore = ["E501", "T201"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 exclude = ["dist/", "\\.nuitka-cache/", "\\.chrome-profile/"]
 warn_unused_configs = true
 check_untyped_defs = true
