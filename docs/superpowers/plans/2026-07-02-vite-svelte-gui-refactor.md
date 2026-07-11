@@ -1,5 +1,7 @@
 # Vite Svelte GUI Refactor Implementation Plan
 
+> 历史说明：本文记录 2026-07-02 的实施方案，历史尺寸约定已被取代；当前维护以 `../specs/2026-07-12-music-workbench-frontend-design.md` 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the hand-written GUI frontend with a Vite + Svelte + TypeScript + Flowbite Svelte frontend while keeping existing GUI behavior and fixing compiled-exe static asset lookup.
@@ -1744,7 +1746,7 @@ npm --prefix music_downloader/gui/frontend run build
 Add this sentence near the GUI usage section:
 
 ```markdown
-GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1200x750`。
+GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1024x720`；当前响应式布局约定见 2026-07-12 音乐工作台规格。
 ```
 
 - [ ] **Step 4: Commit README update**

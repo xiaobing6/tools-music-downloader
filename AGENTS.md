@@ -71,6 +71,8 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - `cli/` 放 Typer CLI、交互命令解析和 CLI 搜索下载工作流，与 `gui/` 同级。
 - `gui/` 保持 pywebview 桌面应用形态，前端源码使用 Vite/Svelte，构建产物输出到 `music_downloader/gui/static/`。
 - GUI 启动体验由 `App.svelte` 编排、`src/lib/startup.ts` 提供阶段模型、`StartupScreen.svelte` 渲染品牌启动页；不要把启动期浏览器、站点验证或调试细节直接展示在启动页上，详细信息继续进入运行日志。
+- GUI 主界面保持“搜索优先”的音乐工作台结构：音源、类型、音质为常用设置，其余选项位于“更多设置”；默认窗口为 `1280x800`、最低为 `1024x720`，在 `1180px` 以下把活动栏移到结果区下方，不要重新引入无断点的固定 `360px` 右栏。
+- 运行日志默认折叠，但日志、下载目录和歌曲信息必须可选择复制；交互控件保留清晰的 `focus-visible` 状态，动态搜索与下载状态使用适度的辅助技术播报。
 
 ### Chrome profile 隔离
 
@@ -97,7 +99,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - **API 签名变更**：修改 `music_downloader/infrastructure/gdstudio.py` 的 `compute_signature`，并更新 README 的 401 排错说明。
 - **交互模式命令解析**：见 `music_downloader/cli/interactive.py` 和 `workflow.py`。
 - **CLI 参数**：见 `music_downloader/cli/app.py`，所有变更要同步更新 `README.md` 参数表。
-- **GUI 功能**：修改 `music_downloader/gui/api.py`、`bridge.py` 和 `gui/frontend/src/`；构建产物输出到 `gui/static/`，不要直接手改静态构建产物；GUI 参数选择不应持久化到用户目录。
+- **GUI 功能**：修改 `music_downloader/gui/api.py`、`bridge.py` 和 `gui/frontend/src/`；构建产物输出到 `gui/static/`，不要直接手改静态构建产物；GUI 参数选择不应持久化到用户目录。涉及布局、窗口尺寸或交互约定时，同步更新前端 Node 测试、Python GUI 测试、`README.md`、本文件和相关设计文档。
 - **GUI 启动页/启动阶段**：修改 `music_downloader/gui/frontend/src/lib/startup.ts`、`StartupScreen.svelte` 和 `App.svelte`；同步更新 `music_downloader/gui/frontend/tests/startup.test.mjs`、`README.md`，再运行前端构建刷新 `gui/static/`。
 - **打包资源**：GUI 静态资源仍在 `music_downloader/gui/static/`，构建脚本需保留 `--include-data-dir=music_downloader/gui/static=music_downloader/gui/static`。
 

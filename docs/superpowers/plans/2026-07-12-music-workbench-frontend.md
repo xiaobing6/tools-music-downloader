@@ -41,6 +41,7 @@
 - Modify: `AGENTS.md` — 前端维护约定和响应式基线。
 - Modify: `docs/superpowers/specs/2026-07-12-music-workbench-frontend-design.md` — 清理后验收措辞，保持最终状态表述。
 - Modify: `docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md` — 标注旧尺寸设计已被新规格取代。
+- Modify: `docs/superpowers/specs/2026-07-02-vite-svelte-gui-refactor-design.md` — 标注历史设计已被新规格取代。
 - Generate: `music_downloader/gui/static/index.html` 与 `music_downloader/gui/static/assets/*` — Vite 构建产物。
 
 ---
@@ -412,6 +413,7 @@ git commit -m "feat: finish responsive music workbench"
 - Modify: `AGENTS.md`
 - Modify: `docs/superpowers/specs/2026-07-12-music-workbench-frontend-design.md`
 - Modify: `docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md`
+- Modify: `docs/superpowers/specs/2026-07-02-vite-svelte-gui-refactor-design.md`
 
 **Interfaces:**
 - Consumes: 最终窗口、布局、设置和日志行为。
@@ -440,19 +442,23 @@ def test_current_gui_docs_match_workbench_contract() -> None:
     assert "1266x1013" not in readme
 
 
-def test_superseded_gui_plan_points_to_current_design() -> None:
-    old_plan = (
-        ROOT / "docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md"
-    ).read_text(encoding="utf-8")
-    assert "2026-07-12-music-workbench-frontend-design.md" in old_plan
-    assert "历史尺寸约定已被取代" in old_plan
+def test_superseded_gui_docs_point_to_current_design() -> None:
+    historical_docs = [
+        ROOT / "docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md",
+        ROOT / "docs/superpowers/specs/2026-07-02-vite-svelte-gui-refactor-design.md",
+    ]
+
+    for path in historical_docs:
+        content = path.read_text(encoding="utf-8")
+        assert "2026-07-12-music-workbench-frontend-design.md" in content
+        assert "历史尺寸约定已被取代" in content
 ```
 
 - [ ] **Step 2: 运行文档测试并确认失败**
 
 Run: `python -m pytest tests/test_gui_documentation.py -q`
 
-Expected: FAIL，README 和 AGENTS 尚未描述工作台契约，旧计划尚未标记被取代。
+Expected: FAIL，README 和 AGENTS 尚未描述工作台契约，历史计划与规格尚未完整标记被取代。
 
 - [ ] **Step 3: 更新当前用户和开发者文档**
 
@@ -472,12 +478,14 @@ Expected: FAIL，README 和 AGENTS 尚未描述工作台契约，旧计划尚未
 
 - [ ] **Step 4: 处理历史文档和当前规格措辞**
 
-在 `docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md` 顶部增加明确说明：
+在 `docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md` 和 `docs/superpowers/specs/2026-07-02-vite-svelte-gui-refactor-design.md` 顶部增加明确说明，分别使用正确的相对路径指向当前规格：
 
 ```markdown
 > 历史说明：本文记录 2026-07-02 的实施方案，其中窗口尺寸等约定已被
 > `../specs/2026-07-12-music-workbench-frontend-design.md` 取代；当前维护以新规格为准。
 ```
+
+历史规格位于同一 `specs/` 目录，因此直接引用 `2026-07-12-music-workbench-frontend-design.md`。
 
 把当前设计规格的旧尺寸清理验收改成不重复旧值的表述：“再次搜索已废弃的窗口尺寸字面量和旧布局描述”。
 

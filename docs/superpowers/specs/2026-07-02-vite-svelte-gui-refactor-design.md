@@ -1,5 +1,7 @@
 # Vite Svelte GUI Refactor Design
 
+> 历史说明：本文记录 2026-07-02 的设计决策，历史尺寸约定已被取代；当前维护以 `2026-07-12-music-workbench-frontend-design.md` 为准。
+
 > Status: approved for planning.
 > User-facing usage stays in `README.md`; collaborator rules stay in `AGENTS.md`.
 
