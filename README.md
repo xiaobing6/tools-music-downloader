@@ -60,6 +60,8 @@ GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1024x720`。窗口
 
 GUI 启动时会先显示品牌启动页，依次展示“连接桌面接口”“加载基础配置”“准备浏览器”“验证访问环境”等阶段化进度。启动页不显示底层日志；如果初始化失败，会停留在启动页并提供“重试”按钮，详细原因可在进入主界面后的运行日志中查看。
 
+GUI 的后台 Chrome 默认以 headless 模式运行。为避免新版 Chrome 在 Windows 上把本应隐藏的平台窗口显示为不可交互的白色窗口，程序会把该平台窗口放到屏幕外；如果站点验证需要人工处理，程序仍会重新打开正常可见的 Chrome 窗口。
+
 ## CLI 使用
 
 CLI 使用时传入 `-k`、`--check-env`、`-i` 等参数：
@@ -199,6 +201,10 @@ npm.cmd run build
 **为什么 Cloudflare 有时需要重新验证？**
 
 `cf_clearance` 与 IP、UA、TLS 指纹和 Chrome profile 相关。工具默认使用项目目录下隔离的 `.chrome-profile/`，不会读取系统 Chrome profile。
+
+**为什么 GUI 旁边出现不可交互的白色窗口？**
+
+新版 Chrome 的 headless 模式仍会创建平台窗口，正常情况下该窗口不会显示。GUI 会在 headless 启动时把它放到屏幕外；如果白窗再次出现，请确认 `music_downloader/gui/bridge.py` 的 headless persistent context 仍使用屏幕外位置参数，并检查系统 Chrome 与 Playwright 版本。不要通过隐藏 GUI 或禁用整个浏览器来规避，因为搜索和下载仍依赖该浏览器会话。
 
 **遇到 HTTP 401 签名验证失败怎么办？**
 

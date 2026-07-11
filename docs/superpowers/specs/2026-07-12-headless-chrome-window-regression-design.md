@@ -1,7 +1,7 @@
 # Headless Chrome 白窗回归修复设计
 
 **日期：** 2026-07-12  
-**状态：** 已确认，待实施
+**状态：** 实施中
 
 ## 背景
 
@@ -51,6 +51,8 @@
 ### 浏览器启动参数
 
 在 `music_downloader/gui/bridge.py` 内集中定义 headless 窗口位置参数，并通过一个小型纯函数按 `headless` 状态返回启动参数。
+
+实际实现使用 `HEADLESS_WINDOW_POSITION_ARG` 和 `_browser_launch_args(*, headless: bool)`；两个 GUI persistent context 调用都显式传入该函数的结果。
 
 所有 GUI `launch_persistent_context` 调用使用该函数：
 

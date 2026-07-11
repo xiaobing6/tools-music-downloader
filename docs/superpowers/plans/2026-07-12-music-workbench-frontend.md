@@ -48,6 +48,8 @@
 
 ### Task 1: 更新桌面窗口尺寸契约
 
+> **2026-07-12 更正：** 原任务只修改了 `app.py` 和 `test_gui_app.py`，遗漏了实际提供启动配置的 `settings.py`，导致真实窗口仍使用旧尺寸。该遗漏由 `2026-07-12-headless-chrome-window-regression.md` 的 Task 2 修复并增加跨模块一致性测试。
+
 **Files:**
 - Modify: `tests/test_gui_app.py`
 - Modify: `music_downloader/gui/app.py`

@@ -121,6 +121,7 @@
 ## 窗口与桌面集成
 
 - `music_downloader/gui/app.py` 的默认窗口改为 `(1280, 800)`。
+- `music_downloader/gui/settings.py` 的 `DEFAULT_CONFIG` 必须使用同一默认尺寸，并由跨模块测试防止两处再次失配。
 - 最低窗口改为 `(1024, 720)`。
 - 仍使用 pywebview 本地窗口，不新增本地 HTTP 后端。
 - 文件夹选择、打开目录、关闭时清理和浏览器会话行为保持不变。

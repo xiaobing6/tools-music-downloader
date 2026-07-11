@@ -56,8 +56,8 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 
 ### API 交互流程
 
-1. 启动 Playwright 浏览器，优先无头模式访问 `music.gdstudio.org`。
-2. 检查 `cf_clearance` cookie，失败后尝试打开可见 Chrome 窗口。
+1. 启动 Playwright 浏览器，优先无头模式访问 `music.gdstudio.org`。GUI 的 headless persistent context 必须带 `--window-position=-32000,-32000`，防止新版 Chrome 的平台窗口被 Windows 合成到桌面。
+2. 检查 `cf_clearance` cookie，失败后尝试打开可见 Chrome 窗口；headed 回退不得带屏幕外位置参数，否则用户无法完成人工验证。
 3. 从页面提取 `mkPlayer.version`，仅用于日志展示，不再参与签名。
 4. 通过 POST 调用 `/api.php`，签名由 `compute_signature` 生成。
 5. 签名算法通过 `page.evaluate` 调用页面自身的 `crc32(search_id)`，确保与站点当前逻辑保持一致。
@@ -77,6 +77,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 ### Chrome profile 隔离
 
 - 默认通过 `launch_persistent_context` 启动，把 user data 放在项目根目录 `.chrome-profile/`，与系统 Chrome profile 隔离。
+- GUI 只在 headless 模式使用屏幕外窗口位置；headed 验证窗口保持正常位置。不要用禁用 GPU、隐藏 GUI 或删除 persistent profile 的方式替代这一兼容措施。
 - `cf_clearance` 跨 profile 失效属预期副作用。
 - 如果用户主动指定 `--user-data-dir`，CLI 会透传，并打印当前目录位置。
 

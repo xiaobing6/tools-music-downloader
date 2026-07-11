@@ -15,6 +15,15 @@ def test_current_gui_docs_match_workbench_contract() -> None:
     assert "1266x1013" not in readme
 
 
+def test_gui_docs_cover_headless_window_regression() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+    assert "不可交互的白色窗口" in readme
+    assert "--window-position=-32000,-32000" in agents
+    assert "headed" in agents
+
+
 def test_superseded_gui_docs_point_to_current_design() -> None:
     historical_docs = [
         ROOT / "docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md",
