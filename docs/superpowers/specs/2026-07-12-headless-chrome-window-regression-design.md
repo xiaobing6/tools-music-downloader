@@ -1,7 +1,7 @@
 # Headless Chrome 白窗回归修复设计
 
 **日期：** 2026-07-12  
-**状态：** 实施中
+**状态：** 已实施
 
 ## 背景
 
@@ -89,6 +89,15 @@
 - `AGENTS.md`：在浏览器初始化和 GUI 修改约定中记录 headless/headed 参数边界。
 - 当前设计文档与随后生成的实施计划：记录验证证据和最终实现。
 - 既有音乐工作台设计/计划只在存在冲突时更新；不复制无关内容。
+
+## 实施与验证结果
+
+- `music_downloader/gui/bridge.py` 已通过 `HEADLESS_WINDOW_POSITION_ARG` 和 `_browser_launch_args` 区分 headless 与 headed 参数；headless 使用屏幕外位置，headed 回退使用空参数列表。
+- `music_downloader/gui/settings.py` 的实际默认尺寸已同步为 `1280×800`，跨模块测试要求其始终等于 `app.DEFAULT_WINDOW_SIZE`。
+- TDD 红灯分别捕获了缺失的 Chrome `args`、旧尺寸 `(1266, 1013)` 和缺失的文档说明；最小实现后对应测试转绿。
+- 自动验证结果：pytest `77 passed`；ruff check 通过；ruff format 显示 `45 files already formatted`；mypy 显示 `Success: no issues found in 30 source files`；`py_compile` 通过。
+- 前端验证结果：Node `15 passed`；Svelte check `0 errors and 0 warnings`；Vite `8.1.2` 构建成功，静态资源与源码一致。
+- 真实入口 `python .\music_download.py` 正常进入首页，用户确认“正常且无白窗”；后台 Chrome 根进程同时检测到 `Headless=True`、`Offscreen=True`。
 
 ## 非目标
 
