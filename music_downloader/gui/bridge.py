@@ -32,6 +32,11 @@ from music_downloader.services.search import SearchService
 
 LogCallback = Callable[[str, str], None]
 ProgressCallback = Callable[[dict[str, Any]], None]
+HEADLESS_WINDOW_POSITION_ARG = "--window-position=-32000,-32000"
+
+
+def _browser_launch_args(*, headless: bool) -> list[str]:
+    return [HEADLESS_WINDOW_POSITION_ARG] if headless else []
 
 
 @dataclass
@@ -160,6 +165,7 @@ class _PlaywrightThread:
                 channel="chrome",
                 headless=final_headless,
                 user_agent=USER_AGENT,
+                args=_browser_launch_args(headless=final_headless),
             )
             self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
             self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
@@ -174,6 +180,7 @@ class _PlaywrightThread:
                     channel="chrome",
                     headless=False,
                     user_agent=USER_AGENT,
+                    args=_browser_launch_args(headless=False),
                 )
                 self._page = (
                     self._context.pages[0] if self._context.pages else self._context.new_page()

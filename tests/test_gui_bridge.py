@@ -15,6 +15,53 @@ class _InlineSession:
         return func()
 
 
+class _FakePage:
+    def goto(self, *_args: object, **_kwargs: object) -> None:
+        return None
+
+
+class _FakeContext:
+    def __init__(self) -> None:
+        self.pages = [_FakePage()]
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeChromium:
+    def __init__(self, calls: list[dict[str, object]]) -> None:
+        self.calls = calls
+
+    def launch_persistent_context(self, **kwargs: object) -> _FakeContext:
+        self.calls.append(kwargs)
+        return _FakeContext()
+
+
+class _FakePlaywright:
+    def __init__(self, calls: list[dict[str, object]]) -> None:
+        self.chromium = _FakeChromium(calls)
+
+
+def test_gui_browser_hides_only_headless_platform_window(tmp_path: Path, monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+    cloudflare_results = iter([False, True])
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _FakePlaywright(calls)
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(
+        bridge_module,
+        "wait_for_cloudflare",
+        lambda _page: next(cloudflare_results),
+    )
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is True
+    assert calls[0]["headless"] is True
+    assert calls[0]["args"] == ["--window-position=-32000,-32000"]
+    assert calls[1]["headless"] is False
+    assert calls[1]["args"] == []
+
+
 def test_download_event_includes_failure_reason_and_path(
     tmp_path: Path,
     monkeypatch,
