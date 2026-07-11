@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 from types import ModuleType
 
-from music_downloader.gui import app as app_module
 from music_downloader.gui import api as api_module
+from music_downloader.gui import app as app_module
 from music_downloader.gui.api import MusicApi
 from music_downloader.gui.settings import DEFAULT_CONFIG, load_config, save_config
 
