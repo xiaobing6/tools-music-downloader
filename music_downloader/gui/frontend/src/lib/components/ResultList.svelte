@@ -78,7 +78,7 @@
 
 </script>
 
-<section class="flex h-full min-h-0 flex-col rounded-lg border border-slate-200 bg-white">
+<section class="flex h-full min-h-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
   <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
     <div>
       <h2 class="text-base font-semibold text-slate-950">搜索结果</h2>
@@ -148,7 +148,14 @@
           />
           <span class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-400">
             {#if song.cover}
-              <img class="h-full w-full object-cover" src={song.cover} alt="" />
+              <img
+                class="h-full w-full object-cover"
+                src={song.cover}
+                alt=""
+                width="48"
+                height="48"
+                loading="lazy"
+              />
             {:else}
               <Music size={22} aria-hidden="true" />
             {/if}
@@ -185,7 +192,7 @@
               {/if}
             </span>
           </span>
-          <span class="whitespace-nowrap text-xs text-slate-500">{song.duration ?? ""}</span>
+          <span class="data-text whitespace-nowrap text-xs text-slate-500">{song.duration ?? ""}</span>
         </label>
       {/each}
     </div>

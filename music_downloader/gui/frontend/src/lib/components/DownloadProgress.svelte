@@ -13,11 +13,16 @@
   let percent = $derived(progressPercent(progress.current, progress.total));
 </script>
 
-<section id="downloadPanel" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+<section
+  id="downloadPanel"
+  class="download-track rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm"
+  aria-live="polite"
+  aria-atomic="true"
+>
   <div class="mb-3 flex items-center justify-between gap-3">
     <div class="min-w-0">
       <p id="progressLabel" class="truncate text-sm font-semibold text-blue-950">{progress.label}</p>
-      <p id="progressText" class="mt-0.5 text-xs text-blue-700">
+      <p id="progressText" class="data-text mt-0.5 text-xs text-blue-700">
         {progress.current} / {progress.total}（{percent}%）
       </p>
     </div>

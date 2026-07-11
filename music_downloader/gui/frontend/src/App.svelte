@@ -43,7 +43,7 @@
   let loadingText = $state("");
   let startupStageKey = $state<StartupStageKey>("launch");
   let currentTaskId = $state<string | null>(null);
-  let logCollapsed = $state(false);
+  let logCollapsed = $state(true);
   let environmentOpen = $state(false);
   let environmentChecks = $state<EnvironmentCheck[]>([]);
   let activeDownloadIndices = $state<number[]>([]);
@@ -51,7 +51,7 @@
   let progress = $state<DownloadProgressState>({
     current: 0,
     total: 0,
-    label: "准备下载..."
+    label: "准备下载…"
   });
 
   let nextLogId = 1;
@@ -89,7 +89,7 @@
     loadingText = "";
     startupStageKey = "bridge";
     browserReady = false;
-    addLog("正在启动音乐下载器...", "info");
+    addLog("正在启动音乐下载器…", "info");
 
     try {
       await waitForPywebview();
@@ -162,7 +162,7 @@
       progress = {
         current: 0,
         total: detail.total,
-        label: "准备下载..."
+        label: "准备下载…"
       };
       return;
     }
@@ -176,7 +176,7 @@
       progress = {
         current: detail.current,
         total: detail.total,
-        label: detail.song_name ? `下载中: ${detail.song_name}` : "下载中..."
+        label: detail.song_name ? `下载中: ${detail.song_name}` : "下载中…"
       };
       return;
     }
@@ -307,7 +307,7 @@
     }
 
     searching = true;
-    loadingText = "正在搜索...";
+    loadingText = "正在搜索…";
     try {
       await saveCurrentConfig();
       const results = await api.search(query, config.source, config.search_type, config.number);
@@ -405,7 +405,7 @@
     if (!api || !currentTaskId) {
       return;
     }
-    addLog("正在取消下载...", "warn");
+    addLog("正在取消下载…", "warn");
     try {
       await api.cancel_download(currentTaskId);
     } catch (error) {
@@ -522,8 +522,8 @@
         />
       </header>
 
-      <main class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] items-stretch gap-4">
-        <section class="flex min-h-0 flex-col gap-4">
+      <main class="workbench-main items-stretch">
+        <section class="results-workspace flex min-h-0 flex-col">
           <div class="min-h-0 flex-1">
             <ResultList
               {songs}
@@ -540,7 +540,7 @@
           </div>
         </section>
 
-        <aside class="flex min-h-0 flex-col gap-4">
+        <aside class="activity-rail">
           <DownloadProgress {progress} cancelable={downloadActive} onCancel={cancelDownload} />
           <LogPanel
             {logs}
@@ -566,10 +566,13 @@
 {#if searching}
   <div
     id="loadingOverlay"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-[1px]"
   >
     <div class="rounded-lg bg-white px-6 py-4 text-sm font-medium text-slate-700 shadow-lg">
-      {loadingText || "请稍候..."}
+      {loadingText || "请稍候…"}
     </div>
   </div>
 {/if}

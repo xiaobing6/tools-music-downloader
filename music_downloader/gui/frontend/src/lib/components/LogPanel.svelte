@@ -46,10 +46,13 @@
   </div>
 
   {#if !collapsed}
-    <div id="logContent" class="min-h-0 flex-1 space-y-2 overflow-auto p-4 scrollbar-thin">
+    <div
+      id="logContent"
+      class="select-text min-h-0 flex-1 space-y-2 overflow-auto p-4 scrollbar-thin"
+    >
       {#each logs as log (log.id)}
         <div class="grid grid-cols-[72px_auto_1fr] items-start gap-2 text-xs">
-          <span class="pt-0.5 text-slate-400">{log.time}</span>
+          <span class="data-text pt-0.5 text-slate-400">{log.time}</span>
           <Badge color={colors[log.level]} rounded>{labels[log.level]}</Badge>
           <p class="min-w-0 break-words text-slate-700">{log.message}</p>
         </div>

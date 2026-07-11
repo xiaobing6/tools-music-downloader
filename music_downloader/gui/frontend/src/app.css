@@ -188,6 +188,37 @@ summary {
   margin-top: 12px;
 }
 
+.advanced-settings > summary::after {
+  margin-left: 8px;
+  color: var(--color-track);
+  content: "＋";
+  font-family: var(--font-data);
+}
+
+.advanced-settings[open] > summary::after {
+  content: "−";
+}
+
+.results-workspace {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.download-track {
+  position: relative;
+  overflow: hidden;
+}
+
+.download-track::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: linear-gradient(90deg, var(--color-track), var(--color-wave));
+}
+
 .workbench-main {
   display: grid;
   min-height: 0;
@@ -217,6 +248,10 @@ summary {
   .activity-rail {
     flex: none;
   }
+
+  .results-workspace {
+    min-height: 420px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -227,6 +262,17 @@ summary {
 
   .workbench-command {
     padding: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
