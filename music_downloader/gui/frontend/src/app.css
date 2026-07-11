@@ -195,6 +195,11 @@ summary {
   font-family: var(--font-data);
 }
 
+.advanced-settings:not([open]) {
+  border-color: transparent;
+  background: transparent;
+}
+
 .advanced-settings[open] > summary::after {
   content: "−";
 }

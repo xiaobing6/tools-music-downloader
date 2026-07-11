@@ -102,7 +102,7 @@
 
   <details class="advanced-settings mt-3 rounded-xl border border-slate-200 bg-slate-50/70">
     <summary
-      class="no-select ml-auto flex min-h-10 w-fit cursor-pointer list-none items-center rounded-lg px-3 text-sm font-semibold text-slate-700 hover:bg-white"
+      class="no-select ml-auto flex min-h-10 w-fit cursor-pointer list-none items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:border-blue-200 hover:text-blue-700"
     >
       更多设置
     </summary>

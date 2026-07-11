@@ -13,8 +13,7 @@
   let percent = $derived(progressPercent(progress.current, progress.total));
 </script>
 
-<section
-  id="downloadPanel"
+<section id="downloadPanel"
   class="download-track rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm"
   aria-live="polite"
   aria-atomic="true"

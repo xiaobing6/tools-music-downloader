@@ -39,6 +39,14 @@ test("settings separate quick controls from advanced controls", async () => {
   assert.ok(settings.indexOf("numberInput") > settings.indexOf("<details"));
 });
 
+test("closed advanced settings stay visually quiet", async () => {
+  const css = await source("app.css");
+  assert.match(
+    css,
+    /\.advanced-settings:not\(\[open\]\)[^{]*\{[^}]*border-color:\s*transparent[^}]*background:\s*transparent/s
+  );
+});
+
 test("search and settings controls expose stable form metadata", async () => {
   const search = await source("lib/components/SearchBar.svelte");
   const settings = await source("lib/components/SettingsPanel.svelte");
