@@ -15,7 +15,7 @@
 
 ## 环境要求
 
-- Python 3.10+
+- Python 3.11+
 - 系统已安装 Google Chrome
 - 如需从源码重建 GUI 前端或打包 exe，需要安装 Node.js 和 npm
 - Windows / macOS / Linux
@@ -115,12 +115,6 @@ tests/                            # pytest 测试
 
 ## 打包 EXE
 
-安装构建依赖：
-
-```bash
-pip install -r requirements-build.txt
-```
-
 如需单独重建 GUI 静态资源：
 
 ```powershell
@@ -128,24 +122,37 @@ npm.cmd --prefix music_downloader/gui/frontend install
 npm.cmd --prefix music_downloader/gui/frontend run build
 ```
 
-生成单文件 exe：
+构建脚本支持以下常用方式：
 
 ```powershell
 .\scripts\build_exe.ps1
-```
-
-已安装构建依赖时可跳过安装：
-
-```powershell
+.\scripts\build_exe.ps1 -Mode standalone
+.\scripts\build_exe.ps1 -Jobs 4
 .\scripts\build_exe.ps1 -SkipInstall
 ```
 
+如果系统因 `Restricted` 执行策略拒绝直接运行 `.ps1`，可只为本次构建进程指定策略：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_exe.ps1
+```
+
+该参数仅对本次 PowerShell 进程生效，不会修改用户级或计算机级策略。受组织策略管理的设备请按组织批准的流程执行；不要通过 `Set-ExecutionPolicy` 修改用户级或计算机级策略。
+
+未指定 `-Mode` 时默认构建 onefile；standalone 保留完整的 `.dist` 布局。
+
 `-SkipInstall` 会跳过 Python 和前端依赖安装，但仍会执行前端构建；因此需要已经存在 `music_downloader/gui/frontend/node_modules/`。
 
-输出文件：
+不同模式的输出布局如下：
 
 ```text
+onefile:
 dist/music_download.exe
+dist/SHA256SUMS.txt
+
+standalone:
+dist/music_download.dist/music_download.exe
+dist/SHA256SUMS.txt
 ```
 
 生成的 `music_download.exe` 同时支持 GUI 和 CLI：
@@ -156,6 +163,8 @@ dist/music_download.exe
 .\dist\music_download.exe -h
 .\dist\music_download.exe --check-env
 ```
+
+正常构建会使用 `requirements-build-constraints.txt` 约束 Python 构建依赖，并通过 `npm ci` 安装前端依赖。所有产物先在 staging 目录中构建，打包后的 `--help` 会通过冒烟测试后才发布到 `dist/`；构建失败时会保留上一次成功的 `dist/`。
 
 构建脚本会在 Nuitka 打包前自动运行 Vite 前端构建，并继续把 `music_downloader/gui/static/` 打包进 exe；`node_modules/` 只用于前端构建，不会被打包进 exe。Chrome 不会被打包，运行时仍使用用户系统已安装的 Google Chrome。
 

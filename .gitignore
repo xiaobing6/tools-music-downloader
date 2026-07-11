@@ -11,6 +11,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+dist-staging/
+dist-backup/
 # 用户下载物，体积大且与本仓库无关。建议把 -o 指到仓库外。
 downloads/
 eggs/

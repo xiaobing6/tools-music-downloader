@@ -82,7 +82,10 @@ def test_results_and_logs_share_resizable_bottom_layout() -> None:
     assert "items-stretch" in app
     assert 'class="min-h-0 flex-1 overflow-auto scrollbar-thin"' not in app
     assert 'class="flex h-full min-h-0 flex-col' in result_list
-    assert 'class="min-h-0 flex-1 divide-y divide-slate-100 overflow-auto scrollbar-thin"' in result_list
+    assert (
+        'class="min-h-0 flex-1 divide-y divide-slate-100 overflow-auto scrollbar-thin"'
+        in result_list
+    )
     assert 'class="flex min-h-64 flex-1' in empty_state
     assert "flex min-h-0 flex-1 flex-col" in log_panel
     assert 'id="logContent" class="min-h-0 flex-1' in log_panel

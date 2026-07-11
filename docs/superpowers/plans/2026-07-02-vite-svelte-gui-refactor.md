@@ -6,7 +6,7 @@
 
 **Architecture:** pywebview remains the desktop shell and keeps exposing `MusicApi` to JavaScript. Vite builds Svelte source from `music_downloader/gui/frontend/` into `music_downloader/gui/static/`, which remains the runtime and Nuitka-packaged asset directory. The frontend uses typed wrappers around the existing pywebview API and listens to the existing `py-log` and `py-progress` custom events.
 
-**Tech Stack:** Python 3.10+, pywebview, Nuitka, Vite, Svelte, TypeScript, Flowbite Svelte, Tailwind CSS, @lucide/svelte, pytest, ruff, mypy.
+**Tech Stack:** Python 3.11+, pywebview, Nuitka, Vite, Svelte, TypeScript, Flowbite Svelte, Tailwind CSS, @lucide/svelte, pytest, ruff, mypy.
 
 ---
 

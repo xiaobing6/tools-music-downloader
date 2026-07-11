@@ -6,7 +6,7 @@
 
 **Architecture:** Keep the public Typer CLI in `music_downloader/cli/app.py`. Generate help text from existing constants in `music_downloader/core/config.py` so future option-list changes automatically reach `--help`. Add tests in `tests/test_cli_app.py`; do not change argument forwarding or runtime behavior.
 
-**Tech Stack:** Python 3.10+, Typer, pytest.
+**Tech Stack:** Python 3.11+, Typer, pytest.
 
 ---
 

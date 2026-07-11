@@ -10,7 +10,7 @@ from music_downloader.core.config import (
     VALID_BITRATES,
     VALID_SOURCES,
 )
-from music_downloader.domain.enums import Bitrate, SearchType, Source
+from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
 from music_downloader.domain.models import SearchOptions, Song
 
 
@@ -65,3 +65,18 @@ def test_config_choices_match_domain_enums() -> None:
     assert list(SEARCH_TYPE_MAP) == [item.value for item in SearchType]
     assert DEFAULT_SOURCE in VALID_SOURCES
     assert DEFAULT_BITRATE in VALID_BITRATES
+
+
+@pytest.mark.parametrize(
+    ("member", "expected"),
+    [
+        pytest.param(Source.NETEASE, "Source.NETEASE", id="source"),
+        pytest.param(SearchType.SONG, "SearchType.SONG", id="search-type"),
+        pytest.param(Bitrate.MP3_320, "Bitrate.MP3_320", id="bitrate"),
+        pytest.param(DownloadStatus.SUCCESS, "DownloadStatus.SUCCESS", id="download-status"),
+    ],
+)
+def test_string_domain_enums_preserve_legacy_formatting(member: object, expected: str) -> None:
+    assert str(member) == expected
+    assert f"{member}" == expected
+    assert format(member) == expected
