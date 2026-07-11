@@ -21,3 +21,39 @@ test("interactive controls have a focus-visible baseline and body text stays sel
   assert.doesNotMatch(css, /body\s*\{[^}]*user-select:\s*none/s);
   assert.match(css, /\.no-select[^}]*user-select:\s*none/s);
 });
+
+test("the main workbench presents search before settings", async () => {
+  const app = await source("App.svelte");
+  assert.ok(app.indexOf("<SearchBar") < app.indexOf("<SettingsPanel"));
+  assert.match(app, /class="music-track/);
+  assert.match(app, /class="workbench-command/);
+});
+
+test("settings separate quick controls from advanced controls", async () => {
+  const settings = await source("lib/components/SettingsPanel.svelte");
+  assert.match(settings, /<details/);
+  assert.match(settings, /<summary[^>]*>\s*更多设置/);
+  assert.ok(settings.indexOf("sourceSelect") < settings.indexOf("<details"));
+  assert.ok(settings.indexOf("typeSelect") < settings.indexOf("<details"));
+  assert.ok(settings.indexOf("bitrateSelect") < settings.indexOf("<details"));
+  assert.ok(settings.indexOf("numberInput") > settings.indexOf("<details"));
+});
+
+test("search and settings controls expose stable form metadata", async () => {
+  const search = await source("lib/components/SearchBar.svelte");
+  const settings = await source("lib/components/SettingsPanel.svelte");
+  assert.match(search, /name="keyword"/);
+  assert.match(search, /autocomplete="off"/);
+  assert.match(search, /搜索歌曲、歌手、专辑…/);
+  for (const name of [
+    "source",
+    "search_type",
+    "bitrate",
+    "number",
+    "download_cover",
+    "download_lyric",
+    "output_dir"
+  ]) {
+    assert.match(settings, new RegExp(`name="${name}"`));
+  }
+});

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Music2 } from "@lucide/svelte";
   import { onMount } from "svelte";
   import SettingsPanel from "./lib/components/SettingsPanel.svelte";
   import SearchBar from "./lib/components/SearchBar.svelte";
@@ -482,31 +483,47 @@
 {#if showStartup}
   <StartupScreen stage={startupStage} onRetry={retryInitialize} />
 {:else if config && options}
-  <div class="app-shell overflow-hidden bg-slate-100 text-slate-950">
-    <div class="flex h-full flex-col gap-4 p-5">
-      <SettingsPanel
-        {config}
-        {options}
-        disabled={busy || downloadActive}
-        onConfigChange={handleConfigChange}
-        onBrowseDirectory={browseDirectory}
-        onOpenDirectory={openDirectory}
-        onEnvironmentCheck={checkEnvironment}
-      />
+  <div class="app-shell workbench-shell text-slate-950">
+    <div class="workbench-frame">
+      <header class="workbench-command">
+        <div class="command-brand">
+          <span class="brand-mark no-select" aria-hidden="true">
+            <Music2 size={24} strokeWidth={2.25} />
+          </span>
+          <div class="min-w-0">
+            <p class="brand-kicker">LOCAL MUSIC WORKBENCH</p>
+            <h1 class="workbench-title">音乐下载器</h1>
+          </div>
+          <div class="music-track no-select" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <span class="workbench-state no-select">搜索与下载已就绪</span>
+        </div>
+
+        <SearchBar
+          {keyword}
+          {searching}
+          disabled={initializing || downloadActive}
+          resultCount={songs.length}
+          onKeyword={(value) => {
+            keyword = value;
+          }}
+          onSearch={search}
+        />
+
+        <SettingsPanel
+          {config}
+          {options}
+          disabled={busy || downloadActive}
+          onConfigChange={handleConfigChange}
+          onBrowseDirectory={browseDirectory}
+          onOpenDirectory={openDirectory}
+          onEnvironmentCheck={checkEnvironment}
+        />
+      </header>
 
       <main class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] items-stretch gap-4">
         <section class="flex min-h-0 flex-col gap-4">
-          <SearchBar
-            {keyword}
-            {searching}
-            disabled={initializing || downloadActive}
-            resultCount={songs.length}
-            onKeyword={(value) => {
-              keyword = value;
-            }}
-            onSearch={search}
-          />
-
           <div class="min-h-0 flex-1">
             <ResultList
               {songs}

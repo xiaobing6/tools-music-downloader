@@ -62,6 +62,132 @@ summary {
   height: 100%;
 }
 
+.workbench-shell {
+  overflow: auto;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 220px),
+    var(--color-canvas);
+}
+
+.workbench-frame {
+  display: flex;
+  min-width: 0;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+.workbench-command {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.07);
+}
+
+.command-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  background: var(--color-track);
+  border-radius: 13px;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+}
+
+.brand-kicker {
+  margin: 0;
+  color: #66809d;
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.workbench-title {
+  margin: 2px 0 0;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.music-track {
+  position: relative;
+  display: flex;
+  height: 24px;
+  min-width: 80px;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.music-track::before {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--color-line) 16%, var(--color-wave));
+}
+
+.music-track span {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 3px;
+  background: var(--color-wave);
+  border-radius: 999px;
+}
+
+.music-track span:nth-child(1),
+.music-track span:nth-child(5) {
+  height: 8px;
+}
+
+.music-track span:nth-child(2),
+.music-track span:nth-child(4) {
+  height: 15px;
+}
+
+.music-track span:nth-child(3) {
+  height: 22px;
+}
+
+.workbench-state {
+  flex: none;
+  padding: 6px 10px;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+}
+
+.settings-panel {
+  margin-top: 12px;
+}
+
 .workbench-main {
   display: grid;
   min-height: 0;
@@ -78,6 +204,10 @@ summary {
 }
 
 @media (max-width: 1179px) {
+  .workbench-frame {
+    padding: 12px;
+  }
+
   .workbench-main {
     display: flex;
     min-height: auto;
@@ -86,6 +216,17 @@ summary {
 
   .activity-rail {
     flex: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .workbench-state,
+  .brand-kicker {
+    display: none;
+  }
+
+  .workbench-command {
+    padding: 14px;
   }
 }
 
