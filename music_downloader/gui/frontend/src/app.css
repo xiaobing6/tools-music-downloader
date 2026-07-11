@@ -4,11 +4,20 @@
 @source "../node_modules/flowbite/dist";
 
 :root {
-  color: #111827;
-  background: #f3f4f6;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+  --color-canvas: #f3f7fc;
+  --color-ink: #102033;
+  --color-track: #2563eb;
+  --color-wave: #38bdf8;
+  --color-success: #10b981;
+  --color-line: #d9e4f0;
+  --font-display: "Microsoft YaHei UI", "Microsoft YaHei", ui-sans-serif, sans-serif;
+  --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Microsoft YaHei", sans-serif;
+  --font-data: Bahnschrift, "Cascadia Mono", Consolas, monospace;
+
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-family: var(--font-body);
 }
 
 html,
@@ -20,7 +29,6 @@ body,
 body {
   margin: 0;
   overflow: hidden;
-  user-select: none;
 }
 
 button,
@@ -30,9 +38,55 @@ textarea {
   font: inherit;
 }
 
+button,
+summary {
+  touch-action: manipulation;
+}
+
+:where(button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-track) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.no-select {
+  user-select: none;
+}
+
+.data-text {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
 .app-shell {
   width: 100%;
   height: 100%;
+}
+
+.workbench-main {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+}
+
+.activity-rail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1179px) {
+  .workbench-main {
+    display: flex;
+    min-height: auto;
+    flex-direction: column;
+  }
+
+  .activity-rail {
+    flex: none;
+  }
 }
 
 .scrollbar-thin::-webkit-scrollbar {

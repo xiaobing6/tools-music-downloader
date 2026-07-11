@@ -78,7 +78,7 @@
     min-height: 100%;
     justify-content: center;
     overflow: hidden;
-    color: #111827;
+    color: var(--color-ink);
     background:
       linear-gradient(180deg, rgba(248, 251, 255, 0.92) 0%, rgba(255, 255, 255, 0.98) 48%),
       #f8fbff;
@@ -120,7 +120,7 @@
     height: clamp(124px, 16vh, 156px);
     align-items: center;
     justify-content: center;
-    color: #2563eb;
+    color: var(--color-track);
     background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
     border: 1px solid rgba(191, 219, 254, 0.95);
     border-radius: 32px;
@@ -176,7 +176,7 @@
 
   .startup-title {
     margin: clamp(24px, 4vh, 36px) 0 0;
-    color: #111827;
+    color: var(--color-ink);
     font-size: 58px;
     font-weight: 800;
     line-height: 1.1;
@@ -204,7 +204,7 @@
 
   .startup-stage {
     margin: 0;
-    color: #111827;
+    color: var(--color-ink);
     font-size: 24px;
     font-weight: 800;
     line-height: 1;
@@ -212,7 +212,7 @@
 
   .startup-percent {
     margin: 0;
-    color: #2563eb;
+    color: var(--color-track);
     font-size: 24px;
     font-variant-numeric: tabular-nums;
     line-height: 1;
@@ -227,7 +227,7 @@
 
   .startup-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #2563eb 0%, #2f7cf6 100%);
+    background: linear-gradient(90deg, var(--color-track) 0%, var(--color-wave) 100%);
     border-radius: inherit;
     box-shadow: 0 0 18px rgba(37, 99, 235, 0.3);
     transition: width 500ms ease;
@@ -261,7 +261,7 @@
     color: #ffffff;
     font-size: 15px;
     font-weight: 700;
-    background: #2563eb;
+    background: var(--color-track);
     border: 0;
     border-radius: 8px;
     box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
@@ -292,5 +292,11 @@
     content: "";
     background: linear-gradient(169deg, transparent 0 37%, rgba(255, 255, 255, 0.96) 37.3% 39.6%, transparent 40%),
       linear-gradient(188deg, transparent 0 43%, rgba(219, 234, 254, 0.58) 43.3% 82%, transparent 82.4%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .startup-progress-fill {
+      transition-duration: 0.01ms;
+    }
   }
 </style>

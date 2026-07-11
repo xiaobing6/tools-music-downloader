@@ -63,3 +63,10 @@ test("startup screen matches the approved hero-style mockup without exposing log
   assert.doesNotMatch(source, /startup-surface/);
   assert.equal(/日志|log|Cloudflare|Playwright|Chrome/i.test(source), false);
 });
+
+test("startup motion respects the user's reduced-motion preference", async () => {
+  const source = await readStartupScreenSource();
+
+  assert.match(source, /prefers-reduced-motion:\s*reduce/);
+  assert.match(source, /transition-duration:\s*0\.01ms/);
+});
