@@ -54,7 +54,9 @@ python music_download.py
 python music_download.py --gui
 ```
 
-GUI 默认下载根目录为项目目录下的 `downloads/`。主界面优先展示搜索框；音源、搜索类型和音质是常用设置，数量、歌词、封面、下载目录和环境检查位于“更多设置”中。中途修改只对当前运行有效，下次启动仍恢复默认值。
+GUI 默认下载根目录为项目目录下的 `downloads/`。主界面优先展示搜索框；音源、搜索类型和结果数量是常用设置，音质、歌词、封面、下载目录和环境检查位于“更多设置”中。中途修改只对当前运行有效，下次启动仍恢复默认值。
+
+输入框和下拉框聚焦时使用品牌蓝边框与柔和光晕，并在标签和控件之间保留足够净空；使用键盘操作按钮、复选框和“更多设置”时仍会显示清晰的焦点外圈。
 
 GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1024x720`。窗口宽度低于 `1180px` 时，下载状态和运行日志会从结果区右侧移到下方；日志默认折叠，可按需展开并复制内容。
 
@@ -185,7 +187,7 @@ python music_download.py --check-env
 
 ```powershell
 cd music_downloader/gui/frontend
-node --test tests/startup.test.mjs
+node --test tests/startup.test.mjs tests/workbench.test.mjs
 npm.cmd run check
 npm.cmd run build
 ```

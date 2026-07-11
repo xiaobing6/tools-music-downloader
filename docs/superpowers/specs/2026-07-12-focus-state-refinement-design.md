@@ -1,7 +1,7 @@
 # GUI 焦点状态与设置层级优化设计
 
 **日期：** 2026-07-12  
-**状态：** 已确认，待实施
+**状态：** 实施中
 
 ## 背景
 
@@ -71,6 +71,12 @@
 - 离散控件焦点环：`2px solid var(--color-track)`。
 - 焦点环间距：`2px`。
 - 继续遵守现有 reduced-motion 约定；本次不新增动画。
+
+## 实现位置
+
+- `music_downloader/gui/frontend/src/app.css` 定义文本字段 `:focus`、离散控件 `:focus-visible` 和 `.field-stack`。
+- `music_downloader/gui/frontend/src/lib/components/SettingsPanel.svelte` 把 `numberInput` 移入 quick settings，把 `bitrateSelect` 移入 advanced settings，并为五个指定字段应用 `.field-stack`。
+- `music_downloader/gui/frontend/tests/workbench.test.mjs` 锁定选择器、字段顺序和 `10px` 净空。
 
 ## 测试与文档
 

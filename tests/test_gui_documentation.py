@@ -13,6 +13,10 @@ def test_current_gui_docs_match_workbench_contract() -> None:
     assert "1180px" in agents
     assert "日志默认折叠" in agents
     assert "1266x1013" not in readme
+    assert "音源、搜索类型和结果数量是常用设置" in readme
+    assert "音质" in readme and "更多设置" in readme
+    assert "音源、类型、结果数量为常用设置" in agents
+    assert "10px" in agents
 
 
 def test_gui_docs_cover_headless_window_regression() -> None:

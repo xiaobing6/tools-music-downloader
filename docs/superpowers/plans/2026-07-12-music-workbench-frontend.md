@@ -244,8 +244,8 @@ test("settings separate quick controls from advanced controls", async () => {
   assert.match(settings, /<summary[^>]*>\s*更多设置/);
   assert.ok(settings.indexOf("sourceSelect") < settings.indexOf("<details"));
   assert.ok(settings.indexOf("typeSelect") < settings.indexOf("<details"));
-  assert.ok(settings.indexOf("bitrateSelect") < settings.indexOf("<details"));
-  assert.ok(settings.indexOf("numberInput") > settings.indexOf("<details"));
+  assert.ok(settings.indexOf("numberInput") < settings.indexOf("<details"));
+  assert.ok(settings.indexOf("bitrateSelect") > settings.indexOf("<details"));
 });
 
 test("search and settings controls expose stable form metadata", async () => {
@@ -468,7 +468,7 @@ Expected: FAIL，README 和 AGENTS 尚未描述工作台契约，历史计划与
 
 - 默认窗口 `1280x800`、最低窗口 `1024x720`。
 - 搜索优先的顶部命令区。
-- 音源、类型、音质为常用设置，数量、封面、歌词、目录和环境检查位于“更多设置”。
+- 音源、类型、结果数量为常用设置，音质、封面、歌词、目录和环境检查位于“更多设置”。
 - `1180px` 以下活动区移到结果下方，日志默认折叠。
 
 在 `AGENTS.md` 增加维护约定：
