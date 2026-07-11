@@ -1,7 +1,7 @@
 # GUI 焦点状态与设置层级优化设计
 
 **日期：** 2026-07-12  
-**状态：** 实施中
+**状态：** 已实施
 
 ## 背景
 
@@ -97,3 +97,12 @@
 - 常用设置依次为音源、类型、结果数量；音质位于更多设置第一列。
 - 五个指定字段的标签与控件间距均为 `10px`，聚焦光晕不遮挡标签。
 - 前端构建和全部自动测试通过，静态产物已刷新。
+
+## 实施与验证结果
+
+- `app.css` 已用文本字段 `:focus` 规则替换旧统一 `3px` outline，并为按钮、summary、checkbox、radio 保留 `2px` `:focus-visible` 外圈。
+- `SettingsPanel.svelte` 已把结果数量移入常用区第三列，把音质移入更多设置第一列；五个指定字段均使用 `.field-stack` 的 `10px` gap。
+- TDD 红灯同时捕获旧焦点规则、旧字段顺序和缺失净空；实现后 Node 测试 `16 passed`。
+- svelte-check 为 `0 errors and 0 warnings`；Vite `8.1.2` 构建成功并刷新静态资源。
+- Python 验证为 pytest `77 passed`；ruff check/format、mypy、`py_compile` 和 `git diff --check` 均通过。
+- 真实 GUI 已检查结果数量与下载目录的字段光晕、更多设置中的音质位置，以及 Tab 聚焦“浏览”按钮时的 `2px` 外圈；标签均未被光晕遮挡。

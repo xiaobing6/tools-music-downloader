@@ -43,7 +43,7 @@
 - Consumes: `GuiConfig.number`、`GuiConfig.bitrate`、`normalizeNumber()`、`bitrateItems` 和现有 `update()`。
 - Produces: `.field-stack`、文本字段 `:focus` 光晕、离散控件 `:focus-visible` 外圈，以及新的设置视觉顺序。
 
-- [ ] **Step 1: 先修改前端测试以表达新行为**
+- [x] **Step 1: 先修改前端测试以表达新行为**
 
 把 `interactive controls have a focus-visible baseline and body text stays selectable` 测试替换为：
 
@@ -89,7 +89,7 @@ test("field stacks reserve ten pixels between labels and controls", async () => 
 });
 ```
 
-- [ ] **Step 2: 运行测试并确认旧实现失败**
+- [x] **Step 2: 运行测试并确认旧实现失败**
 
 Run from `music_downloader/gui/frontend`:
 
@@ -99,7 +99,7 @@ node --test tests/workbench.test.mjs
 
 Expected: FAIL，缺少新的字段选择器和 `.field-stack`，且 `numberInput` 仍位于 `<details>` 后。
 
-- [ ] **Step 3: 实现分层焦点和字段净空**
+- [x] **Step 3: 实现分层焦点和字段净空**
 
 在 `src/app.css` 中用以下规则替换旧统一 `:focus-visible`：
 
@@ -125,7 +125,7 @@ Expected: FAIL，缺少新的字段选择器和 `.field-stack`，且 `numberInpu
 }
 ```
 
-- [ ] **Step 4: 交换数量与音质并应用 field-stack**
+- [x] **Step 4: 交换数量与音质并应用 field-stack**
 
 在 `SettingsPanel.svelte` 中：
 
@@ -135,7 +135,7 @@ Expected: FAIL，缺少新的字段选择器和 `.field-stack`，且 `numberInpu
 - 从文本输入和 select 的 class 中移除 `focus-visible:border-blue-500`，避免覆盖全局品牌蓝边框。
 - 复选框 class 和横向 `gap-2` 保持不变。
 
-- [ ] **Step 5: 运行前端测试并确认转绿**
+- [x] **Step 5: 运行前端测试并确认转绿**
 
 Run:
 
@@ -145,7 +145,7 @@ node --test tests/startup.test.mjs tests/workbench.test.mjs
 
 Expected: 现有 15 项加新增字段净空测试，共 16 项全部 PASS。
 
-- [ ] **Step 6: 提交前端源码和测试**
+- [x] **Step 6: 提交前端源码和测试**
 
 ```powershell
 git add music_downloader/gui/frontend/src/app.css music_downloader/gui/frontend/src/lib/components/SettingsPanel.svelte music_downloader/gui/frontend/tests/workbench.test.mjs
@@ -167,7 +167,7 @@ git commit -m "feat: refine GUI field focus states"
 - Consumes: Task 1 的最终字段顺序、10px 净空和焦点选择器。
 - Produces: 与当前 GUI 一致的用户说明、协作者约定和设计状态。
 
-- [ ] **Step 1: 先更新文档测试期望**
+- [x] **Step 1: 先更新文档测试期望**
 
 在 `test_current_gui_docs_match_workbench_contract` 中追加：
 
@@ -178,7 +178,7 @@ git commit -m "feat: refine GUI field focus states"
     assert "10px" in agents
 ```
 
-- [ ] **Step 2: 运行文档测试并确认旧文案失败**
+- [x] **Step 2: 运行文档测试并确认旧文案失败**
 
 Run:
 
@@ -188,14 +188,14 @@ pytest tests/test_gui_documentation.py::test_current_gui_docs_match_workbench_co
 
 Expected: FAIL，README 和 AGENTS 仍把音质描述为常用设置，也没有 10px 字段净空约定。
 
-- [ ] **Step 3: 更新 README、AGENTS 和相关设计**
+- [x] **Step 3: 更新 README、AGENTS 和相关设计**
 
 - `README.md`：把 GUI 使用说明改为“音源、搜索类型和结果数量是常用设置，音质、歌词、封面、下载目录和环境检查位于更多设置”；追加字段聚焦使用蓝色边框与柔和光晕、键盘操作控件保留清晰外圈。
 - `AGENTS.md`：把主界面约定更新为“音源、类型、结果数量为常用设置”，并记录五个 `.field-stack` 使用 10px、文本字段与离散控件分别使用 `:focus`/`:focus-visible`。
 - 音乐工作台设计：同步设置层级、10px 净空和分层焦点基线。
 - 焦点优化设计：状态更新为“实施中”，写入实际 CSS/Svelte 实现位置；最终验证结果留到 Task 3。
 
-- [ ] **Step 4: 运行文档测试和旧文案扫描**
+- [x] **Step 4: 运行文档测试和旧文案扫描**
 
 Run:
 
@@ -206,7 +206,7 @@ rg -n "音源、搜索类型和音质是常用设置|音源、类型、音质为
 
 Expected: 文档测试全部 PASS；旧设置层级文案和五个目标字段的旧间距均不存在。
 
-- [ ] **Step 5: 提交文档同步**
+- [x] **Step 5: 提交文档同步**
 
 ```powershell
 git add README.md AGENTS.md tests/test_gui_documentation.py docs/superpowers/specs/2026-07-12-music-workbench-frontend-design.md docs/superpowers/specs/2026-07-12-focus-state-refinement-design.md
@@ -227,7 +227,7 @@ git commit -m "docs: align GUI settings and focus guidance"
 - Consumes: Tasks 1–2 的前端源码、测试和文档。
 - Produces: 最新静态产物、真实 GUI 验收和可复查验证记录。
 
-- [ ] **Step 1: 串行运行前端检查和构建**
+- [x] **Step 1: 串行运行前端检查和构建**
 
 Run from `music_downloader/gui/frontend`，不要并行争用 `.vite-temp`：
 
@@ -239,7 +239,7 @@ npm.cmd run build
 
 Expected: Node 16 项全部 PASS；svelte-check 0 errors/0 warnings；Vite build 成功并刷新 static。
 
-- [ ] **Step 2: 运行 Python 和静态产物验证**
+- [x] **Step 2: 运行 Python 和静态产物验证**
 
 Run from repository root:
 
@@ -254,7 +254,7 @@ git diff --check
 
 Expected: pytest 全部 PASS；ruff、mypy、py_compile 和 diff check 退出码均为 0。
 
-- [ ] **Step 3: 启动真实 GUI 做视觉验收**
+- [x] **Step 3: 启动真实 GUI 做视觉验收**
 
 Run:
 
@@ -270,18 +270,18 @@ python .\music_download.py
 - 输入框和下拉框只有蓝色边框与柔和光晕，不再出现硬质 3px 外圈。
 - Tab 聚焦按钮、复选框和“更多设置”时仍有清晰 2px 外圈。
 
-- [ ] **Step 4: 更新状态和验证记录**
+- [x] **Step 4: 更新状态和验证记录**
 
 把焦点设计状态改为“已实施”，记录 Node、Svelte、Vite、pytest、ruff、mypy、编译和真实 GUI 结果；在本计划勾选完成项并追加 Execution Record。
 
-- [ ] **Step 5: 提交静态产物和验证记录**
+- [x] **Step 5: 提交静态产物和验证记录**
 
 ```powershell
 git add music_downloader/gui/static docs/superpowers/specs/2026-07-12-focus-state-refinement-design.md docs/superpowers/plans/2026-07-12-focus-state-refinement.md
 git commit -m "feat: deliver refined GUI focus states"
 ```
 
-- [ ] **Step 6: 确认工作区干净**
+- [x] **Step 6: 确认工作区干净**
 
 Run:
 
@@ -291,3 +291,11 @@ git log -6 --oneline
 ```
 
 Expected: 工作区干净，最近提交包含前端实现、文档同步和最终验证记录。
+
+## Execution Record
+
+- Task 1 red: 12 项中 3 项失败，分别对应旧统一焦点规则、`numberInput` 仍在 details 后和缺失 `.field-stack`；green: Node 16 passed；提交 `8123567`。
+- Task 2 red: README 仍把音质描述为常用设置；green: 文档测试 3 passed；提交 `6c8c7f2`。
+- 前端：Node 16 passed，svelte-check 0 errors/0 warnings，Vite 8.1.2 构建成功。
+- Python：pytest 77 passed，ruff check/format、mypy、py_compile、diff check 全部通过。
+- 真实 GUI：确认常用区顺序、更多设置中的音质、字段 10px 净空、柔和光晕和按钮 2px 键盘焦点环；验收窗口已关闭。
