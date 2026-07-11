@@ -47,13 +47,13 @@
 
 <section class="settings-panel">
   <div class="quick-settings grid gap-3 sm:grid-cols-3">
-    <label class="space-y-1.5 text-sm font-medium text-slate-700" for="sourceSelect">
+    <label class="field-stack text-sm font-medium text-slate-700" for="sourceSelect">
       音源
       <select
         id="sourceSelect"
         name="source"
         autocomplete="off"
-        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors focus-visible:border-blue-500 disabled:bg-slate-100"
+        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
         value={config.source}
         disabled={disabled}
         onchange={(event) => update("source", event.currentTarget.value)}
@@ -64,13 +64,13 @@
       </select>
     </label>
 
-    <label class="space-y-1.5 text-sm font-medium text-slate-700" for="typeSelect">
+    <label class="field-stack text-sm font-medium text-slate-700" for="typeSelect">
       类型
       <select
         id="typeSelect"
         name="search_type"
         autocomplete="off"
-        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors focus-visible:border-blue-500 disabled:bg-slate-100"
+        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
         value={config.search_type}
         disabled={disabled}
         onchange={(event) => update("search_type", event.currentTarget.value)}
@@ -81,21 +81,20 @@
       </select>
     </label>
 
-    <label class="space-y-1.5 text-sm font-medium text-slate-700" for="bitrateSelect">
-      音质
-      <select
-        id="bitrateSelect"
-        name="bitrate"
+    <label class="field-stack text-sm font-medium text-slate-700" for="numberInput">
+      结果数量
+      <input
+        id="numberInput"
+        name="number"
         autocomplete="off"
-        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors focus-visible:border-blue-500 disabled:bg-slate-100"
-        value={config.bitrate}
+        class="data-text h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
+        type="number"
+        min="1"
+        inputmode="numeric"
+        value={config.number}
         disabled={disabled}
-        onchange={(event) => update("bitrate", event.currentTarget.value)}
-      >
-        {#each bitrateItems as item}
-          <option value={item.value}>{item.name}</option>
-        {/each}
-      </select>
+        onchange={(event) => update("number", normalizeNumber(event.currentTarget.value, config.number))}
+      />
     </label>
 
   </div>
@@ -108,20 +107,21 @@
     </summary>
 
     <div class="grid gap-4 border-t border-slate-200 p-4 lg:grid-cols-[140px_1fr]">
-      <label class="space-y-1.5 text-sm font-medium text-slate-700" for="numberInput">
-        结果数量
-        <input
-          id="numberInput"
-          name="number"
+      <label class="field-stack text-sm font-medium text-slate-700" for="bitrateSelect">
+        音质
+        <select
+          id="bitrateSelect"
+          name="bitrate"
           autocomplete="off"
-          class="data-text h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors focus-visible:border-blue-500 disabled:bg-slate-100"
-          type="number"
-          min="1"
-          inputmode="numeric"
-          value={config.number}
+          class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
+          value={config.bitrate}
           disabled={disabled}
-          onchange={(event) => update("number", normalizeNumber(event.currentTarget.value, config.number))}
-        />
+          onchange={(event) => update("bitrate", event.currentTarget.value)}
+        >
+          {#each bitrateItems as item}
+            <option value={item.value}>{item.name}</option>
+          {/each}
+        </select>
       </label>
 
       <div class="flex flex-wrap items-end gap-5 pb-2">
@@ -151,14 +151,14 @@
         </label>
       </div>
 
-      <div class="space-y-1.5 text-sm font-medium text-slate-700 lg:col-span-2">
+      <div class="field-stack text-sm font-medium text-slate-700 lg:col-span-2">
         <label for="outputDirInput">下载目录</label>
         <div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <input
             id="outputDirInput"
             name="output_dir"
             autocomplete="off"
-            class="select-text h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors focus-visible:border-blue-500 disabled:bg-slate-100"
+            class="select-text h-10 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
             type="text"
             value={config.output_dir}
             disabled={disabled}

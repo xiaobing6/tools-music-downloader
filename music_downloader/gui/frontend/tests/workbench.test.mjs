@@ -15,9 +15,17 @@ test("workbench styles define the approved tokens and responsive activity rail",
   assert.match(css, /@media\s*\(max-width:\s*1179px\)/);
 });
 
-test("interactive controls have a focus-visible baseline and body text stays selectable", async () => {
+test("form fields use a soft halo while discrete controls retain keyboard focus", async () => {
   const css = await source("app.css");
-  assert.match(css, /:focus-visible/);
+  assert.match(
+    css,
+    /:where\(\s*input:not\(\[type="checkbox"\]\):not\(\[type="radio"\]\),\s*select,\s*textarea\s*\):focus\s*\{[^}]*outline:\s*none[^}]*border-color:\s*var\(--color-track\)[^}]*box-shadow:\s*0 0 0 3px color-mix\(in srgb, var\(--color-track\) 10%, transparent\)/s
+  );
+  assert.match(
+    css,
+    /:where\(button, summary, input\[type="checkbox"\], input\[type="radio"\]\):focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-track\)[^}]*outline-offset:\s*2px/s
+  );
+  assert.doesNotMatch(css, /:where\(button, input, select, textarea, summary\):focus-visible/);
   assert.doesNotMatch(css, /body\s*\{[^}]*user-select:\s*none/s);
   assert.match(css, /\.no-select[^}]*user-select:\s*none/s);
 });
@@ -29,14 +37,21 @@ test("the main workbench presents search before settings", async () => {
   assert.match(app, /class="workbench-command/);
 });
 
-test("settings separate quick controls from advanced controls", async () => {
+test("settings place result count in quick controls and bitrate in advanced controls", async () => {
   const settings = await source("lib/components/SettingsPanel.svelte");
-  assert.match(settings, /<details/);
+  const detailsIndex = settings.indexOf("<details");
   assert.match(settings, /<summary[^>]*>\s*更多设置/);
-  assert.ok(settings.indexOf("sourceSelect") < settings.indexOf("<details"));
-  assert.ok(settings.indexOf("typeSelect") < settings.indexOf("<details"));
-  assert.ok(settings.indexOf("bitrateSelect") < settings.indexOf("<details"));
-  assert.ok(settings.indexOf("numberInput") > settings.indexOf("<details"));
+  assert.ok(settings.indexOf("sourceSelect") < settings.indexOf("typeSelect"));
+  assert.ok(settings.indexOf("typeSelect") < settings.indexOf("numberInput"));
+  assert.ok(settings.indexOf("numberInput") < detailsIndex);
+  assert.ok(settings.indexOf("bitrateSelect") > detailsIndex);
+});
+
+test("field stacks reserve ten pixels between labels and controls", async () => {
+  const css = await source("app.css");
+  const settings = await source("lib/components/SettingsPanel.svelte");
+  assert.match(css, /\.field-stack\s*\{[^}]*display:\s*grid[^}]*gap:\s*10px/s);
+  assert.equal((settings.match(/class="field-stack/g) ?? []).length, 5);
 });
 
 test("closed advanced settings stay visually quiet", async () => {

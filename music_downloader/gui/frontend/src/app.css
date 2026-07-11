@@ -43,9 +43,24 @@ summary {
   touch-action: manipulation;
 }
 
-:where(button, input, select, textarea, summary):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-track) 28%, transparent);
+:where(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+):focus {
+  outline: none;
+  border-color: var(--color-track);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-track) 10%, transparent);
+}
+
+:where(button, summary, input[type="checkbox"], input[type="radio"]):focus-visible {
+  outline: 2px solid var(--color-track);
   outline-offset: 2px;
+}
+
+.field-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .no-select {
