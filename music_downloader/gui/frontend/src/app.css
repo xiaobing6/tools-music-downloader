@@ -58,6 +58,41 @@ summary {
   outline-offset: 2px;
 }
 
+.select-control {
+  position: relative;
+  display: block;
+}
+
+select.select-input {
+  appearance: none;
+  background-image: none;
+  padding-right: 2.75rem;
+}
+
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  pointer-events: none;
+  color: #64748b;
+  transform: translateY(-50%);
+  transition: transform 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.select-input:focus + .select-chevron {
+  color: var(--color-track);
+}
+
+.select-input:disabled + .select-chevron {
+  opacity: 0.45;
+}
+
+@supports selector(.select-control:has(select:open)) {
+  .select-control:has(select:open) .select-chevron {
+    transform: translateY(-50%) rotate(180deg);
+  }
+}
+
 .field-stack {
   display: grid;
   gap: 10px;
@@ -78,18 +113,20 @@ summary {
 }
 
 .workbench-shell {
-  overflow: auto;
+  overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 220px),
     var(--color-canvas);
 }
 
 .workbench-frame {
+  box-sizing: border-box;
   display: flex;
+  height: 100%;
   min-width: 0;
-  min-height: 100%;
+  min-height: 0;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   padding: 16px;
 }
 
@@ -97,32 +134,32 @@ summary {
   position: relative;
   z-index: 2;
   flex: none;
-  padding: 16px;
+  padding: 14px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--color-line);
-  border-radius: 18px;
-  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.07);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.06);
 }
 
 .command-brand {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .brand-mark {
   display: inline-flex;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   flex: none;
   align-items: center;
   justify-content: center;
   color: white;
   background: var(--color-track);
-  border-radius: 13px;
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
 }
 
 .brand-kicker {
@@ -146,13 +183,17 @@ summary {
 .music-track {
   position: relative;
   display: flex;
-  height: 24px;
-  min-width: 80px;
-  flex: 1;
+  width: 100%;
+  max-width: 160px;
+  height: 20px;
+  min-width: 64px;
+  flex: 0 1 160px;
   align-items: center;
   justify-content: flex-end;
-  gap: 7px;
+  gap: 6px;
+  margin-left: auto;
   overflow: hidden;
+  opacity: 0.66;
 }
 
 .music-track::before {
@@ -190,7 +231,7 @@ summary {
 
 .workbench-state {
   flex: none;
-  padding: 6px 10px;
+  padding: 5px 9px;
   color: #166534;
   font-size: 12px;
   font-weight: 700;
@@ -200,7 +241,7 @@ summary {
 }
 
 .settings-panel {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .advanced-settings > summary::after {
@@ -217,6 +258,53 @@ summary {
 
 .advanced-settings[open] > summary::after {
   content: "−";
+}
+
+.result-columns,
+.result-row {
+  display: grid;
+  grid-template-columns: 16px 40px minmax(190px, 1fr) minmax(180px, 0.95fr) minmax(150px, 0.72fr) 64px;
+  column-gap: 12px;
+  align-items: center;
+}
+
+.result-columns {
+  min-height: 28px;
+  padding: 0 16px;
+  color: #718096;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: #f8fafc;
+  border-bottom: 1px solid #e8eef5;
+}
+
+.result-row {
+  width: 100%;
+  min-height: 60px;
+  padding: 6px 16px;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.result-row:hover {
+  background: #f8fbff;
+}
+
+.result-row:has(input:focus-visible) {
+  outline: 2px solid color-mix(in srgb, var(--color-track) 42%, transparent);
+  outline-offset: -2px;
+}
+
+.result-row[data-selected="true"] {
+  background: #eff6ff;
+  box-shadow: inset 3px 0 0 var(--color-track);
+}
+
+.result-row[data-selected="true"]:hover {
+  background: #e8f2ff;
 }
 
 .results-workspace {
@@ -244,14 +332,19 @@ summary {
   min-height: 0;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 16px;
+  gap: 14px;
+  overflow: hidden;
 }
 
 .activity-rail {
   display: flex;
   min-height: 0;
+  padding: 10px;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(217, 228, 240, 0.9);
+  border-radius: 16px;
 }
 
 @media (max-width: 1179px) {
@@ -261,12 +354,19 @@ summary {
 
   .workbench-main {
     display: flex;
-    min-height: auto;
+    min-height: 0;
     flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .activity-rail {
     flex: none;
+    padding: 0;
+    gap: 16px;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
   }
 
   .results-workspace {

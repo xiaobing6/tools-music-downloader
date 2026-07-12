@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Badge } from "flowbite-svelte";
   import {
     CheckCircle2,
     Clock3,
@@ -65,6 +64,21 @@
     return bitrate === "flac" || bitrate === "999";
   }
 
+  function sourceLabel(source: unknown): string {
+    const value = String(source ?? "").toLowerCase();
+    const labels: Record<string, string> = {
+      kuwo: "酷我音乐",
+      netease: "网易云音乐",
+      migu: "咪咕音乐"
+    };
+    return labels[value] ?? String(source ?? "—");
+  }
+
+  function durationLabel(duration: unknown): string {
+    const value = String(duration ?? "").trim();
+    return value && value !== "--:--" ? value : "—";
+  }
+
   function statusLabel(status: SongStatus): string {
     const labels: Record<SongStatus["state"], string> = {
       queued: "排队中",
@@ -79,10 +93,10 @@
 </script>
 
 <section class="flex h-full min-h-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
-  <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+  <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
     <div>
       <h2 class="text-base font-semibold text-slate-950">搜索结果</h2>
-      <p class="mt-0.5 text-xs text-slate-500">已选择 {selectedCount} 首</p>
+      <p class="mt-0.5 text-xs text-slate-500">共 {songs.length} 首 · 已选择 {selectedCount} 首</p>
     </div>
     <div class="flex flex-wrap gap-2">
       <button
@@ -131,68 +145,80 @@
   {#if songs.length === 0}
     <EmptyState />
   {:else}
+    <div class="result-columns" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span>歌曲 / 歌手</span>
+      <span>专辑</span>
+      <span>来源 / 状态</span>
+      <span class="text-right">时长</span>
+    </div>
     <div class="min-h-0 flex-1 divide-y divide-slate-100 overflow-auto scrollbar-thin">
       {#each songs as song, index}
         {@const status = statusFor(index)}
-        <label
-          class="grid w-full cursor-pointer grid-cols-[auto_48px_1fr_auto] items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
-        >
+        {@const selected = hasIndex(selectedIndices, index)}
+        <label class="result-row" data-selected={selected}>
           <input
-            class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            class="h-4 w-4 rounded border-slate-300 text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
             type="checkbox"
-            checked={hasIndex(selectedIndices, index)}
+            checked={selected}
             aria-label={`选择 ${song.name ?? "歌曲"}`}
             onchange={() => {
               onToggle(index);
             }}
           />
-          <span class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-400">
+          <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-400">
             {#if song.cover}
               <img
                 class="h-full w-full object-cover"
                 src={song.cover}
                 alt=""
-                width="48"
-                height="48"
+                width="40"
+                height="40"
                 loading="lazy"
               />
             {:else}
-              <Music size={22} aria-hidden="true" />
+              <Music size={20} aria-hidden="true" />
             {/if}
           </span>
           <span class="min-w-0">
             <span class="block truncate text-sm font-semibold text-slate-950">
               {song.name ?? "未知歌曲"}
             </span>
-            <span class="mt-1 block truncate text-xs text-slate-500">
-              {song.artist ?? "未知歌手"}{song.album ? ` / ${song.album}` : ""}
-            </span>
-            <span class="mt-2 flex flex-wrap items-center gap-2">
-              {#if song.source}
-                <Badge color="blue" rounded>{song.source}</Badge>
-              {/if}
-              {#if isHiRes(song)}
-                <Badge color="green" rounded>Hi-Res</Badge>
-              {/if}
-              {#if status}
-                <span class="inline-flex items-center gap-1 text-xs text-slate-500" title={status.reason}>
-                  {#if status.state === "success"}
-                    <CheckCircle2 class="text-emerald-600" size={15} aria-hidden="true" />
-                  {:else if status.state === "skip"}
-                    <SkipForward class="text-slate-500" size={15} aria-hidden="true" />
-                  {:else if status.state === "fail"}
-                    <XCircle class="text-red-600" size={15} aria-hidden="true" />
-                  {:else if status.state === "downloading"}
-                    <LoaderCircle class="animate-spin text-blue-600" size={15} aria-hidden="true" />
-                  {:else}
-                    <Clock3 class="text-amber-600" size={15} aria-hidden="true" />
-                  {/if}
-                  {statusLabel(status)}
-                </span>
-              {/if}
+            <span class="mt-0.5 block truncate text-xs text-slate-500">
+              {song.artist ?? "未知歌手"}
             </span>
           </span>
-          <span class="data-text whitespace-nowrap text-xs text-slate-500">{song.duration ?? ""}</span>
+          <span class="truncate text-xs text-slate-500" title={song.album ?? ""}>
+            {song.album ?? "—"}
+          </span>
+          <span class="min-w-0 text-xs text-slate-500">
+            <span class="flex min-w-0 items-center gap-1.5">
+              <span class="truncate">{sourceLabel(song.source)}</span>
+              {#if isHiRes(song)}
+                <span class="shrink-0 font-medium text-emerald-700">Hi-Res</span>
+              {/if}
+            </span>
+            {#if status}
+              <span class="mt-0.5 inline-flex max-w-full items-center gap-1" title={status.reason}>
+                {#if status.state === "success"}
+                  <CheckCircle2 class="shrink-0 text-emerald-600" size={14} aria-hidden="true" />
+                {:else if status.state === "skip"}
+                  <SkipForward class="shrink-0 text-slate-500" size={14} aria-hidden="true" />
+                {:else if status.state === "fail"}
+                  <XCircle class="shrink-0 text-red-600" size={14} aria-hidden="true" />
+                {:else if status.state === "downloading"}
+                  <LoaderCircle class="shrink-0 animate-spin text-blue-600" size={14} aria-hidden="true" />
+                {:else}
+                  <Clock3 class="shrink-0 text-amber-600" size={14} aria-hidden="true" />
+                {/if}
+                <span class="truncate">{statusLabel(status)}</span>
+              </span>
+            {/if}
+          </span>
+          <span class="data-text whitespace-nowrap text-right text-xs text-slate-500">
+            {durationLabel(song.duration)}
+          </span>
         </label>
       {/each}
     </div>

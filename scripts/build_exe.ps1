@@ -64,8 +64,12 @@ with open('pyproject.toml', 'rb') as f:
 
     $frontendDir = Join-Path $ProjectRoot "music_downloader/gui/frontend"
     $staticIndex = Join-Path $ProjectRoot "music_downloader/gui/static/index.html"
+    $iconPath = Join-Path $ProjectRoot "music_downloader/gui/assets/music_downloader.ico"
     if (-not (Test-Path -LiteralPath $frontendDir -PathType Container)) {
         throw "Frontend source directory is missing: $frontendDir"
+    }
+    if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
+        throw "Application icon not found: $iconPath"
     }
 
     $npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
@@ -132,6 +136,8 @@ with open('pyproject.toml', 'rb') as f:
         "--windows-company-name=tools-music-downloader",
         "--windows-file-description=Music downloader CLI and GUI tool",
         "--windows-console-mode=hide",
+        "--windows-icon-from-ico=$iconPath",
+        "--include-data-file=music_downloader/gui/assets/music_downloader.ico=music_downloader/gui/assets/music_downloader.ico",
         "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static"
     )
     if ($isCi) {

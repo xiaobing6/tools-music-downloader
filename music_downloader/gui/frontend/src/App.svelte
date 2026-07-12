@@ -8,8 +8,11 @@
   import LogPanel from "./lib/components/LogPanel.svelte";
   import EnvironmentModal from "./lib/components/EnvironmentModal.svelte";
   import StartupScreen from "./lib/components/StartupScreen.svelte";
+  import CloseConfirmModal from "./lib/components/CloseConfirmModal.svelte";
   import {
     getPywebviewApi,
+    onCloseRequest,
+    onPythonCover,
     onPythonLog,
     onPythonProgress,
     waitForPywebview
@@ -17,6 +20,7 @@
   import { selectedSongs, timeLabel } from "./lib/state";
   import { startupProgressForStage, type StartupStageKey } from "./lib/startup";
   import type {
+    CoverDetail,
     DownloadProgressState,
     EnvironmentCheck,
     GuiConfig,
@@ -46,6 +50,7 @@
   let logCollapsed = $state(true);
   let environmentOpen = $state(false);
   let environmentChecks = $state<EnvironmentCheck[]>([]);
+  let closeConfirmOpen = $state(false);
   let activeDownloadIndices = $state<number[]>([]);
   let downloadStarting = $state(false);
   let progress = $state<DownloadProgressState>({
@@ -139,6 +144,14 @@
 
   function retryInitialize() {
     void initialize();
+  }
+
+  function handleCover(detail: CoverDetail) {
+    songs = songs.map((song) =>
+      String(song.id ?? "") === detail.id && String(song.source ?? "") === detail.source
+        ? { ...song, cover: detail.cover }
+        : song
+    );
   }
 
   function handleProgress(detail: ProgressDetail) {
@@ -466,15 +479,25 @@
     }
   }
 
+  async function confirmAppClose() {
+    await getPywebviewApi().confirm_close();
+  }
+
   onMount(() => {
     const removeLogListener = onPythonLog((detail) => addLog(detail.message, detail.level));
     const removeProgressListener = onPythonProgress(handleProgress);
+    const removeCoverListener = onPythonCover(handleCover);
+    const removeCloseRequestListener = onCloseRequest(() => {
+      closeConfirmOpen = true;
+    });
 
     void initialize();
 
     return () => {
       removeLogListener();
       removeProgressListener();
+      removeCoverListener();
+      removeCloseRequestListener();
       shutdownApi();
     };
   });
@@ -504,7 +527,6 @@
           {keyword}
           {searching}
           disabled={initializing || downloadActive}
-          resultCount={songs.length}
           onKeyword={(value) => {
             keyword = value;
           }}
@@ -562,6 +584,8 @@
     />
   </div>
 {/if}
+
+<CloseConfirmModal bind:open={closeConfirmOpen} onConfirm={confirmAppClose} />
 
 {#if searching}
   <div

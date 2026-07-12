@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Folder, HardDrive, ShieldCheck } from "@lucide/svelte";
+  import { ChevronDown, Folder, HardDrive, ShieldCheck } from "@lucide/svelte";
   import type { GuiConfig, SelectItem, ValidOptions } from "../types";
   import {
     normalizeNumber,
@@ -49,36 +49,42 @@
   <div class="quick-settings grid gap-3 sm:grid-cols-3">
     <label class="field-stack text-sm font-medium text-slate-700" for="sourceSelect">
       音源
-      <select
-        id="sourceSelect"
-        name="source"
-        autocomplete="off"
-        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
-        value={config.source}
-        disabled={disabled}
-        onchange={(event) => update("source", event.currentTarget.value)}
-      >
-        {#each sourceItems as item}
-          <option value={item.value} disabled={item.disabled}>{item.name}</option>
-        {/each}
-      </select>
+      <span class="select-control">
+        <select
+          id="sourceSelect"
+          name="source"
+          autocomplete="off"
+          class="select-input h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
+          value={config.source}
+          disabled={disabled}
+          onchange={(event) => update("source", event.currentTarget.value)}
+        >
+          {#each sourceItems as item}
+            <option value={item.value} disabled={item.disabled}>{item.name}</option>
+          {/each}
+        </select>
+        <ChevronDown class="select-chevron" size={16} strokeWidth={2.25} aria-hidden="true" />
+      </span>
     </label>
 
     <label class="field-stack text-sm font-medium text-slate-700" for="typeSelect">
       类型
-      <select
-        id="typeSelect"
-        name="search_type"
-        autocomplete="off"
-        class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
-        value={config.search_type}
-        disabled={disabled}
-        onchange={(event) => update("search_type", event.currentTarget.value)}
-      >
-        {#each typeItems as item}
-          <option value={item.value}>{item.name}</option>
-        {/each}
-      </select>
+      <span class="select-control">
+        <select
+          id="typeSelect"
+          name="search_type"
+          autocomplete="off"
+          class="select-input h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
+          value={config.search_type}
+          disabled={disabled}
+          onchange={(event) => update("search_type", event.currentTarget.value)}
+        >
+          {#each typeItems as item}
+            <option value={item.value}>{item.name}</option>
+          {/each}
+        </select>
+        <ChevronDown class="select-chevron" size={16} strokeWidth={2.25} aria-hidden="true" />
+      </span>
     </label>
 
     <label class="field-stack text-sm font-medium text-slate-700" for="numberInput">
@@ -109,19 +115,22 @@
     <div class="grid gap-4 border-t border-slate-200 p-4 lg:grid-cols-[140px_1fr]">
       <label class="field-stack text-sm font-medium text-slate-700" for="bitrateSelect">
         音质
-        <select
-          id="bitrateSelect"
-          name="bitrate"
-          autocomplete="off"
-          class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
-          value={config.bitrate}
-          disabled={disabled}
-          onchange={(event) => update("bitrate", event.currentTarget.value)}
-        >
-          {#each bitrateItems as item}
-            <option value={item.value}>{item.name}</option>
-          {/each}
-        </select>
+        <span class="select-control">
+          <select
+            id="bitrateSelect"
+            name="bitrate"
+            autocomplete="off"
+            class="select-input h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 transition-colors disabled:bg-slate-100"
+            value={config.bitrate}
+            disabled={disabled}
+            onchange={(event) => update("bitrate", event.currentTarget.value)}
+          >
+            {#each bitrateItems as item}
+              <option value={item.value}>{item.name}</option>
+            {/each}
+          </select>
+          <ChevronDown class="select-chevron" size={16} strokeWidth={2.25} aria-hidden="true" />
+        </span>
       </label>
 
       <div class="flex flex-wrap items-end gap-5 pb-2">

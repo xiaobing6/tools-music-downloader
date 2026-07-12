@@ -45,6 +45,7 @@ music_downloader/gui/frontend/         # Vite/Svelte 前端源码
 music_downloader/gui/frontend/src/lib/startup.ts # GUI 启动阶段、文案和进度
 music_downloader/gui/frontend/src/lib/components/StartupScreen.svelte # GUI 品牌启动页
 music_downloader/gui/frontend/tests/startup.test.mjs # 启动页与启动文案测试
+music_downloader/gui/assets/music_downloader.ico # Windows 应用图标（多尺寸）
 music_downloader/gui/static/           # GUI 静态构建产物
 music_downloader/core/config.py        # 共享常量、默认值、支持平台
 music_downloader/core/console.py       # rich/plain console 输出
@@ -71,8 +72,13 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - `cli/` 放 Typer CLI、交互命令解析和 CLI 搜索下载工作流，与 `gui/` 同级。
 - `gui/` 保持 pywebview 桌面应用形态，前端源码使用 Vite/Svelte，构建产物输出到 `music_downloader/gui/static/`。
 - GUI 启动体验由 `App.svelte` 编排、`src/lib/startup.ts` 提供阶段模型、`StartupScreen.svelte` 渲染品牌启动页；不要把启动期浏览器、站点验证或调试细节直接展示在启动页上，详细信息继续进入运行日志。
+- Windows 应用图标统一使用 `music_downloader/gui/assets/music_downloader.ico`；源码运行通过 `webview.start(icon=...)` 加载，Nuitka 构建必须保留 `--windows-icon-from-ico` 和对应 `--include-data-file`，确保窗口、任务栏和 EXE 使用同一品牌图标。
 - GUI 主界面保持“搜索优先”的音乐工作台结构：音源、类型、结果数量为常用设置，音质及其余选项位于“更多设置”；默认窗口为 `1280x800`、最低为 `1024x720`，在 `1180px` 以下把活动栏移到结果区下方，不要重新引入无断点的固定 `360px` 右栏。
-- 音源、类型、结果数量、音质和下载目录使用 `.field-stack`，标签与控件之间保持 `10px` 净空；文本字段通过 `:focus` 显示品牌蓝边框和柔和光晕，按钮、summary、checkbox 和 radio 通过 `:focus-visible` 保留清晰的 `2px` 键盘焦点环。
+- 主界面使用固定外壳并禁用窗口级滚动：宽屏 `.workbench-frame` 四边保持 `16px`、低于 `1180px` 时四边保持 `12px` 等距边界；展开“更多设置”时压缩下方工作区，结果列表、日志和窄屏 `.workbench-main` 在内部滚动。不要用 `scrollbar-gutter`、隐藏滚动条或 JavaScript 宽度补偿重新解决窗口抖动。
+- 搜索结果保持紧凑音乐库形态：使用 `60px` 六列行对齐复选框、`40px` 封面、歌曲/歌手、专辑、来源/状态和时长；三个文本信息区采用内容加权弹性列，时长固定为 `64px` 并右对齐。音源显示中文名，未知时长显示为破折号，选中项使用浅蓝底与左侧品牌色标记。总数和已选数只在结果区集中显示，下载按钮文字保持稳定为“下载选中”，不要在搜索栏或按钮中重复显示动态数量。搜索完成后封面逐张加载，不得阻塞结果返回；单张封面解析失败时继续显示默认图标。
+- 结果行的整行焦点轮廓只响应复选框的 `:focus-visible`，不要用无条件 `:focus-within` 让鼠标点击后残留外框。空状态使用实际剩余高度居中，不要重新添加会在“更多设置”展开时溢出的固定最小高度。
+- GUI 使用 Svelte 主题化全局关闭确认，不使用 Windows 原生 `MessageBox`。原生 `closing` 是锁定式同步事件，处理函数返回 `False` 才表示取消关闭：首次关闭必须返回 `False`，再从后台线程发送 `py-close-request`，不得在该回调中同步调用 `evaluate_js`；前端确认接口先设置一次性许可并返回，窗口销毁稍后异步执行，避免 pywebview 在 API 回传时访问已释放的 WebView2，确认后的 `closing` 返回 `True`。清理逻辑只绑定 `window.events.closed`。弹窗初始焦点落在无轮廓的说明文本，按钮仅在用户键盘导航后显示焦点环；文案保持简短，并支持“继续使用”、`Esc` 和遮罩取消。搜索输入框保留 `aria-label="搜索关键词"`，不要只依赖 placeholder 作为可访问名称。
+- 音源、类型、结果数量、音质和下载目录使用 `.field-stack`，标签与控件之间保持 `10px` 净空；下拉框保留原生 `<select>` 行为，统一使用装饰性下拉箭头，并在浏览器暴露展开状态时向上旋转；文本字段通过 `:focus` 显示品牌蓝边框和柔和光晕，按钮、summary、checkbox 和 radio 通过 `:focus-visible` 保留清晰的 `2px` 键盘焦点环。
 - 运行日志默认折叠，但日志、下载目录和歌曲信息必须可选择复制；动态搜索与下载状态使用适度的辅助技术播报。
 
 ### Chrome profile 隔离

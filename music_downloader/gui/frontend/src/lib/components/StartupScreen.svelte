@@ -22,7 +22,7 @@
         <span></span>
       </div>
       <span class="startup-mark">
-        <Music2 size={92} strokeWidth={2.15} />
+        <Music2 size={76} strokeWidth={2.15} />
       </span>
       <div class="startup-sound-bars startup-sound-bars-right">
         <span></span>
@@ -98,9 +98,9 @@
   .startup-content {
     position: relative;
     z-index: 1;
-    width: min(610px, calc(100% - 40px));
+    width: min(560px, calc(100% - 40px));
     margin: 0 auto;
-    padding: clamp(160px, 30vh, 300px) 0 clamp(48px, 8vh, 96px);
+    padding: clamp(116px, 20vh, 190px) 0 clamp(44px, 6vh, 72px);
     text-align: center;
   }
 
@@ -109,89 +109,89 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: min(420px, 100%);
-    height: clamp(132px, 17vh, 164px);
+    width: min(360px, 100%);
+    height: clamp(116px, 15vh, 136px);
     margin: 0 auto;
   }
 
   .startup-mark {
     display: flex;
-    width: clamp(124px, 16vh, 156px);
-    height: clamp(124px, 16vh, 156px);
+    width: clamp(108px, 14vh, 128px);
+    height: clamp(108px, 14vh, 128px);
     align-items: center;
     justify-content: center;
     color: var(--color-track);
     background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
     border: 1px solid rgba(191, 219, 254, 0.95);
-    border-radius: 32px;
+    border-radius: 28px;
     box-shadow:
-      0 22px 42px rgba(37, 99, 235, 0.18),
+      0 16px 32px rgba(37, 99, 235, 0.16),
       0 2px 8px rgba(15, 23, 42, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
   .startup-sound-bars {
     position: absolute;
-    top: clamp(32px, 5vh, 48px);
+    top: clamp(28px, 4vh, 40px);
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
   }
 
   .startup-sound-bars-left {
-    right: calc(50% + clamp(76px, 9vh, 96px));
+    right: calc(50% + clamp(64px, 8vh, 78px));
     transform: rotate(180deg);
   }
 
   .startup-sound-bars-right {
-    left: calc(50% + clamp(76px, 9vh, 96px));
+    left: calc(50% + clamp(64px, 8vh, 78px));
   }
 
   .startup-sound-bars span {
     display: block;
-    width: 8px;
+    width: 6px;
     border-radius: 999px;
     background: linear-gradient(180deg, rgba(59, 130, 246, 0.2), rgba(191, 219, 254, 0.04));
   }
 
   .startup-sound-bars span:nth-child(1) {
-    height: 18px;
+    height: 14px;
     opacity: 0.2;
   }
 
   .startup-sound-bars span:nth-child(2) {
-    height: 42px;
+    height: 32px;
     opacity: 0.34;
   }
 
   .startup-sound-bars span:nth-child(3) {
-    height: 82px;
+    height: 64px;
     opacity: 0.48;
   }
 
   .startup-sound-bars span:nth-child(4) {
-    height: 116px;
+    height: 90px;
     opacity: 0.4;
   }
 
   .startup-title {
-    margin: clamp(24px, 4vh, 36px) 0 0;
+    margin: clamp(22px, 3vh, 28px) 0 0;
     color: var(--color-ink);
-    font-size: 58px;
+    font-size: clamp(42px, 5vw, 48px);
     font-weight: 800;
     line-height: 1.1;
   }
 
   .startup-subtitle {
-    margin: clamp(8px, 1.4vh, 12px) 0 0;
+    margin: 8px 0 0;
     color: #536579;
-    font-size: 29px;
+    font-size: 20px;
     line-height: 1.35;
   }
 
   .startup-status {
     width: 100%;
-    margin: clamp(48px, 8.5vh, 82px) auto 0;
+    margin: clamp(36px, 6vh, 52px) auto 0;
     text-align: left;
   }
 
@@ -199,13 +199,13 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 23px;
+    margin-bottom: 16px;
   }
 
   .startup-stage {
     margin: 0;
     color: var(--color-ink);
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 800;
     line-height: 1;
   }
@@ -213,13 +213,13 @@
   .startup-percent {
     margin: 0;
     color: var(--color-track);
-    font-size: 24px;
+    font-size: 18px;
     font-variant-numeric: tabular-nums;
     line-height: 1;
   }
 
   .startup-progress {
-    height: 17px;
+    height: 12px;
     overflow: hidden;
     background: #dde5ef;
     border-radius: 999px;
@@ -234,10 +234,10 @@
   }
 
   .startup-description {
-    min-height: 34px;
-    margin: 28px 0 0;
+    min-height: 28px;
+    margin: 18px 0 0;
     color: #536579;
-    font-size: 23px;
+    font-size: 17px;
     line-height: 1.45;
   }
 
@@ -271,8 +271,8 @@
     position: absolute;
     left: -8%;
     right: -8%;
-    bottom: -40px;
-    height: clamp(220px, 34vh, 350px);
+    bottom: -72px;
+    height: clamp(190px, 28vh, 260px);
     pointer-events: none;
     background:
       repeating-radial-gradient(
@@ -283,7 +283,7 @@
         transparent 19px
       ),
       radial-gradient(ellipse 86% 44% at 50% 82%, rgba(219, 234, 254, 0.72), transparent 72%);
-    opacity: 0.88;
+    opacity: 0.68;
   }
 
   .startup-wave::before {

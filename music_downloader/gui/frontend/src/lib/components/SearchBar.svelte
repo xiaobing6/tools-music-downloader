@@ -5,7 +5,6 @@
     keyword: string;
     searching: boolean;
     disabled: boolean;
-    resultCount: number;
     onKeyword: (keyword: string) => void;
     onSearch: () => void;
   }
@@ -14,7 +13,6 @@
     keyword,
     searching,
     disabled,
-    resultCount,
     onKeyword,
     onSearch
   }: Props = $props();
@@ -37,6 +35,7 @@
       class="h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-base text-slate-900 shadow-sm transition-[border-color,box-shadow] focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100"
       type="search"
       name="keyword"
+      aria-label="搜索关键词"
       autocomplete="off"
       value={keyword}
       placeholder="搜索歌曲、歌手、专辑…"
@@ -54,10 +53,11 @@
     {searching ? "搜索中" : "搜索"}
   </button>
   <span
-    class="data-text min-w-16 whitespace-nowrap text-sm text-slate-500"
+    class="sr-only"
+    role="status"
     aria-live="polite"
     aria-atomic="true"
   >
-    {searching ? "正在搜索…" : resultCount > 0 ? `共 ${resultCount} 首` : "等待搜索"}
+    {searching ? "正在搜索…" : ""}
   </span>
 </form>

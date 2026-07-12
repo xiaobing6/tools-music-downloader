@@ -19,6 +19,38 @@ def test_current_gui_docs_match_workbench_contract() -> None:
     assert "10px" in agents
 
 
+def test_gui_docs_cover_visual_polish_contract() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+    assert "使用 `scrollbar-gutter: stable` 预留" not in readme
+    assert "固定外壳" in readme
+    assert "内部滚动" in readme
+    assert "下拉箭头" in readme
+    assert "使用 `scrollbar-gutter: stable` 预留" not in agents
+    assert "固定外壳" in agents
+    assert "内部滚动" in agents
+    assert "下拉箭头" in agents
+    assert "紧凑音乐库" in readme
+    assert "60px" in readme
+    assert "紧凑音乐库" in agents
+    assert "60px" in agents
+    assert "内容加权" in readme
+    assert "按钮文字保持稳定" in readme
+    assert "内容加权" in agents
+    assert "按钮文字保持稳定" in agents
+    assert "Windows 应用图标" in readme
+    assert "music_downloader.ico" in readme
+    assert "Windows 应用图标" in agents
+    assert "music_downloader.ico" in agents
+    assert "全局关闭确认" in readme
+    assert "aria-label" in readme
+    assert "全局关闭确认" in agents
+    assert "aria-label" in agents
+    assert "封面逐张加载" in readme
+    assert "封面逐张加载" in agents
+
+
 def test_gui_docs_cover_headless_window_regression() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")

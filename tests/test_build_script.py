@@ -38,9 +38,16 @@ def test_build_script_keeps_required_nuitka_options() -> None:
         "--include-module=webview.platforms.mshtml",
         "--playwright-include-browser=none",
         "--windows-console-mode=hide",
+        "--windows-icon-from-ico=$iconPath",
         "--include-data-dir=music_downloader/gui/static=music_downloader/gui/static",
+        "--include-data-file=music_downloader/gui/assets/music_downloader.ico=music_downloader/gui/assets/music_downloader.ico",
     ):
         assert argument in SCRIPT
+    assert (
+        '$iconPath = Join-Path $ProjectRoot "music_downloader/gui/assets/music_downloader.ico"'
+        in SCRIPT
+    )
+    assert "Application icon not found: $iconPath" in SCRIPT
     assert "--windows-console-mode=attach" not in SCRIPT
 
 
@@ -107,11 +114,14 @@ def _assert_build_script_failure_handling(tmp_path: Path, scenario: str) -> None
     scripts_dir = project_root / "scripts"
     frontend_dir = project_root / "music_downloader" / "gui" / "frontend"
     static_dir = project_root / "music_downloader" / "gui" / "static"
+    assets_dir = project_root / "music_downloader" / "gui" / "assets"
     scripts_dir.mkdir(parents=True)
     frontend_dir.mkdir(parents=True)
     static_dir.mkdir(parents=True)
+    assets_dir.mkdir(parents=True)
     (frontend_dir / "node_modules").mkdir()
     (static_dir / "index.html").write_text("stub", encoding="utf-8")
+    (assets_dir / "music_downloader.ico").write_bytes(b"icon-stub")
     (scripts_dir / "build_exe.ps1").write_text(SCRIPT, encoding="utf-8")
     (project_root / "pyproject.toml").write_text('[project]\nversion = "0.0.0"\n', encoding="utf-8")
 

@@ -23,30 +23,61 @@ from music_downloader.domain.models import SearchOptions
 from music_downloader.gui.bridge import MusicBridge
 from music_downloader.gui.settings import DEFAULT_CONFIG, load_config, save_config
 
+_CLOSE_DESTROY_DELAY_SECONDS = 0.05
+
 
 class MusicApi:
     """API class exposed to JavaScript as window.pywebview.api.
 
     All public methods are callable from the frontend. The _emit method
-    dispatches CustomEvent('py-log' / 'py-progress') to the window so
+    dispatches CustomEvent('py-log' / 'py-progress' / 'py-cover') to the window so
     the frontend can listen for real-time updates.
     """
 
     def __init__(self) -> None:
         self._window: Any = None
+        self._close_confirmed = False
         self._bridge = MusicBridge(
             on_log=self._handle_log,
             on_progress=self._handle_progress,
+            on_cover=self._handle_cover,
         )
 
     def set_window(self, window: Any) -> None:
         self._window = window
+
+    def request_close_confirmation(self) -> None:
+        self._emit("close-request", {})
+
+    def consume_close_confirmation(self) -> bool:
+        confirmed = self._close_confirmed
+        self._close_confirmed = False
+        return confirmed
+
+    def confirm_close(self) -> None:
+        if self._window is None:
+            return
+        self._close_confirmed = True
+        window = self._window
+
+        def destroy_window() -> None:
+            try:
+                window.destroy()
+            except Exception:
+                self._close_confirmed = False
+
+        timer = threading.Timer(_CLOSE_DESTROY_DELAY_SECONDS, destroy_window)
+        timer.daemon = True
+        timer.start()
 
     def _handle_log(self, msg: str, level: str) -> None:
         self._emit("log", {"message": msg, "level": level})
 
     def _handle_progress(self, data: dict[str, Any]) -> None:
         self._emit("progress", data)
+
+    def _handle_cover(self, data: dict[str, str]) -> None:
+        self._emit("cover", data)
 
     def _emit(self, event: str, data: dict[str, Any]) -> None:
         if self._window is not None:

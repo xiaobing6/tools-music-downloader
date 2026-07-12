@@ -66,6 +66,7 @@ test("search and settings controls expose stable form metadata", async () => {
   const search = await source("lib/components/SearchBar.svelte");
   const settings = await source("lib/components/SettingsPanel.svelte");
   assert.match(search, /name="keyword"/);
+  assert.match(search, /aria-label="搜索关键词"/);
   assert.match(search, /autocomplete="off"/);
   assert.match(search, /搜索歌曲、歌手、专辑…/);
   for (const name of [
@@ -100,7 +101,68 @@ test("download progress is announced without making the entire log live", async 
 
 test("album art reserves space and loads lazily", async () => {
   const results = await source("lib/components/ResultList.svelte");
-  assert.match(results, /<img[^>]*width="48"[^>]*height="48"[^>]*loading="lazy"/s);
+  assert.match(results, /<img[^>]*width="40"[^>]*height="40"[^>]*loading="lazy"/s);
+});
+
+test("results use compact library rows with one consolidated count", async () => {
+  const results = await source("lib/components/ResultList.svelte");
+  const search = await source("lib/components/SearchBar.svelte");
+  const app = await source("App.svelte");
+  const css = await source("app.css");
+
+  assert.match(results, /class="result-columns"/);
+  assert.match(results, /class="result-row"/);
+  assert.match(results, /data-selected=/);
+  assert.match(results, /focus-visible:/);
+  assert.match(results, /酷我音乐/);
+  assert.match(results, /网易云音乐/);
+  assert.match(results, /咪咕音乐/);
+  assert.match(results, /"—"/);
+  assert.match(results, /共 \{songs\.length\} 首 · 已选择 \{selectedCount\} 首/);
+  assert.match(css, /\.result-row\s*\{[^}]*min-height:\s*60px/s);
+  assert.match(
+    css,
+    /grid-template-columns:\s*16px 40px minmax\(190px, 1fr\) minmax\(180px, 0\.95fr\) minmax\(150px, 0\.72fr\) 64px;/
+  );
+  assert.match(css, /\.result-row\[data-selected="true"\][^{]*\{[^}]*background:[^}]*box-shadow:/s);
+  assert.match(results, />\s*下载选中\s*<\/button>/s);
+  assert.doesNotMatch(results, /下载选中\{selectedCount/);
+  assert.doesNotMatch(search, /resultCount/);
+  assert.doesNotMatch(app, /resultCount=\{songs\.length\}/);
+});
+
+test("result row outlines are reserved for keyboard-visible focus", async () => {
+  const css = await source("app.css");
+  assert.match(css, /\.result-row:has\(input:focus-visible\)\s*\{/);
+  assert.doesNotMatch(css, /\.result-row:focus-within\s*\{/);
+});
+
+test("empty results center within the actual remaining card height", async () => {
+  const emptyState = await source("lib/components/EmptyState.svelte");
+  assert.match(emptyState, /class="[^"]*min-h-0[^"]*flex-1[^"]*items-center[^"]*justify-center/);
+  assert.doesNotMatch(emptyState, /min-h-64/);
+});
+
+test("themed close confirmation replaces the native prompt", async () => {
+  const modal = await source("lib/components/CloseConfirmModal.svelte");
+  const app = await source("App.svelte");
+  const api = await source("lib/api.ts");
+  const types = await source("lib/types.ts");
+
+  assert.match(modal, /role="alertdialog"/);
+  assert.match(modal, /关闭音乐下载器？/);
+  assert.match(modal, /确定要关闭应用吗？/);
+  assert.match(modal, /继续使用/);
+  assert.match(modal, /关闭应用/);
+  assert.match(modal, /size="xs"/);
+  assert.match(modal, /data-autofocus/);
+  assert.match(modal, /tabindex="-1"/);
+  assert.doesNotMatch(modal, /\.focus\(\)/);
+  assert.doesNotMatch(modal, /bind:this=\{continueButton\}/);
+  assert.match(app, /<CloseConfirmModal/);
+  assert.match(app, /onCloseRequest/);
+  assert.match(api, /py-close-request/);
+  assert.match(types, /confirm_close\(\): Promise<void>/);
 });
 
 test("search overlay exposes an assistive status", async () => {
@@ -120,4 +182,17 @@ test("user-facing loading copy uses the single ellipsis character", async () => 
   ]) {
     assert.equal(app.includes(outdated), false);
   }
+});
+
+test("search covers are applied progressively and listeners are cleaned up", async () => {
+  const app = await source("App.svelte");
+  const api = await source("lib/api.ts");
+  const types = await source("lib/types.ts");
+
+  assert.match(types, /interface CoverDetail/);
+  assert.match(api, /onPythonCover/);
+  assert.match(api, /py-cover/);
+  assert.match(app, /onPythonCover\(handleCover\)/);
+  assert.match(app, /songs = songs\.map/);
+  assert.match(app, /removeCoverListener\(\)/);
 });

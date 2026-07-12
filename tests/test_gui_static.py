@@ -86,10 +86,41 @@ def test_results_and_logs_share_resizable_bottom_layout() -> None:
         'class="min-h-0 flex-1 divide-y divide-slate-100 overflow-auto scrollbar-thin"'
         in result_list
     )
-    assert 'class="flex min-h-64 flex-1' in empty_state
+    assert 'class="flex min-h-0 flex-1' in empty_state
     assert "flex min-h-0 flex-1 flex-col" in log_panel
     assert 'id="logContent" class="min-h-0 flex-1' in log_panel
     assert "max-h-60" not in log_panel
+
+
+def test_result_list_uses_compact_library_rows() -> None:
+    result_list = (FRONTEND_SRC / "lib/components/ResultList.svelte").read_text(encoding="utf-8")
+    search_bar = (FRONTEND_SRC / "lib/components/SearchBar.svelte").read_text(encoding="utf-8")
+    app = (FRONTEND_SRC / "App.svelte").read_text(encoding="utf-8")
+    css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+
+    assert 'class="result-columns"' in result_list
+    assert 'class="result-row"' in result_list
+    assert "data-selected=" in result_list
+    assert 'width="40"' in result_list
+    assert 'height="40"' in result_list
+    assert "酷我音乐" in result_list
+    assert "—" in result_list
+    assert "min-height: 60px;" in css
+    assert (
+        "grid-template-columns: 16px 40px minmax(190px, 1fr) "
+        "minmax(180px, 0.95fr) minmax(150px, 0.72fr) 64px;"
+    ) in css
+    assert 'data-selected="true"' in css
+    assert "下载选中{selectedCount" not in result_list
+    assert "resultCount" not in search_bar
+    assert "resultCount={songs.length}" not in app
+
+
+def test_result_rows_only_outline_keyboard_focus() -> None:
+    css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+
+    assert ".result-row:has(input:focus-visible)" in css
+    assert ".result-row:focus-within" not in css
 
 
 def test_app_shell_fills_pywebview_client_area_without_fixed_minimums() -> None:
@@ -142,13 +173,60 @@ def test_startup_screen_uses_viewport_relative_layout() -> None:
 
     assert "min-height: 100%;" in source
     assert "display: flex;" in source
-    assert "width: min(610px, calc(100% - 40px));" in source
-    assert "width: min(420px, 100%);" in source
+    assert "width: min(560px, calc(100% - 40px));" in source
+    assert "width: min(360px, 100%);" in source
     assert "padding: clamp(" in source
     assert "height: clamp(" in source
-    assert "width: 610px;" not in source
+    assert "width: 560px;" not in source
     assert "padding-top: 300px;" not in source
-    assert "width: 420px;" not in source
+    assert "width: 360px;" not in source
+
+
+def test_settings_selects_have_stable_custom_chevrons() -> None:
+    settings = (FRONTEND_SRC / "lib/components/SettingsPanel.svelte").read_text(encoding="utf-8")
+    css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+    assert "select.select-input {" in css
+    select_input_block = css.split("select.select-input {", 1)[1].split("}", 1)[0]
+
+    assert "ChevronDown" in settings
+    assert 'class="select-control"' in settings
+    assert 'class="select-chevron"' in settings
+    assert "appearance: none;" in select_input_block
+    assert "background-image: none;" in select_input_block
+    assert "select:open" in css
+
+
+def test_workbench_uses_fixed_shell_with_internal_scrolling() -> None:
+    css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+    shell_block = css.split(".workbench-shell {", 1)[1].split("}", 1)[0]
+    frame_block = css.split(".workbench-frame {", 1)[1].split("}", 1)[0]
+    main_block = css.split(".workbench-main {", 1)[1].split("}", 1)[0]
+    responsive = css.split("@media (max-width: 1179px)", 1)[1].split(
+        "@media (max-width: 760px)", 1
+    )[0]
+    responsive_main = responsive.split(".workbench-main {", 1)[1].split("}", 1)[0]
+
+    assert "overflow: hidden;" in shell_block
+    assert "scrollbar-gutter" not in css
+    assert "box-sizing: border-box;" in frame_block
+    assert "height: 100%;" in frame_block
+    assert "min-height: 0;" in frame_block
+    assert "padding: 16px;" in frame_block
+    assert "overflow: hidden;" in main_block
+    assert "min-height: 0;" in responsive_main
+    assert "overflow-y: auto;" in responsive_main
+    assert "overscroll-behavior: contain;" in responsive_main
+    assert "padding: 12px;" in responsive
+
+
+def test_visual_polish_keeps_startup_compact_and_activity_grouped() -> None:
+    startup = (FRONTEND_SRC / "lib/components/StartupScreen.svelte").read_text(encoding="utf-8")
+    css = (FRONTEND_SRC / "app.css").read_text(encoding="utf-8")
+
+    assert "width: min(560px, calc(100% - 40px));" in startup
+    assert "font-size: clamp(42px, 5vw, 48px);" in startup
+    assert "opacity: 0.68;" in startup
+    assert "background: rgba(255, 255, 255, 0.56);" in css
 
 
 def test_gui_does_not_duplicate_backend_summary_logs() -> None:
