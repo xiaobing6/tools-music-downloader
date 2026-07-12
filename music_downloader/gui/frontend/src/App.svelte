@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Music2 } from "@lucide/svelte";
   import { onMount } from "svelte";
   import SettingsPanel from "./lib/components/SettingsPanel.svelte";
   import SearchBar from "./lib/components/SearchBar.svelte";
@@ -7,8 +8,11 @@
   import LogPanel from "./lib/components/LogPanel.svelte";
   import EnvironmentModal from "./lib/components/EnvironmentModal.svelte";
   import StartupScreen from "./lib/components/StartupScreen.svelte";
+  import CloseConfirmModal from "./lib/components/CloseConfirmModal.svelte";
   import {
     getPywebviewApi,
+    onCloseRequest,
+    onPythonCover,
     onPythonLog,
     onPythonProgress,
     waitForPywebview
@@ -16,6 +20,7 @@
   import { selectedSongs, timeLabel } from "./lib/state";
   import { startupProgressForStage, type StartupStageKey } from "./lib/startup";
   import type {
+    CoverDetail,
     DownloadProgressState,
     EnvironmentCheck,
     GuiConfig,
@@ -42,15 +47,16 @@
   let loadingText = $state("");
   let startupStageKey = $state<StartupStageKey>("launch");
   let currentTaskId = $state<string | null>(null);
-  let logCollapsed = $state(false);
+  let logCollapsed = $state(true);
   let environmentOpen = $state(false);
   let environmentChecks = $state<EnvironmentCheck[]>([]);
+  let closeConfirmOpen = $state(false);
   let activeDownloadIndices = $state<number[]>([]);
   let downloadStarting = $state(false);
   let progress = $state<DownloadProgressState>({
     current: 0,
     total: 0,
-    label: "准备下载..."
+    label: "准备下载…"
   });
 
   let nextLogId = 1;
@@ -88,7 +94,7 @@
     loadingText = "";
     startupStageKey = "bridge";
     browserReady = false;
-    addLog("正在启动音乐下载器...", "info");
+    addLog("正在启动音乐下载器…", "info");
 
     try {
       await waitForPywebview();
@@ -140,6 +146,14 @@
     void initialize();
   }
 
+  function handleCover(detail: CoverDetail) {
+    songs = songs.map((song) =>
+      String(song.id ?? "") === detail.id && String(song.source ?? "") === detail.source
+        ? { ...song, cover: detail.cover }
+        : song
+    );
+  }
+
   function handleProgress(detail: ProgressDetail) {
     if (
       detail.type !== "start" &&
@@ -161,7 +175,7 @@
       progress = {
         current: 0,
         total: detail.total,
-        label: "准备下载..."
+        label: "准备下载…"
       };
       return;
     }
@@ -175,7 +189,7 @@
       progress = {
         current: detail.current,
         total: detail.total,
-        label: detail.song_name ? `下载中: ${detail.song_name}` : "下载中..."
+        label: detail.song_name ? `下载中: ${detail.song_name}` : "下载中…"
       };
       return;
     }
@@ -306,7 +320,7 @@
     }
 
     searching = true;
-    loadingText = "正在搜索...";
+    loadingText = "正在搜索…";
     try {
       await saveCurrentConfig();
       const results = await api.search(query, config.source, config.search_type, config.number);
@@ -404,7 +418,7 @@
     if (!api || !currentTaskId) {
       return;
     }
-    addLog("正在取消下载...", "warn");
+    addLog("正在取消下载…", "warn");
     try {
       await api.cancel_download(currentTaskId);
     } catch (error) {
@@ -465,15 +479,25 @@
     }
   }
 
+  async function confirmAppClose() {
+    await getPywebviewApi().confirm_close();
+  }
+
   onMount(() => {
     const removeLogListener = onPythonLog((detail) => addLog(detail.message, detail.level));
     const removeProgressListener = onPythonProgress(handleProgress);
+    const removeCoverListener = onPythonCover(handleCover);
+    const removeCloseRequestListener = onCloseRequest(() => {
+      closeConfirmOpen = true;
+    });
 
     void initialize();
 
     return () => {
       removeLogListener();
       removeProgressListener();
+      removeCoverListener();
+      removeCloseRequestListener();
       shutdownApi();
     };
   });
@@ -482,31 +506,46 @@
 {#if showStartup}
   <StartupScreen stage={startupStage} onRetry={retryInitialize} />
 {:else if config && options}
-  <div class="app-shell overflow-hidden bg-slate-100 text-slate-950">
-    <div class="flex h-full flex-col gap-4 p-5">
-      <SettingsPanel
-        {config}
-        {options}
-        disabled={busy || downloadActive}
-        onConfigChange={handleConfigChange}
-        onBrowseDirectory={browseDirectory}
-        onOpenDirectory={openDirectory}
-        onEnvironmentCheck={checkEnvironment}
-      />
+  <div class="app-shell workbench-shell text-slate-950">
+    <div class="workbench-frame">
+      <header class="workbench-command">
+        <div class="command-brand">
+          <span class="brand-mark no-select" aria-hidden="true">
+            <Music2 size={24} strokeWidth={2.25} />
+          </span>
+          <div class="min-w-0">
+            <p class="brand-kicker">LOCAL MUSIC WORKBENCH</p>
+            <h1 class="workbench-title">音乐下载器</h1>
+          </div>
+          <div class="music-track no-select" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <span class="workbench-state no-select">搜索与下载已就绪</span>
+        </div>
 
-      <main class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] items-stretch gap-4">
-        <section class="flex min-h-0 flex-col gap-4">
-          <SearchBar
-            {keyword}
-            {searching}
-            disabled={initializing || downloadActive}
-            resultCount={songs.length}
-            onKeyword={(value) => {
-              keyword = value;
-            }}
-            onSearch={search}
-          />
+        <SearchBar
+          {keyword}
+          {searching}
+          disabled={initializing || downloadActive}
+          onKeyword={(value) => {
+            keyword = value;
+          }}
+          onSearch={search}
+        />
 
+        <SettingsPanel
+          {config}
+          {options}
+          disabled={busy || downloadActive}
+          onConfigChange={handleConfigChange}
+          onBrowseDirectory={browseDirectory}
+          onOpenDirectory={openDirectory}
+          onEnvironmentCheck={checkEnvironment}
+        />
+      </header>
+
+      <main class="workbench-main items-stretch">
+        <section class="results-workspace flex min-h-0 flex-col">
           <div class="min-h-0 flex-1">
             <ResultList
               {songs}
@@ -523,7 +562,7 @@
           </div>
         </section>
 
-        <aside class="flex min-h-0 flex-col gap-4">
+        <aside class="activity-rail">
           <DownloadProgress {progress} cancelable={downloadActive} onCancel={cancelDownload} />
           <LogPanel
             {logs}
@@ -546,13 +585,18 @@
   </div>
 {/if}
 
+<CloseConfirmModal bind:open={closeConfirmOpen} onConfirm={confirmAppClose} />
+
 {#if searching}
   <div
     id="loadingOverlay"
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-[1px]"
   >
     <div class="rounded-lg bg-white px-6 py-4 text-sm font-medium text-slate-700 shadow-lg">
-      {loadingText || "请稍候..."}
+      {loadingText || "请稍候…"}
     </div>
   </div>
 {/if}

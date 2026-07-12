@@ -26,6 +26,8 @@
 
 GUI 前端使用 Vite、Svelte、TypeScript、Flowbite Svelte、Tailwind CSS 和 `@lucide/svelte`，构建产物输出到 `music_downloader/gui/static/`，由 pywebview 加载。启动页由 `StartupScreen.svelte` 渲染，启动阶段文案和进度定义在 `src/lib/startup.ts`。
 
+Windows 应用图标使用 `music_downloader/gui/assets/music_downloader.ico` 中的蓝底白色音符。源码运行时 pywebview 直接加载该图标；Nuitka 构建时通过 `--windows-icon-from-ico` 嵌入 EXE，同时用于窗口标题栏、任务栏和资源管理器。
+
 ## 安装
 
 ```bash
@@ -54,11 +56,21 @@ python music_download.py
 python music_download.py --gui
 ```
 
-GUI 默认下载根目录为项目目录下的 `downloads/`。中途可以临时修改来源、搜索类型、数量、音质、歌词、封面和下载目录，但下次启动仍恢复默认值。
+GUI 默认下载根目录为项目目录下的 `downloads/`。主界面优先展示搜索框；音源、搜索类型和结果数量是常用设置，音质、歌词、封面、下载目录和环境检查位于“更多设置”中。中途修改只对当前运行有效，下次启动仍恢复默认值。
 
-GUI 默认窗口大小和最小窗口大小均为 `1266x1013`。
+输入框和下拉框聚焦时使用品牌蓝边框与柔和光晕，并在标签和控件之间保留足够净空；使用键盘操作按钮、复选框和“更多设置”时仍会显示清晰的焦点外圈。下拉框保留原生选择行为，并使用统一的下拉箭头；在支持原生展开状态的环境中，箭头会向上旋转。
+
+GUI 默认窗口大小为 `1280x800`，最小窗口大小为 `1024x720`。窗口宽度低于 `1180px` 时，下载状态和运行日志会从结果区右侧移到下方；日志默认折叠，可按需展开并复制内容。主界面使用固定外壳：宽屏保持四边 `16px`、窄屏保持四边 `12px` 的等距边界，展开“更多设置”时压缩下方工作区，结果、日志和窄屏工作区在各自区域内部滚动，不再出现窗口级滚动条。
+
+搜索结果采用紧凑音乐库布局：每行保持 `60px`，歌曲/歌手、专辑和来源/状态使用内容加权的弹性列，时长使用兼容长时长的 `64px` 右对齐列；音源显示中文名称，未知时长显示为破折号。选中项使用浅蓝底和左侧品牌色标记，总数与已选数量集中显示在结果区标题下方；下载按钮文字保持稳定为“下载选中”，避免选择数量变化挤动操作区。搜索完成后封面逐张加载，不阻塞结果返回；单张封面解析失败时继续显示默认图标。
+
+鼠标取消选择后不会残留整行焦点框，键盘导航时仍保留清晰的整行焦点轮廓。空搜索提示始终相对结果卡片的实际剩余空间居中，“更多设置”展开后也不会因固定最小高度向下偏移。
+
+GUI 使用与工作台主题一致的全局关闭确认弹窗：无论当前是否正在下载，点击窗口关闭按钮都会显示“关闭音乐下载器？”和“确定要关闭应用吗？”。选择“继续使用”、按 `Esc` 或点击遮罩都会返回应用；只有选择“关闭应用”才执行窗口销毁和资源清理。搜索框通过 `aria-label="搜索关键词"` 提供明确的辅助技术名称。
 
 GUI 启动时会先显示品牌启动页，依次展示“连接桌面接口”“加载基础配置”“准备浏览器”“验证访问环境”等阶段化进度。启动页不显示底层日志；如果初始化失败，会停留在启动页并提供“重试”按钮，详细原因可在进入主界面后的运行日志中查看。
+
+GUI 的后台 Chrome 默认以 headless 模式运行。为避免新版 Chrome 在 Windows 上把本应隐藏的平台窗口显示为不可交互的白色窗口，程序会把该平台窗口放到屏幕外；如果站点验证需要人工处理，程序仍会重新打开正常可见的 Chrome 窗口。
 
 ## CLI 使用
 
@@ -183,7 +195,7 @@ python music_download.py --check-env
 
 ```powershell
 cd music_downloader/gui/frontend
-node --test tests/startup.test.mjs
+node --test tests/startup.test.mjs tests/workbench.test.mjs
 npm.cmd run check
 npm.cmd run build
 ```
@@ -199,6 +211,10 @@ npm.cmd run build
 **为什么 Cloudflare 有时需要重新验证？**
 
 `cf_clearance` 与 IP、UA、TLS 指纹和 Chrome profile 相关。工具默认使用项目目录下隔离的 `.chrome-profile/`，不会读取系统 Chrome profile。
+
+**为什么 GUI 旁边出现不可交互的白色窗口？**
+
+新版 Chrome 的 headless 模式仍会创建平台窗口，正常情况下该窗口不会显示。GUI 会在 headless 启动时把它放到屏幕外；如果白窗再次出现，请确认 `music_downloader/gui/bridge.py` 的 headless persistent context 仍使用屏幕外位置参数，并检查系统 Chrome 与 Playwright 版本。不要通过隐藏 GUI 或禁用整个浏览器来规避，因为搜索和下载仍依赖该浏览器会话。
 
 **遇到 HTTP 401 签名验证失败怎么办？**
 

@@ -4,6 +4,7 @@ import sys
 from types import ModuleType
 
 from music_downloader.gui import api as api_module
+from music_downloader.gui import app as app_module
 from music_downloader.gui.api import MusicApi
 from music_downloader.gui.settings import DEFAULT_CONFIG, load_config, save_config
 
@@ -22,8 +23,7 @@ def test_load_config_returns_defaults_each_time() -> None:
     assert config["source"] == DEFAULT_CONFIG["source"]
     assert config["number"] == DEFAULT_CONFIG["number"]
     assert config["output_dir"].endswith("downloads")
-    assert config["window_width"] == 1266
-    assert config["window_height"] == 1013
+    assert (config["window_width"], config["window_height"]) == app_module.DEFAULT_WINDOW_SIZE
 
 
 def test_save_config_does_not_persist_user_choices() -> None:

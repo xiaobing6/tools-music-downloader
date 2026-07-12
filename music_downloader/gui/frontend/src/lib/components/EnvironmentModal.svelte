@@ -13,7 +13,7 @@
 </script>
 
 <Modal {open} title="环境检查" dismissable={false} placement="center" size="lg">
-  <div id="envModalBody" class="space-y-3">
+  <div id="envModalBody" class="max-h-[60vh] space-y-3 overflow-y-auto overscroll-contain pr-1">
     {#each checks as check}
       <div class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-3">
         <div class="min-w-0">

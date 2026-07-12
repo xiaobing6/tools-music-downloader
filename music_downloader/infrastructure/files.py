@@ -52,12 +52,21 @@ def safe_filename(name: str, max_length: int = 180) -> str:
 
 
 def normalize_song_dict(song: dict[str, Any]) -> dict[str, str]:
-    model = Song.from_api(song)
+    model = Song(
+        id=song.get("id", ""),
+        url_id=song.get("url_id", ""),
+        pic_id=song.get("pic_id", ""),
+        lyric_id=song.get("lyric_id", ""),
+        name=song.get("name", "未知"),
+        artist=get_artist_str(song),
+    )
+    duration = song.get("duration", "--:--")
+    duration_text = str(duration).strip() if duration is not None else "--:--"
     return {
         "name": model.display_name,
         "artist": get_artist_str(song),
         "album": str(song.get("album", "未知")),
-        "duration": model.duration_text,
+        "duration": duration_text or "--:--",
         "source": str(song.get("source", "未知")),
         "id": model.id,
         "url_id": model.url_id,

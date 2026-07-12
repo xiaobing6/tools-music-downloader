@@ -23,6 +23,10 @@ async function readStartupScreenSource() {
   return readFile(new URL("../src/lib/components/StartupScreen.svelte", import.meta.url), "utf8");
 }
 
+async function readSettingsPanelSource() {
+  return readFile(new URL("../src/lib/components/SettingsPanel.svelte", import.meta.url), "utf8");
+}
+
 test("startup stages expose brand-safe progress without diagnostic details", async () => {
   const { STARTUP_STAGES } = await loadStartupModule();
 
@@ -62,4 +66,20 @@ test("startup screen matches the approved hero-style mockup without exposing log
   assert.match(source, /startup-wave/);
   assert.doesNotMatch(source, /startup-surface/);
   assert.equal(/日志|log|Cloudflare|Playwright|Chrome/i.test(source), false);
+});
+
+test("startup motion respects the user's reduced-motion preference", async () => {
+  const source = await readStartupScreenSource();
+
+  assert.match(source, /prefers-reduced-motion:\s*reduce/);
+  assert.match(source, /transition-duration:\s*0\.01ms/);
+});
+
+test("settings selects provide a decorative custom chevron", async () => {
+  const source = await readSettingsPanelSource();
+
+  assert.match(source, /ChevronDown/);
+  assert.match(source, /class="select-control"/);
+  assert.match(source, /class="select-chevron"/);
+  assert.match(source, /aria-hidden="true"/);
 });

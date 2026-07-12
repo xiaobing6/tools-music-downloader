@@ -23,7 +23,7 @@ from music_downloader.core.config import (
     USER_AGENT,
 )
 from music_downloader.domain.enums import SearchType, Source
-from music_downloader.domain.models import SearchOptions
+from music_downloader.domain.models import SearchOptions, Song
 from music_downloader.infrastructure.downloader import build_output_path, download_song
 from music_downloader.infrastructure.environment import run_environment_checks
 from music_downloader.infrastructure.files import safe_filename
@@ -32,6 +32,12 @@ from music_downloader.services.search import SearchService
 
 LogCallback = Callable[[str, str], None]
 ProgressCallback = Callable[[dict[str, Any]], None]
+CoverCallback = Callable[[dict[str, str]], None]
+HEADLESS_WINDOW_POSITION_ARG = "--window-position=-32000,-32000"
+
+
+def _browser_launch_args(*, headless: bool) -> list[str]:
+    return [HEADLESS_WINDOW_POSITION_ARG] if headless else []
 
 
 @dataclass
@@ -160,6 +166,7 @@ class _PlaywrightThread:
                 channel="chrome",
                 headless=final_headless,
                 user_agent=USER_AGENT,
+                args=_browser_launch_args(headless=final_headless),
             )
             self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
             self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
@@ -174,6 +181,7 @@ class _PlaywrightThread:
                     channel="chrome",
                     headless=False,
                     user_agent=USER_AGENT,
+                    args=_browser_launch_args(headless=False),
                 )
                 self._page = (
                     self._context.pages[0] if self._context.pages else self._context.new_page()
@@ -218,12 +226,15 @@ class MusicBridge:
         self,
         on_log: LogCallback | None = None,
         on_progress: ProgressCallback | None = None,
+        on_cover: CoverCallback | None = None,
     ):
         self._on_log = on_log
         self._on_progress = on_progress
+        self._on_cover = on_cover
         self._session = _PlaywrightThread(on_log=self._emit_log)
         self._tasks: dict[str, DownloadTask] = {}
         self._task_counter = 0
+        self._cover_generation = 0
 
     def _emit_log(self, msg: str, level: str = "info") -> None:
         if self._on_log:
@@ -232,6 +243,50 @@ class MusicBridge:
     def _emit_progress(self, data: dict[str, Any]) -> None:
         if self._on_progress:
             self._on_progress(data)
+
+    def _emit_cover(self, data: dict[str, str]) -> None:
+        if self._on_cover:
+            self._on_cover(data)
+
+    def _resolve_covers(self, songs: list[Song], source: str, generation: int) -> None:
+        client = GdStudioClient(self._session.page)
+        for song in songs:
+            if generation != self._cover_generation:
+                return
+            if not song.pic_id:
+                continue
+            try:
+
+                def _get_cover(current: Song = song) -> str:
+                    return client.get_pic_url(current, source)
+
+                cover = self._session.submit(
+                    _get_cover,
+                    timeout=60.0,
+                )
+            except Exception:  # noqa: BLE001
+                if generation != self._cover_generation:
+                    return
+                continue
+            if generation != self._cover_generation:
+                return
+            if cover:
+                self._emit_cover({"id": song.id, "source": source, "cover": str(cover)})
+
+    def _start_cover_resolution(
+        self,
+        songs: list[Song],
+        source: str,
+        generation: int,
+    ) -> None:
+        if not songs or self._on_cover is None:
+            return
+        thread = threading.Thread(
+            target=self._resolve_covers,
+            args=(songs, source, generation),
+            daemon=True,
+        )
+        thread.start()
 
     def ensure_browser(self) -> bool:
         if self._session.ready:
@@ -243,6 +298,8 @@ class MusicBridge:
     def search(
         self, keyword: str, source: str, search_type: str, number: int
     ) -> list[dict[str, Any]]:
+        self._cover_generation += 1
+        cover_generation = self._cover_generation
         if not self.ensure_browser():
             return []
         self._emit_log(
@@ -250,9 +307,9 @@ class MusicBridge:
             "info",
         )
 
-        def _do_search() -> list[dict[str, Any]]:
+        def _do_search() -> list[Song]:
             client = GdStudioClient(self._session.page)
-            songs = SearchService(client).search(
+            return SearchService(client).search(
                 SearchOptions(
                     keyword=keyword,
                     source=Source(source),
@@ -260,10 +317,11 @@ class MusicBridge:
                     number=number,
                 )
             )
-            return [song.to_result_dict() for song in songs]
 
-        results = self._session.submit(_do_search, timeout=120.0)
+        songs = self._session.submit(_do_search, timeout=120.0)
+        results = [song.to_result_dict() for song in songs]
         self._emit_log(f"找到 {len(results)} 首歌曲", "success")
+        self._start_cover_resolution(songs, source, cover_generation)
         return results
 
     def _run_download(self, task: DownloadTask) -> None:
@@ -460,6 +518,7 @@ class MusicBridge:
         return [{"name": c.name, "ok": c.ok, "detail": c.detail} for c in results]
 
     def shutdown(self) -> None:
+        self._cover_generation += 1
         for task in self._tasks.values():
             task.cancel_event.set()
         time.sleep(0.3)

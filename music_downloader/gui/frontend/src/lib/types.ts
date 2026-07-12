@@ -61,6 +61,12 @@ export interface PyLogDetail {
   level: LogEntry["level"];
 }
 
+export interface CoverDetail {
+  id: string;
+  source: string;
+  cover: string;
+}
+
 export type ProgressDetail =
   | { type: "start"; task_id: string; total: number }
   | {
@@ -119,5 +125,6 @@ export interface PywebviewApi {
   open_download_dir(path?: string): Promise<void>;
   select_directory(): Promise<string>;
   check_environment(): Promise<EnvironmentCheck[]>;
+  confirm_close(): Promise<void>;
   shutdown(): Promise<void>;
 }

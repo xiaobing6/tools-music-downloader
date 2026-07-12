@@ -1,4 +1,4 @@
-import type { ProgressDetail, PyLogDetail, PywebviewApi } from "./types";
+import type { CoverDetail, ProgressDetail, PyLogDetail, PywebviewApi } from "./types";
 
 export const PYWEBVIEW_READY_TIMEOUT_MS = 15000;
 const PYWEBVIEW_NOT_READY_MESSAGE = "pywebview 未就绪，请在桌面窗口中运行";
@@ -64,4 +64,18 @@ export function onPythonProgress(handler: (detail: ProgressDetail) => void): () 
   };
   window.addEventListener("py-progress", listener);
   return () => window.removeEventListener("py-progress", listener);
+}
+
+export function onPythonCover(handler: (detail: CoverDetail) => void): () => void {
+  const listener = (event: Event) => {
+    handler((event as CustomEvent<CoverDetail>).detail);
+  };
+  window.addEventListener("py-cover", listener);
+  return () => window.removeEventListener("py-cover", listener);
+}
+
+export function onCloseRequest(handler: () => void): () => void {
+  const listener = () => handler();
+  window.addEventListener("py-close-request", listener);
+  return () => window.removeEventListener("py-close-request", listener);
 }
