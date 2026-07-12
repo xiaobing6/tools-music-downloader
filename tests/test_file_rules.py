@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from music_downloader.domain.models import Song
 from music_downloader.infrastructure.downloader import build_output_path
 from music_downloader.infrastructure.files import normalize_song_dict, safe_filename
 
@@ -23,7 +24,16 @@ def test_flac_extension(tmp_path: Path) -> None:
 
 
 def test_normalize_song_dict_keeps_display_shape() -> None:
-    data = normalize_song_dict({"id": "1", "name": "Song", "artist": ["A"], "duration": 61})
+    song = Song.from_api(
+        {
+            "id": "1",
+            "name": "Song",
+            "artist": ["A"],
+            "extra_data": {"duration": 61},
+        }
+    )
+
+    data = normalize_song_dict(song.to_result_dict())
 
     assert data["name"] == "Song"
     assert data["artist"] == "A"

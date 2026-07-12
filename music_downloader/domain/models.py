@@ -67,6 +67,9 @@ class Song(BaseModel):
 
     @classmethod
     def from_api(cls, data: dict[str, Any]) -> Song:
+        extra_data = data.get("extra_data")
+        if not isinstance(extra_data, dict):
+            extra_data = {}
         return cls(
             id=data.get("id", ""),
             url_id=data.get("url_id", ""),
@@ -75,9 +78,9 @@ class Song(BaseModel):
             name=data.get("name", "未知"),
             artist=get_artist_str(data),
             album=data.get("album", "未知"),
-            duration=data.get("duration", 0),
+            duration=extra_data.get("duration", 0),
             source=data.get("source", "未知"),
-            has_hires=bool(data.get("has_hires", False)),
+            has_hires=bool(extra_data.get("has_hires", False)),
         )
 
     @property

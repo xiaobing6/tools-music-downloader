@@ -14,7 +14,24 @@ from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, S
 from music_downloader.domain.models import SearchOptions, Song
 
 
-def test_song_accepts_api_dict() -> None:
+@pytest.mark.parametrize(
+    ("source", "duration", "has_hires", "expected_duration", "expected_name"),
+    [
+        pytest.param("netease", 131, True, "2:11", "Track [Hi-Res]", id="netease"),
+        pytest.param("spotify", 231, False, "3:51", "Track", id="spotify"),
+        pytest.param("kuwo", 324, False, "5:24", "Track", id="kuwo"),
+    ],
+)
+def test_song_accepts_current_api_dict(
+    source: str,
+    duration: int,
+    has_hires: bool,
+    expected_duration: str,
+    expected_name: str,
+) -> None:
+    extra_data: dict[str, object] = {"duration": duration}
+    if has_hires:
+        extra_data["has_hires"] = True
     song = Song.from_api(
         {
             "id": 123,
@@ -24,20 +41,33 @@ def test_song_accepts_api_dict() -> None:
             "name": "Track",
             "artist": ["A", "B"],
             "album": "Album",
-            "duration": 125,
-            "source": "netease",
-            "has_hires": True,
+            "source": source,
+            "extra_data": extra_data,
         }
     )
 
     assert song.id == "123"
     assert song.artist == "A, B"
-    assert song.display_name == "Track [Hi-Res]"
-    assert song.duration_text == "2:05"
+    assert song.duration_text == expected_duration
+    assert song.display_name == expected_name
+
+
+def test_song_does_not_fall_back_to_legacy_top_level_metadata() -> None:
+    song = Song.from_api(
+        {
+            "id": "1",
+            "name": "Track",
+            "duration": 125,
+            "has_hires": True,
+        }
+    )
+
+    assert song.duration_text == "--:--"
+    assert song.display_name == "Track"
 
 
 def test_song_accepts_placeholder_duration() -> None:
-    song = Song.from_api({"id": "1", "name": "Track", "duration": "--:--"})
+    song = Song.from_api({"id": "1", "name": "Track", "extra_data": {"duration": "--:--"}})
 
     assert song.duration is None
     assert song.duration_text == "--:--"
