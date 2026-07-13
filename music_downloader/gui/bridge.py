@@ -345,160 +345,200 @@ class MusicBridge:
         self._start_cover_resolution(songs, source, cover_generation)
         return results
 
-    def _run_download(self, task: DownloadTask) -> None:
-        output_dir = task.output_dir
-        try:
-            os.makedirs(output_dir, exist_ok=True)
-        except OSError as exc:
-            self._emit_log(
-                f"无法创建下载目录 {output_dir} ({exc})，尝试使用项目 downloads/ 目录",
-                "warn",
-            )
-            output_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                "downloads",
-            )
-            os.makedirs(output_dir, exist_ok=True)
-
-        safe_dir_name = safe_filename(task.keyword.strip()) if task.keyword.strip() else ""
-        if not safe_dir_name and task.songs:
-            first_artist = task.songs[0].get("artist", "下载")
-            safe_dir_name = safe_filename(str(first_artist))
-        target_dir = os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
-        try:
-            os.makedirs(target_dir, exist_ok=True)
-        except OSError as exc:
-            self._emit_log(f"无法创建目标目录 {target_dir}: {exc}", "error")
-            self._emit_progress(
-                {
-                    "type": "complete",
-                    "task_id": task.task_id,
-                    "success": 0,
-                    "fail": len(task.songs),
-                    "skip": 0,
-                }
-            )
-            self._tasks.pop(task.task_id, None)
-            return
-
+    def _fail_unfinished_downloads(
+        self,
+        task: DownloadTask,
+        start_index: int,
+        target_dir: str,
+        reason: str,
+    ) -> None:
         total = len(task.songs)
-        self._emit_progress(
-            {
-                "type": "start",
-                "task_id": task.task_id,
-                "total": total,
-            }
-        )
-
-        for idx, song in enumerate(task.songs):
-            if task.cancel_event.is_set():
-                self._emit_log("下载已取消", "warn")
-                break
-
-            name = str(song.get("name", "未知"))
-            self._emit_progress(
-                {
-                    "type": "progress",
-                    "task_id": task.task_id,
-                    "current": idx,
-                    "total": total,
-                    "song_name": name,
-                }
-            )
-
-            def _do_download(
-                _song: dict[str, Any] = song,
-                _idx: int = idx,
-                _total: int = total,
-            ) -> str:
-                return download_song(
-                    page=self._session.page,
-                    context=self._session.context,
-                    song=_song,
-                    source=task.source,
-                    save_dir=target_dir,
-                    index=_idx + 1,
-                    total=_total,
-                    download_lyric=task.download_lyric,
-                    download_cover=task.download_cover,
-                    bitrate=task.bitrate,
-                )
-
-            result = self._session.submit(_do_download, timeout=300.0)
-
-            # 原始索引用于前端状态更新
+        for idx in range(start_index, total):
+            song = task.songs[idx]
             try:
                 song_index = int(song.get("_gui_index", idx))
             except (TypeError, ValueError):
                 song_index = idx
+            task.fail += 1
+            self._emit_progress(
+                {
+                    "type": "song_done",
+                    "task_id": task.task_id,
+                    "index": song_index,
+                    "result": "fail",
+                    "reason": reason,
+                    "path": build_output_path(target_dir, song, task.bitrate),
+                    "current": idx + 1,
+                    "total": total,
+                }
+            )
 
-            filepath = build_output_path(target_dir, song, task.bitrate)
-            reason = ""
+    def _run_download(self, task: DownloadTask) -> None:
+        output_dir = task.output_dir
+        target_dir = output_dir
+        next_index = 0
+        try:
+            try:
+                os.makedirs(output_dir, exist_ok=True)
+            except OSError as exc:
+                self._emit_log(
+                    f"无法创建下载目录 {output_dir} ({exc})，尝试使用项目 downloads/ 目录",
+                    "warn",
+                )
+                output_dir = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                    "downloads",
+                )
+                os.makedirs(output_dir, exist_ok=True)
 
-            if result == "success":
-                task.success += 1
-                self._emit_log(f"下载完成: {name}", "success")
+            safe_dir_name = safe_filename(task.keyword.strip()) if task.keyword.strip() else ""
+            if not safe_dir_name and task.songs:
+                first_artist = task.songs[0].get("artist", "下载")
+                safe_dir_name = safe_filename(str(first_artist))
+            target_dir = os.path.join(output_dir, safe_dir_name) if safe_dir_name else output_dir
+            try:
+                os.makedirs(target_dir, exist_ok=True)
+            except OSError as exc:
+                self._emit_log(f"无法创建目标目录 {target_dir}: {exc}", "error")
+                self._fail_unfinished_downloads(
+                    task,
+                    0,
+                    target_dir,
+                    "无法创建下载目录",
+                )
+                return
+
+            total = len(task.songs)
+            self._emit_progress(
+                {
+                    "type": "start",
+                    "task_id": task.task_id,
+                    "total": total,
+                }
+            )
+
+            for idx, song in enumerate(task.songs):
+                if task.cancel_event.is_set():
+                    self._emit_log("下载已取消", "warn")
+                    break
+
+                name = str(song.get("name", "未知"))
                 self._emit_progress(
                     {
-                        "type": "song_done",
+                        "type": "progress",
                         "task_id": task.task_id,
-                        "index": song_index,
-                        "result": "success",
-                        "reason": reason,
-                        "path": filepath,
-                        "current": idx + 1,
+                        "current": idx,
                         "total": total,
-                    }
-                )
-            elif result == "skip":
-                task.skip += 1
-                self._emit_log(f"已存在，跳过: {name}", "warn")
-                self._emit_progress(
-                    {
-                        "type": "song_done",
-                        "task_id": task.task_id,
-                        "index": song_index,
-                        "result": "skip",
-                        "reason": reason,
-                        "path": filepath,
-                        "current": idx + 1,
-                        "total": total,
-                    }
-                )
-            else:
-                task.fail += 1
-                reason = "下载失败，请查看日志"
-                self._emit_log(f"下载失败: {name}", "error")
-                self._emit_progress(
-                    {
-                        "type": "song_done",
-                        "task_id": task.task_id,
-                        "index": song_index,
-                        "result": "fail",
-                        "reason": reason,
-                        "path": filepath,
-                        "current": idx + 1,
-                        "total": total,
+                        "song_name": name,
                     }
                 )
 
-            if idx < total - 1:
-                time.sleep(INTER_SONG_DELAY_SEC)
+                def _do_download(
+                    _song: dict[str, Any] = song,
+                    _idx: int = idx,
+                    _total: int = total,
+                ) -> str:
+                    return download_song(
+                        page=self._session.page,
+                        context=self._session.context,
+                        song=_song,
+                        source=task.source,
+                        save_dir=target_dir,
+                        index=_idx + 1,
+                        total=_total,
+                        download_lyric=task.download_lyric,
+                        download_cover=task.download_cover,
+                        bitrate=task.bitrate,
+                    )
 
-        self._emit_progress(
-            {
-                "type": "complete",
-                "task_id": task.task_id,
-                "success": task.success,
-                "fail": task.fail,
-                "skip": task.skip,
-            }
-        )
-        self._emit_log(
-            f"下载完成: 成功 {task.success} / 失败 {task.fail} / 跳过 {task.skip}",
-            "success" if task.fail == 0 else "warn",
-        )
-        self._tasks.pop(task.task_id, None)
+                result = self._session.submit(_do_download, timeout=300.0)
+
+                # 原始索引用于前端状态更新
+                try:
+                    song_index = int(song.get("_gui_index", idx))
+                except (TypeError, ValueError):
+                    song_index = idx
+
+                filepath = build_output_path(target_dir, song, task.bitrate)
+                reason = ""
+
+                if result == "success":
+                    task.success += 1
+                    self._emit_log(f"下载完成: {name}", "success")
+                    self._emit_progress(
+                        {
+                            "type": "song_done",
+                            "task_id": task.task_id,
+                            "index": song_index,
+                            "result": "success",
+                            "reason": reason,
+                            "path": filepath,
+                            "current": idx + 1,
+                            "total": total,
+                        }
+                    )
+                elif result == "skip":
+                    task.skip += 1
+                    self._emit_log(f"已存在，跳过: {name}", "warn")
+                    self._emit_progress(
+                        {
+                            "type": "song_done",
+                            "task_id": task.task_id,
+                            "index": song_index,
+                            "result": "skip",
+                            "reason": reason,
+                            "path": filepath,
+                            "current": idx + 1,
+                            "total": total,
+                        }
+                    )
+                else:
+                    task.fail += 1
+                    reason = "下载失败，请查看日志"
+                    self._emit_log(f"下载失败: {name}", "error")
+                    self._emit_progress(
+                        {
+                            "type": "song_done",
+                            "task_id": task.task_id,
+                            "index": song_index,
+                            "result": "fail",
+                            "reason": reason,
+                            "path": filepath,
+                            "current": idx + 1,
+                            "total": total,
+                        }
+                    )
+
+                next_index = idx + 1
+                if idx < total - 1:
+                    time.sleep(INTER_SONG_DELAY_SEC)
+
+        except Exception as exc:  # noqa: BLE001 - worker must always publish a terminal event
+            self._emit_log(f"下载任务异常: {exc}", "error")
+            if not task.cancel_event.is_set():
+                self._fail_unfinished_downloads(
+                    task,
+                    next_index,
+                    target_dir,
+                    "下载任务异常，请查看日志",
+                )
+        finally:
+            try:
+                self._emit_progress(
+                    {
+                        "type": "complete",
+                        "task_id": task.task_id,
+                        "success": task.success,
+                        "fail": task.fail,
+                        "skip": task.skip,
+                    }
+                )
+                self._emit_log(
+                    f"下载完成: 成功 {task.success} / 失败 {task.fail} / 跳过 {task.skip}",
+                    "success" if task.fail == 0 else "warn",
+                )
+            finally:
+                self._tasks.pop(task.task_id, None)
 
     def start_download(
         self,

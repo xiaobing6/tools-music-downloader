@@ -16,6 +16,17 @@ class _InlineSession:
         return func()
 
 
+class _RaisingSession(_InlineSession):
+    def __init__(self, *, succeed_before_raise: int = 0) -> None:
+        self._remaining_successes = succeed_before_raise
+
+    def submit(self, func, timeout: float | None = None) -> Any:  # noqa: ANN001
+        if self._remaining_successes > 0:
+            self._remaining_successes -= 1
+            return func()
+        raise RuntimeError("download session failed")
+
+
 class _FakePage:
     def goto(self, *_args: object, **_kwargs: object) -> None:
         return None
@@ -226,6 +237,150 @@ def test_gui_download_uses_keyword_directory_like_cli(
 
     assert save_dirs == [str(tmp_path / "周杰伦")]
     assert not (tmp_path / "第一首歌手").exists()
+
+
+def test_download_exception_completes_once_and_removes_task(
+    tmp_path: Path,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _RaisingSession()  # type: ignore[assignment]
+    task = DownloadTask(
+        task_id="task-exception",
+        songs=[
+            {"id": "1", "name": "One", "artist": "Artist", "_gui_index": 4},
+            {"id": "2", "name": "Two", "artist": "Artist", "_gui_index": 9},
+        ],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    bridge._tasks[task.task_id] = task
+
+    bridge._run_download(task)
+
+    complete_events = [event for event in events if event["type"] == "complete"]
+    done_events = [event for event in events if event["type"] == "song_done"]
+    assert complete_events == [
+        {
+            "type": "complete",
+            "task_id": task.task_id,
+            "success": 0,
+            "fail": 2,
+            "skip": 0,
+        }
+    ]
+    assert [event["index"] for event in done_events] == [4, 9]
+    assert all(event["result"] == "fail" for event in done_events)
+    assert task.task_id not in bridge._tasks
+
+
+def test_download_exception_preserves_completed_song_results(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _RaisingSession(succeed_before_raise=1)  # type: ignore[assignment]
+    monkeypatch.setattr(bridge_module, "download_song", lambda **_kwargs: "success")
+    task = DownloadTask(
+        task_id="task-partial",
+        songs=[
+            {"id": "1", "name": "One", "artist": "Artist"},
+            {"id": "2", "name": "Two", "artist": "Artist"},
+            {"id": "3", "name": "Three", "artist": "Artist"},
+        ],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    bridge._tasks[task.task_id] = task
+
+    bridge._run_download(task)
+
+    done_events = [event for event in events if event["type"] == "song_done"]
+    assert [event["result"] for event in done_events] == ["success", "fail", "fail"]
+    assert task.success == 1
+    assert task.fail == 2
+    assert sum(event["type"] == "complete" for event in events) == 1
+    assert task.task_id not in bridge._tasks
+
+
+def test_cancelled_download_completes_without_failing_unprocessed_songs(
+    tmp_path: Path,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _InlineSession()  # type: ignore[assignment]
+    task = DownloadTask(
+        task_id="task-cancelled",
+        songs=[{"id": "1", "name": "One", "artist": "Artist"}],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    task.cancel_event.set()
+    bridge._tasks[task.task_id] = task
+
+    bridge._run_download(task)
+
+    assert not [event for event in events if event["type"] == "song_done"]
+    assert [event for event in events if event["type"] == "complete"] == [
+        {
+            "type": "complete",
+            "task_id": task.task_id,
+            "success": 0,
+            "fail": 0,
+            "skip": 0,
+        }
+    ]
+    assert task.task_id not in bridge._tasks
+
+
+def test_download_target_directory_failure_marks_all_songs_once(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _InlineSession()  # type: ignore[assignment]
+    task = DownloadTask(
+        task_id="task-directory",
+        keyword="Album",
+        songs=[
+            {"id": "1", "name": "One", "artist": "Artist"},
+            {"id": "2", "name": "Two", "artist": "Artist"},
+        ],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    bridge._tasks[task.task_id] = task
+    real_makedirs = bridge_module.os.makedirs
+
+    def fail_target_dir(path: str, *, exist_ok: bool) -> None:
+        if path.endswith("Album"):
+            raise OSError("target unavailable")
+        real_makedirs(path, exist_ok=exist_ok)
+
+    monkeypatch.setattr(bridge_module.os, "makedirs", fail_target_dir)
+
+    bridge._run_download(task)
+
+    done_events = [event for event in events if event["type"] == "song_done"]
+    assert len(done_events) == 2
+    assert all(event["result"] == "fail" for event in done_events)
+    assert sum(event["type"] == "complete" for event in events) == 1
+    assert task.fail == 2
+    assert task.task_id not in bridge._tasks
 
 
 def test_gui_search_returns_before_progressive_cover_resolution(monkeypatch) -> None:
