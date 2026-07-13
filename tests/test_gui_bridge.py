@@ -44,6 +44,28 @@ class _FakePlaywright:
         self.chromium = _FakeChromium(calls)
 
 
+class _FailingPage(_FakePage):
+    def goto(self, *_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("navigation failed")
+
+
+class _SequencedChromium:
+    def __init__(self, outcomes: list[object]) -> None:
+        self.outcomes = outcomes
+
+    def launch_persistent_context(self, **_kwargs: object) -> _FakeContext:
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        assert isinstance(outcome, _FakeContext)
+        return outcome
+
+
+class _SequencedPlaywright:
+    def __init__(self, outcomes: list[object]) -> None:
+        self.chromium = _SequencedChromium(outcomes)
+
+
 def test_gui_browser_hides_only_headless_platform_window(tmp_path: Path, monkeypatch) -> None:
     calls: list[dict[str, object]] = []
     cloudflare_results = iter([False, True])
@@ -61,6 +83,66 @@ def test_gui_browser_hides_only_headless_platform_window(tmp_path: Path, monkeyp
     assert calls[0]["args"] == ["--window-position=-32000,-32000"]
     assert calls[1]["headless"] is False
     assert calls[1]["args"] == []
+
+
+def test_gui_browser_cleans_navigation_failure_before_retry(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    failed_context = _FakeContext()
+    failed_context.pages = [_FailingPage()]
+    retry_context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _SequencedPlaywright([failed_context, retry_context])
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: True)
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
+    assert failed_context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is True
+    assert session.context is retry_context
+    assert session.page is retry_context.pages[0]
+    assert session.ready is True
+
+
+def test_gui_browser_cleans_context_when_verification_fails(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _SequencedPlaywright([context])
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: False)
+
+    assert session.start_browser(headless=False, user_data_dir=str(tmp_path)) is False
+    assert context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
+
+
+def test_gui_browser_cleans_state_when_headed_fallback_launch_fails(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    headless_context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _SequencedPlaywright(
+        [headless_context, RuntimeError("headed launch failed")]
+    )
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: False)
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
+    assert headless_context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
 
 
 def test_download_event_includes_failure_reason_and_path(

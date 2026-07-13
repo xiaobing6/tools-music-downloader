@@ -83,6 +83,16 @@ class _PlaywrightThread:
         if self._on_log:
             self._on_log(msg, level)
 
+    def _cleanup_browser(self) -> None:
+        """Close and clear browser state on the owning Playwright thread."""
+        context = self._context
+        self._context = None
+        self._page = None
+        self._browser_ready.clear()
+        if context is not None:
+            with contextlib.suppress(Exception):
+                context.close()
+
     def start(self) -> bool:
         if self._thread is not None and self._thread.is_alive():
             return True
@@ -122,16 +132,11 @@ class _PlaywrightThread:
                 task.future.set()
 
         # Cleanup on thread exit.
-        with contextlib.suppress(Exception):
-            if self._context is not None:
-                self._context.close()
+        self._cleanup_browser()
         with contextlib.suppress(Exception):
             if self._playwright is not None:
                 self._playwright_cm.stop()
         self._playwright = None
-        self._context = None
-        self._page = None
-        self._browser_ready.clear()
 
     def submit(self, func: Callable[[], Any], timeout: float | None = None) -> Any:
         """Submit a callable to run on the Playwright thread and block for result."""
@@ -158,45 +163,62 @@ class _PlaywrightThread:
 
         final_user_data_dir = user_data_dir
         final_headless = headless
+        open_cancelled = threading.Event()
 
         def _open() -> bool:
-            self._log("正在启动浏览器...", "info")
-            self._context = self._playwright.chromium.launch_persistent_context(
-                user_data_dir=final_user_data_dir,
-                channel="chrome",
-                headless=final_headless,
-                user_agent=USER_AGENT,
-                args=_browser_launch_args(headless=final_headless),
-            )
-            self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
-            self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
-            self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
-            cf_passed = wait_for_cloudflare(self._page)
-            if not cf_passed and final_headless:
-                self._log("无头模式未通过验证，尝试有头模式...", "warn")
-                with contextlib.suppress(Exception):
-                    self._context.close()
+            self._cleanup_browser()
+            if open_cancelled.is_set():
+                return False
+            try:
+                self._log("正在启动浏览器...", "info")
                 self._context = self._playwright.chromium.launch_persistent_context(
                     user_data_dir=final_user_data_dir,
                     channel="chrome",
-                    headless=False,
+                    headless=final_headless,
                     user_agent=USER_AGENT,
-                    args=_browser_launch_args(headless=False),
+                    args=_browser_launch_args(headless=final_headless),
                 )
                 self._page = (
                     self._context.pages[0] if self._context.pages else self._context.new_page()
                 )
+                self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
                 self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                 cf_passed = wait_for_cloudflare(self._page)
-            if cf_passed:
-                self._log("浏览器就绪，Cloudflare 验证通过", "success")
-                self._browser_ready.set()
-                return True
-            self._log("Cloudflare 验证未通过", "error")
-            return False
+
+                if not cf_passed and final_headless:
+                    self._log("无头模式未通过验证，尝试有头模式...", "warn")
+                    self._cleanup_browser()
+                    self._context = self._playwright.chromium.launch_persistent_context(
+                        user_data_dir=final_user_data_dir,
+                        channel="chrome",
+                        headless=False,
+                        user_agent=USER_AGENT,
+                        args=_browser_launch_args(headless=False),
+                    )
+                    self._page = (
+                        self._context.pages[0]
+                        if self._context.pages
+                        else self._context.new_page()
+                    )
+                    self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
+                    cf_passed = wait_for_cloudflare(self._page)
+
+                if cf_passed and not open_cancelled.is_set():
+                    self._log("浏览器就绪，Cloudflare 验证通过", "success")
+                    self._browser_ready.set()
+                    return True
+                self._log("Cloudflare 验证未通过", "error")
+                return False
+            finally:
+                if not self._browser_ready.is_set():
+                    self._cleanup_browser()
 
         try:
             return self.submit(_open, timeout=120.0)
+        except TimeoutError as exc:
+            open_cancelled.set()
+            self._log(f"浏览器启动失败: {exc}", "error")
+            return False
         except Exception as exc:
             self._log(f"浏览器启动失败: {exc}", "error")
             return False

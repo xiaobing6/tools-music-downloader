@@ -8,7 +8,7 @@ from enum import Enum
 class Source(str, Enum):  # noqa: UP042 - preserve legacy string formatting
     label: str
 
-    def __new__(cls, value: str, label: str) -> Source:
+    def __new__(cls, value: str, label: str = "") -> Source:
         member = str.__new__(cls, value)
         member._value_ = value
         member.label = label
