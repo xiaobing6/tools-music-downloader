@@ -31,6 +31,8 @@ class Source(str, Enum):  # noqa: UP042 - preserve legacy string formatting
 
 def source_label(value: object, fallback: str = "未知") -> str:
     """Return a catalog label while preserving unknown upstream source IDs."""
+    if isinstance(value, Source):
+        return value.label
     text = str(value).strip() if value is not None else ""
     if not text:
         return fallback

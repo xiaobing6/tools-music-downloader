@@ -383,7 +383,15 @@ class MusicBridge:
         output_dir = task.output_dir
         target_dir = output_dir
         next_index = 0
+        total = len(task.songs)
         try:
+            self._emit_progress(
+                {
+                    "type": "start",
+                    "task_id": task.task_id,
+                    "total": total,
+                }
+            )
             try:
                 os.makedirs(output_dir, exist_ok=True)
             except OSError as exc:
@@ -413,15 +421,6 @@ class MusicBridge:
                     "无法创建下载目录",
                 )
                 return
-
-            total = len(task.songs)
-            self._emit_progress(
-                {
-                    "type": "start",
-                    "task_id": task.task_id,
-                    "total": total,
-                }
-            )
 
             for idx, song in enumerate(task.songs):
                 if task.cancel_event.is_set():

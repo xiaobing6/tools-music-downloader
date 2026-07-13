@@ -417,6 +417,11 @@ def test_download_target_directory_failure_marks_all_songs_once(
 
     bridge._run_download(task)
 
+    assert events[0] == {
+        "type": "start",
+        "task_id": task.task_id,
+        "total": 2,
+    }
     done_events = [event for event in events if event["type"] == "song_done"]
     assert len(done_events) == 2
     assert all(event["result"] == "fail" for event in done_events)

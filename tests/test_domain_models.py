@@ -118,6 +118,7 @@ def test_source_catalog_is_complete_and_labeled() -> None:
     assert {item.value: item.label for item in Source} == expected
     assert list(expected) == VALID_SOURCES
     assert enum_module.source_label("kugou") == "酷狗音乐"
+    assert enum_module.source_label(Source.NETEASE) == "网易云音乐"
     assert enum_module.source_label("future-source") == "future-source"
     assert enum_module.source_label(None) == "未知"
 
