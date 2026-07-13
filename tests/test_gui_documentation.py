@@ -60,6 +60,37 @@ def test_gui_docs_cover_headless_window_regression() -> None:
     assert "headed" in agents
 
 
+def test_docs_define_complete_source_catalog_and_single_maintenance_point() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+    expected_sources = {
+        "netease": "网易云音乐",
+        "migu": "咪咕音乐",
+        "kugou": "酷狗音乐",
+        "kuwo": "酷我音乐",
+        "ytmusic": "YouTube Music",
+        "tidal": "Tidal",
+        "qobuz": "Qobuz",
+        "deezer": "Deezer",
+        "spotify": "Spotify",
+        "tencent": "QQ音乐",
+        "ximalaya": "喜马拉雅",
+        "joox": "JOOX",
+        "apple": "Apple Music",
+    }
+    for source_id, label in expected_sources.items():
+        assert f"`{source_id}`" in readme
+        assert label in readme
+
+    assert "酷狗专辑搜索" in readme
+    assert "上游不保证" in readme
+    assert "CLI 参数仍使用音源 ID" in readme
+    assert "音源只在 `music_downloader/domain/enums.py`" in agents
+    assert "`VALID_SOURCES` 自动从 `Source` 派生" in agents
+    assert "HTML、JSON 或 XML" in agents
+
+
 def test_superseded_gui_docs_point_to_current_design() -> None:
     historical_docs = [
         ROOT / "docs/superpowers/plans/2026-07-02-vite-svelte-gui-refactor.md",

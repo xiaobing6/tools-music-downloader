@@ -85,6 +85,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 
 - 默认通过 `launch_persistent_context` 启动，把 user data 放在项目根目录 `.chrome-profile/`，与系统 Chrome profile 隔离。
 - GUI 只在 headless 模式使用屏幕外窗口位置；headed 验证窗口保持正常位置。不要用禁用 GPU、隐藏 GUI 或删除 persistent profile 的方式替代这一兼容措施。
+- GUI 浏览器初始化失败、验证失败或超时时，必须在 Playwright 所属线程关闭并清空 page/context/ready 状态；重试不得复用失败会话或继续锁住 profile。
 - `cf_clearance` 跨 profile 失效属预期副作用。
 - 如果用户主动指定 `--user-data-dir`，CLI 会透传，并打印当前目录位置。
 
@@ -93,12 +94,14 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - 默认下载根目录是项目根目录的 `downloads/`。
 - 重复判断只看最终目标文件是否已经存在。
 - 音频文件落盘成功即可认定单曲下载成功。
+- 音频响应在最终文件替换前只做保守校验：拒绝明确的 HTML、JSON 或 XML 错误文档；`audio/*`、`application/octet-stream`、缺失或未知 MIME 的非错误二进制内容继续接受。不要把严格容器签名或 Mutagen 可解析性作为成功前置条件。
 - 元数据、歌词或封面处理失败只记录 warning，不删除已下载音频，不把歌曲判为失败。
 - 不要重新引入“写入 ID3/FLAC 失败就删除音频文件”的逻辑。
+- GUI 下载后台任务的正常、取消、目录失败、超时和未预期异常都必须恰好发送一次 complete 事件，并在 `finally` 中从任务表移除；取消不得把尚未处理的歌曲误报为失败。
 
 ## 常见修改场景
 
-- **新增音乐源**：修改 `music_downloader/core/config.py` 中的 `VALID_SOURCES`，并同步 `domain/enums.py` 的 `Source`。
+- **新增音乐源**：音源只在 `music_downloader/domain/enums.py` 的 `Source` 中维护 API 值和展示名；`VALID_SOURCES` 自动从 `Source` 派生，CLI、GUI API 和前端结果行均消费这份目录，不要另建音源 ID 或展示名映射。
 - **修改默认设置**：调整 `DEFAULT_KEYWORD`、`DEFAULT_SOURCE`、`DEFAULT_NUMBER`、`DEFAULT_BITRATE`。
 - **调整搜索逻辑**：优先修改 `music_downloader/services/search.py` 和 `music_downloader/infrastructure/gdstudio.py`。
 - **调整下载行为**：优先修改 `music_downloader/infrastructure/downloader.py`，保持“文件存在即跳过”和“元数据失败 warning-only”语义。
