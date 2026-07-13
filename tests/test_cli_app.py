@@ -51,6 +51,14 @@ def test_help_lists_supported_option_values() -> None:
     assert ".chrome-profile" in result.output
 
 
+def test_help_lists_source_ids_with_display_names() -> None:
+    result = CliRunner().invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "netease（网易云音乐）" in result.output
+    assert "kugou（酷狗音乐）" in result.output
+
+
 def test_help_uses_rich_rendering() -> None:
     result = CliRunner().invoke(app, ["--help"])
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from types import ModuleType
 
+from music_downloader.domain.enums import Source
 from music_downloader.gui import api as api_module
 from music_downloader.gui import app as app_module
 from music_downloader.gui.api import MusicApi
@@ -54,7 +55,9 @@ def test_gui_valid_options_expose_gui_choices_only() -> None:
     assert set(options) == {"sources", "bitrates", "search_types"}
     assert options["bitrates"] == ["128", "192", "320", "flac"]
     assert options["search_types"] == ["song", "album", "playlist"]
-    assert {"value": "netease", "label": "网易云音乐"} in options["sources"]
+    assert options["sources"] == [
+        {"value": source.value, "label": source.label} for source in Source
+    ]
 
 
 def test_select_directory_uses_pywebview_folder_dialog(monkeypatch) -> None:

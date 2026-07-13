@@ -17,6 +17,7 @@ from music_downloader.core.config import (
     VALID_FORMATS,
     VALID_SOURCES,
 )
+from music_downloader.domain.enums import Source
 
 if TYPE_CHECKING:
     from music_downloader.cli.models import RunOptions
@@ -41,7 +42,7 @@ def _value_list(values: list[str] | tuple[str, ...]) -> str:
 HELP_EPILOG = "\n\n".join(
     [
         "可选值:",
-        f"--source   {_value_list(VALID_SOURCES)}",
+        f"--source   {_value_list([f'{source.value}（{source.label}）' for source in Source])}",
         f"--type     {_value_list(tuple(SEARCH_TYPE_MAP))}",
         f"--format   {_value_list(VALID_FORMATS)}",
         f"--bitrate  {_value_list(VALID_BITRATES)}",

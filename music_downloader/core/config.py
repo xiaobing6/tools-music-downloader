@@ -1,5 +1,7 @@
 """全局常量、默认值和支持的平台列表。"""
 
+from music_downloader.domain.enums import Source
+
 BASE_URL = "https://music.gdstudio.org"
 PROXY_BASE_URL = "https://music-proxy.gdstudio.org"
 
@@ -25,20 +27,7 @@ REQUEST_TIMEOUT_MS = 300000
 COVER_TIMEOUT_MS = 30000
 PAGE_NAV_TIMEOUT_MS = 60000
 
-VALID_SOURCES = [
-    "netease",
-    "migu",
-    "kuwo",
-    "ytmusic",
-    "tidal",
-    "qobuz",
-    "deezer",
-    "spotify",
-    "tencent",
-    "ximalaya",
-    "joox",
-    "apple",
-]
+VALID_SOURCES = [source.value for source in Source]
 
 VALID_FORMATS = ["table", "json", "list"]
 VALID_BITRATES = ["128", "192", "320", "flac"]

@@ -22,7 +22,7 @@ from music_downloader.core.config import (
     PAGE_NAV_TIMEOUT_MS,
     USER_AGENT,
 )
-from music_downloader.domain.enums import SearchType, Source
+from music_downloader.domain.enums import SearchType, Source, source_label
 from music_downloader.domain.models import SearchOptions, Song
 from music_downloader.infrastructure.downloader import build_output_path, download_song
 from music_downloader.infrastructure.environment import run_environment_checks
@@ -303,7 +303,8 @@ class MusicBridge:
         if not self.ensure_browser():
             return []
         self._emit_log(
-            f'搜索 "{keyword}" (来源: {source}, 类型: {search_type}, 数量: {number})...',
+            f'搜索 "{keyword}" (来源: {source_label(source)} ({source}), '
+            f'类型: {search_type}, 数量: {number})...',
             "info",
         )
 

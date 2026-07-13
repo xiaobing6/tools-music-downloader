@@ -182,6 +182,26 @@ def test_gui_search_returns_before_progressive_cover_resolution(monkeypatch) -> 
     assert captured[0][1] == "netease"
 
 
+def test_gui_search_log_uses_catalog_display_name(monkeypatch) -> None:
+    logs: list[tuple[str, str]] = []
+
+    class FakeClient:
+        def __init__(self, _page: object) -> None:
+            pass
+
+        def search(self, _options: object) -> list[dict[str, object]]:
+            return []
+
+    bridge = MusicBridge(on_log=lambda message, level: logs.append((message, level)))
+    bridge._session = _InlineSession()  # type: ignore[assignment]
+    monkeypatch.setattr(bridge, "ensure_browser", lambda: True)
+    monkeypatch.setattr(bridge_module, "GdStudioClient", FakeClient)
+
+    bridge.search("Song", "netease", "song", 1)
+
+    assert any("来源: 网易云音乐 (netease)" in message for message, _level in logs)
+
+
 def test_cover_resolution_continues_after_one_song_fails(monkeypatch) -> None:
     events: list[dict[str, str]] = []
 
