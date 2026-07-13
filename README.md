@@ -13,6 +13,20 @@
 - GUI 每次启动都使用默认参数，不保存来源、搜索类型、数量、音质等用户选择。
 - GUI 启动时显示品牌启动页和阶段化进度条；启动细节写入运行日志，不直接显示在启动页上。
 
+## 界面预览
+
+### 启动页面
+
+<p align="center">
+  <img src="docs/images/gui-startup.png" alt="音乐下载器 GUI 启动页面" width="100%">
+</p>
+
+### 主工作台
+
+<p align="center">
+  <img src="docs/images/gui-main.png" alt="音乐下载器 GUI 主工作台" width="100%">
+</p>
+
 ## 环境要求
 
 - Python 3.11+
