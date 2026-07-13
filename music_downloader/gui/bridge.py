@@ -196,9 +196,7 @@ class _PlaywrightThread:
                         args=_browser_launch_args(headless=False),
                     )
                     self._page = (
-                        self._context.pages[0]
-                        if self._context.pages
-                        else self._context.new_page()
+                        self._context.pages[0] if self._context.pages else self._context.new_page()
                     )
                     self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                     cf_passed = wait_for_cloudflare(self._page)
@@ -326,7 +324,7 @@ class MusicBridge:
             return []
         self._emit_log(
             f'搜索 "{keyword}" (来源: {source_label(source)} ({source}), '
-            f'类型: {search_type}, 数量: {number})...',
+            f"类型: {search_type}, 数量: {number})...",
             "info",
         )
 

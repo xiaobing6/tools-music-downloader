@@ -47,9 +47,7 @@ def test_normalize_song_dict_handles_placeholder_duration() -> None:
 
 
 def test_normalize_song_dict_uses_source_catalog_display_name() -> None:
-    data = normalize_song_dict(
-        {"id": "1", "name": "Song", "artist": ["A"], "source": "netease"}
-    )
+    data = normalize_song_dict({"id": "1", "name": "Song", "artist": ["A"], "source": "netease"})
 
     assert data["source"] == "网易云音乐"
 

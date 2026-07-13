@@ -81,6 +81,27 @@ def _safe_embed_metadata(**kwargs: Any) -> bool:
         return False
 
 
+def _audio_response_error(content_type: str, body: bytes) -> str | None:
+    """Return a reason for obvious upstream error documents, otherwise None."""
+    mime = content_type.partition(";")[0].strip().lower()
+    if mime == "text/html" or mime == "application/json" or mime.endswith("+json"):
+        return f"响应类型为 {mime}"
+    if mime in {"application/xml", "text/xml"} or mime.endswith("+xml"):
+        return f"响应类型为 {mime}"
+
+    prefix = body[:512]
+    if prefix.startswith(b"\xef\xbb\xbf"):
+        prefix = prefix[3:]
+    prefix = prefix.lstrip(b"\x00\t\r\n ").lower()
+    if prefix.startswith((b"<!doctype html", b"<html")):
+        return "响应内容为 HTML"
+    if prefix.startswith((b"{", b"[")):
+        return "响应内容为 JSON"
+    if prefix.startswith(b"<?xml"):
+        return "响应内容为 XML"
+    return None
+
+
 def _download_body_to_file(
     context: Any,
     proxy_url: str,
@@ -114,6 +135,12 @@ def _download_body_to_file(
             f"  ✗ 下载文件异常 (仅 {len(body)} 字节)，可能是错误响应",
             style="red",
         )
+        cleanup_paths([tmp_path])
+        return False
+
+    response_error = _audio_response_error(resp.headers.get("content-type", ""), body)
+    if response_error is not None:
+        console.print(f"  ✗ 下载文件异常 ({response_error})，可能是错误响应", style="red")
         cleanup_paths([tmp_path])
         return False
 

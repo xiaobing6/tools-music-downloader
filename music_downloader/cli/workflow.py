@@ -88,7 +88,7 @@ def do_search_and_download(
 ) -> None:
     console.print(
         f'搜索 "{options.keyword}" (来源: {source_label(options.source)} ({options.source}), '
-        f'类型: {options.search_type}, 数量: {options.number})...',
+        f"类型: {options.search_type}, 数量: {options.number})...",
         style="bold cyan",
     )
     client = GdStudioClient(page)
@@ -294,16 +294,13 @@ def interactive_mode(
             if cmd.value in VALID_SOURCES:
                 state["source"] = cmd.value
                 console.print(
-                    f"  ✓ 音乐源已切换为: {source_label(state['source'])} "
-                    f"({state['source']})",
+                    f"  ✓ 音乐源已切换为: {source_label(state['source'])} ({state['source']})",
                     style="green",
                 )
             else:
                 console.print(
                     f"  ✗ 无效来源: {cmd.value}，可选: "
-                    + ", ".join(
-                        f"{source.value}（{source.label}）" for source in Source
-                    ),
+                    + ", ".join(f"{source.value}（{source.label}）" for source in Source),
                     style="red",
                 )
             continue

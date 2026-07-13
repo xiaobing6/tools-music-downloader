@@ -101,9 +101,7 @@ class MusicApi:
 
     def get_valid_options(self) -> dict[str, Any]:
         return {
-            "sources": [
-                {"value": source.value, "label": source.label} for source in Source
-            ],
+            "sources": [{"value": source.value, "label": source.label} for source in Source],
             "bitrates": VALID_BITRATES,
             "search_types": list(SEARCH_TYPE_MAP.keys()),
         }
