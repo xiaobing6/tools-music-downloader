@@ -103,7 +103,6 @@ def test_result_list_uses_compact_library_rows() -> None:
     assert "data-selected=" in result_list
     assert 'width="40"' in result_list
     assert 'height="40"' in result_list
-    assert "酷我音乐" in result_list
     assert "—" in result_list
     assert "min-height: 60px;" in css
     assert (
@@ -114,6 +113,24 @@ def test_result_list_uses_compact_library_rows() -> None:
     assert "下载选中{selectedCount" not in result_list
     assert "resultCount" not in search_bar
     assert "resultCount={songs.length}" not in app
+
+
+def test_search_feedback_and_source_labels_use_shared_frontend_state() -> None:
+    app = (FRONTEND_SRC / "App.svelte").read_text(encoding="utf-8")
+    search_bar = (FRONTEND_SRC / "lib/components/SearchBar.svelte").read_text(encoding="utf-8")
+    result_list = (FRONTEND_SRC / "lib/components/ResultList.svelte").read_text(encoding="utf-8")
+
+    assert 'let searchFeedback = $state("")' in app
+    assert 'let searchAnnouncement = $state("")' in app
+    assert "feedback={searchFeedback}" in app
+    assert "sourceOptions={options.sources}" in app
+    assert "searchAnnouncement={searchAnnouncement}" in app
+    assert 'id="searchFeedback"' in search_bar
+    assert "aria-invalid={Boolean(feedback)}" in search_bar
+    assert 'aria-live="polite"' in result_list
+    assert "sourceOptions" in result_list
+    assert "const labels: Record<string, string>" not in result_list
+    assert 'netease: "网易云音乐"' not in result_list
 
 
 def test_result_rows_only_outline_keyboard_focus() -> None:

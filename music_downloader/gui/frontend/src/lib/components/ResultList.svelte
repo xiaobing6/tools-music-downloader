@@ -10,7 +10,7 @@
     XCircle
   } from "@lucide/svelte";
   import EmptyState from "./EmptyState.svelte";
-  import type { Song, SongStatus } from "../types";
+  import type { OptionItem, Song, SongStatus } from "../types";
 
   type IndexCollection = Set<number> | number[];
   type StatusCollection = Map<number, SongStatus> | Record<number, SongStatus> | SongStatus[];
@@ -20,6 +20,8 @@
     selectedIndices: IndexCollection;
     failedIndices: IndexCollection;
     statuses: StatusCollection;
+    sourceOptions: OptionItem[];
+    searchAnnouncement: string;
     browserReady: boolean;
     onToggle: (index: number) => void;
     onSelectAll: () => void;
@@ -33,6 +35,8 @@
     selectedIndices,
     failedIndices,
     statuses,
+    sourceOptions,
+    searchAnnouncement,
     browserReady,
     onToggle,
     onSelectAll,
@@ -43,6 +47,11 @@
 
   let selectedCount = $derived(collectionSize(selectedIndices));
   let failedCount = $derived(collectionSize(failedIndices));
+  let sourceLabels = $derived(
+    new Map<string, string>(
+      sourceOptions.map((option) => [option.value.toLowerCase(), option.label])
+    )
+  );
 
   function hasIndex(collection: IndexCollection, index: number): boolean {
     return collection instanceof Set ? collection.has(index) : collection.includes(index);
@@ -65,13 +74,11 @@
   }
 
   function sourceLabel(source: unknown): string {
-    const value = String(source ?? "").toLowerCase();
-    const labels: Record<string, string> = {
-      kuwo: "酷我音乐",
-      netease: "网易云音乐",
-      migu: "咪咕音乐"
-    };
-    return labels[value] ?? String(source ?? "—");
+    const value = String(source ?? "").trim();
+    if (!value) {
+      return "—";
+    }
+    return sourceLabels.get(value.toLowerCase()) ?? value;
   }
 
   function durationLabel(duration: unknown): string {
@@ -93,6 +100,9 @@
 </script>
 
 <section class="flex h-full min-h-0 flex-col rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+    {searchAnnouncement}
+  </span>
   <div class="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
     <div>
       <h2 class="text-base font-semibold text-slate-950">搜索结果</h2>
