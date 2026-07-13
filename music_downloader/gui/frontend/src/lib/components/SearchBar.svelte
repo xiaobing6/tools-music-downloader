@@ -59,7 +59,12 @@
     </button>
   </div>
   {#if feedback}
-    <p id="searchFeedback" class="mt-2 text-sm font-medium text-red-600" role="alert">
+    <p
+      id="searchFeedback"
+      class="mt-2 text-sm font-medium text-red-600"
+      role="status"
+      aria-live="polite"
+    >
       {feedback}
     </p>
   {/if}

@@ -141,8 +141,12 @@ test("search feedback and source labels come from shared state", async () => {
   assert.match(search, /id="searchFeedback"/);
   assert.match(search, /aria-invalid=\{Boolean\(feedback\)\}/);
   assert.match(search, /aria-describedby=\{feedback \? "searchFeedback" : undefined\}/);
+  assert.match(search, /id="searchFeedback"[^>]*role="status"[^>]*aria-live="polite"/s);
   assert.match(results, /aria-live="polite"/);
   assert.match(results, /sourceOptions/);
+  assert.doesNotMatch(app, /searchAnnouncement = searchFeedback/);
+  assert.doesNotMatch(app, /searchAnnouncement = "正在搜索"/);
+  assert.doesNotMatch(app, /searchAnnouncement = "搜索失败"/);
   assert.doesNotMatch(results, /const labels: Record<string, string>/);
   assert.doesNotMatch(results, /netease:\s*"网易云音乐"/);
 });

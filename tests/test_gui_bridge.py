@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -151,6 +152,47 @@ def test_gui_browser_cleans_state_when_headed_fallback_launch_fails(
 
     assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
     assert headless_context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
+
+
+def test_gui_browser_timeout_does_not_launch_headed_fallback(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    verification_started = threading.Event()
+    release_verification = threading.Event()
+    workers: list[threading.Thread] = []
+    headless_context = _FakeContext()
+    headed_context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    playwright = _SequencedPlaywright([headless_context, headed_context])
+    session._playwright = playwright
+
+    def wait_for_verification(_page: object) -> bool:
+        verification_started.set()
+        assert release_verification.wait(timeout=2.0)
+        return False
+
+    def timeout_submit(func, timeout=None) -> object:  # noqa: ANN001, ARG001
+        worker = threading.Thread(target=func)
+        workers.append(worker)
+        worker.start()
+        assert verification_started.wait(timeout=2.0)
+        raise TimeoutError("simulated submit timeout")
+
+    monkeypatch.setattr(session, "submit", timeout_submit)
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", wait_for_verification)
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
+    release_verification.set()
+    workers[0].join(timeout=2.0)
+
+    assert not workers[0].is_alive()
+    assert len(playwright.chromium.outcomes) == 1
+    assert headless_context.closed is True
+    assert headed_context.closed is False
     assert session.context is None
     assert session.page is None
     assert session.ready is False

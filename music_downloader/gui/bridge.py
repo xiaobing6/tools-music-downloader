@@ -183,7 +183,11 @@ class _PlaywrightThread:
                 )
                 self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
                 self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
+                if open_cancelled.is_set():
+                    return False
                 cf_passed = wait_for_cloudflare(self._page)
+                if open_cancelled.is_set():
+                    return False
 
                 if not cf_passed and final_headless:
                     self._log("无头模式未通过验证，尝试有头模式...", "warn")
@@ -199,6 +203,8 @@ class _PlaywrightThread:
                         self._context.pages[0] if self._context.pages else self._context.new_page()
                     )
                     self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
+                    if open_cancelled.is_set():
+                        return False
                     cf_passed = wait_for_cloudflare(self._page)
 
                 if cf_passed and not open_cancelled.is_set():

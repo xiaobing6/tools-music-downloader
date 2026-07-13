@@ -318,13 +318,13 @@
     const query = keyword.trim();
     if (!query) {
       searchFeedback = "请输入搜索关键词";
-      searchAnnouncement = searchFeedback;
+      searchAnnouncement = "";
       addLog("请输入搜索关键词", "warn");
       return;
     }
 
     searchFeedback = "";
-    searchAnnouncement = "正在搜索";
+    searchAnnouncement = "";
     searching = true;
     loadingText = "正在搜索…";
     try {
@@ -341,7 +341,7 @@
           : "搜索完成，未找到歌曲";
     } catch (error) {
       searchFeedback = "搜索失败，请稍后重试或查看运行日志";
-      searchAnnouncement = "搜索失败";
+      searchAnnouncement = "";
       addLog(`搜索失败: ${errorMessage(error)}`, "error");
     } finally {
       searching = false;
