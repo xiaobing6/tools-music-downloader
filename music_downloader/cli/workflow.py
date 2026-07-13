@@ -30,7 +30,8 @@ from music_downloader.core.config import (
     VALID_SOURCES,
 )
 from music_downloader.core.console import console
-from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
+from music_downloader.core.runtime import active_chrome_profile, runtime_root
+from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source, source_label
 from music_downloader.domain.models import DownloadOptions, SearchOptions
 from music_downloader.infrastructure.downloader import download_song
 from music_downloader.infrastructure.files import safe_filename
@@ -76,7 +77,7 @@ def _resolve_run_options(options: RunOptions, script_dir: str) -> RunOptions:
 
 def _source_runtime_root(module_file: str | os.PathLike[str]) -> Path:
     """Return the project root when running from source."""
-    return Path(module_file).resolve().parents[2]
+    return runtime_root(module_file, compiled=False)
 
 
 def do_search_and_download(
@@ -87,7 +88,8 @@ def do_search_and_download(
     show_progress: bool = True,
 ) -> None:
     console.print(
-        f'搜索 "{options.keyword}" (来源: {options.source}, 类型: {options.search_type}, 数量: {options.number})...',
+        f'搜索 "{options.keyword}" (来源: {source_label(options.source)} ({options.source}), '
+        f"类型: {options.search_type}, 数量: {options.number})...",
         style="bold cyan",
     )
     client = GdStudioClient(page)
@@ -271,7 +273,8 @@ def interactive_mode(
     console.print("输入关键词搜索并下载，输入 q 退出")
     console.print("命令: s <来源> 切换音乐源 | n <数量> 修改数量 | so 只搜索不下载")
     console.print(
-        f"当前设置: 来源={state['source']}, 类型={state['search_type']}, 数量={state['number']}"
+        f"当前设置: 来源={source_label(state['source'])} ({state['source']}), "
+        f"类型={state['search_type']}, 数量={state['number']}"
     )
     console.print()
 
@@ -291,10 +294,14 @@ def interactive_mode(
         if cmd.kind == "set_source":
             if cmd.value in VALID_SOURCES:
                 state["source"] = cmd.value
-                console.print(f"  ✓ 音乐源已切换为: {state['source']}", style="green")
+                console.print(
+                    f"  ✓ 音乐源已切换为: {source_label(state['source'])} ({state['source']})",
+                    style="green",
+                )
             else:
                 console.print(
-                    f"  ✗ 无效来源: {cmd.value}，可选: {', '.join(VALID_SOURCES)}",
+                    f"  ✗ 无效来源: {cmd.value}，可选: "
+                    + ", ".join(f"{source.value}（{source.label}）" for source in Source),
                     style="red",
                 )
             continue
@@ -371,7 +378,8 @@ def _resolve_user_data_dir(user_data_dir: str | None, script_dir: str) -> str:
     """
     if user_data_dir:
         return os.path.abspath(user_data_dir)
-    return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
+    profile_root = os.path.join(script_dir, ".chrome-profile")
+    return os.path.abspath(active_chrome_profile(profile_root))
 
 
 def run_with_browser(options: RunOptions) -> int:
@@ -387,11 +395,13 @@ def run_with_browser(options: RunOptions) -> int:
     if sync_playwright is None:
         return 1
 
-    if "__compiled__" in globals():
-        # Nuitka 编译环境：sys.argv[0] 是用户执行的真实 EXE 路径
-        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-    else:
-        script_dir = str(_source_runtime_root(__file__))
+    script_dir = str(
+        runtime_root(
+            __file__,
+            compiled="__compiled__" in globals(),
+            executable=sys.argv[0],
+        )
+    )
     options = _resolve_run_options(options, script_dir)
     user_data_dir = _resolve_user_data_dir(options.user_data_dir, script_dir)
     os.makedirs(user_data_dir, exist_ok=True)

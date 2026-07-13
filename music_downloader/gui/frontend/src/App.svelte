@@ -45,6 +45,8 @@
   let initializing = $state(true);
   let searching = $state(false);
   let loadingText = $state("");
+  let searchFeedback = $state("");
+  let searchAnnouncement = $state("");
   let startupStageKey = $state<StartupStageKey>("launch");
   let currentTaskId = $state<string | null>(null);
   let logCollapsed = $state(true);
@@ -315,10 +317,14 @@
 
     const query = keyword.trim();
     if (!query) {
+      searchFeedback = "请输入搜索关键词";
+      searchAnnouncement = "";
       addLog("请输入搜索关键词", "warn");
       return;
     }
 
+    searchFeedback = "";
+    searchAnnouncement = "";
     searching = true;
     loadingText = "正在搜索…";
     try {
@@ -329,7 +335,13 @@
       selectedIndices = new Set();
       failedIndices = new Set();
       statuses = {};
+      searchAnnouncement =
+        results.length > 0
+          ? `搜索完成，共找到 ${results.length} 首歌曲`
+          : "搜索完成，未找到歌曲";
     } catch (error) {
+      searchFeedback = "搜索失败，请稍后重试或查看运行日志";
+      searchAnnouncement = "";
       addLog(`搜索失败: ${errorMessage(error)}`, "error");
     } finally {
       searching = false;
@@ -526,9 +538,14 @@
         <SearchBar
           {keyword}
           {searching}
+          feedback={searchFeedback}
           disabled={initializing || downloadActive}
           onKeyword={(value) => {
             keyword = value;
+            if (searchFeedback) {
+              searchFeedback = "";
+              searchAnnouncement = "";
+            }
           }}
           onSearch={search}
         />
@@ -552,6 +569,8 @@
               {selectedIndices}
               {failedIndices}
               {statuses}
+              sourceOptions={options.sources}
+              searchAnnouncement={searchAnnouncement}
               browserReady={canDownload}
               onToggle={toggleSelection}
               onSelectAll={selectAll}

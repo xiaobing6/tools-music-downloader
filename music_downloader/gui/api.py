@@ -16,7 +16,6 @@ from pydantic import ValidationError
 from music_downloader.core.config import (
     SEARCH_TYPE_MAP,
     VALID_BITRATES,
-    VALID_SOURCES,
 )
 from music_downloader.domain.enums import Bitrate, SearchType, Source
 from music_downloader.domain.models import SearchOptions
@@ -102,7 +101,7 @@ class MusicApi:
 
     def get_valid_options(self) -> dict[str, Any]:
         return {
-            "sources": [{"value": s, "label": _SOURCE_LABELS.get(s, s)} for s in VALID_SOURCES],
+            "sources": [{"value": source.value, "label": source.label} for source in Source],
             "bitrates": VALID_BITRATES,
             "search_types": list(SEARCH_TYPE_MAP.keys()),
         }
@@ -217,21 +216,6 @@ class MusicApi:
     def shutdown(self) -> None:
         self._bridge.shutdown()
 
-
-_SOURCE_LABELS: dict[str, str] = {
-    "netease": "网易云音乐",
-    "migu": "咪咕音乐",
-    "kuwo": "酷我音乐",
-    "ytmusic": "YouTube Music",
-    "tidal": "Tidal",
-    "qobuz": "Qobuz",
-    "deezer": "Deezer",
-    "spotify": "Spotify",
-    "tencent": "QQ音乐",
-    "ximalaya": "喜马拉雅",
-    "joox": "Joox",
-    "apple": "Apple Music",
-}
 
 _FOLDER_DIALOG_TITLE_PARTS = (
     "\u9009\u62e9\u6587\u4ef6\u5939",

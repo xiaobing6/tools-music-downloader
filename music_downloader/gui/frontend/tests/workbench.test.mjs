@@ -114,9 +114,6 @@ test("results use compact library rows with one consolidated count", async () =>
   assert.match(results, /class="result-row"/);
   assert.match(results, /data-selected=/);
   assert.match(results, /focus-visible:/);
-  assert.match(results, /酷我音乐/);
-  assert.match(results, /网易云音乐/);
-  assert.match(results, /咪咕音乐/);
   assert.match(results, /"—"/);
   assert.match(results, /共 \{songs\.length\} 首 · 已选择 \{selectedCount\} 首/);
   assert.match(css, /\.result-row\s*\{[^}]*min-height:\s*60px/s);
@@ -129,6 +126,29 @@ test("results use compact library rows with one consolidated count", async () =>
   assert.doesNotMatch(results, /下载选中\{selectedCount/);
   assert.doesNotMatch(search, /resultCount/);
   assert.doesNotMatch(app, /resultCount=\{songs\.length\}/);
+});
+
+test("search feedback and source labels come from shared state", async () => {
+  const app = await source("App.svelte");
+  const search = await source("lib/components/SearchBar.svelte");
+  const results = await source("lib/components/ResultList.svelte");
+
+  assert.match(app, /let searchFeedback = \$state\(""\)/);
+  assert.match(app, /let searchAnnouncement = \$state\(""\)/);
+  assert.match(app, /feedback=\{searchFeedback\}/);
+  assert.match(app, /sourceOptions=\{options\.sources\}/);
+  assert.match(app, /searchAnnouncement=\{searchAnnouncement\}/);
+  assert.match(search, /id="searchFeedback"/);
+  assert.match(search, /aria-invalid=\{Boolean\(feedback\)\}/);
+  assert.match(search, /aria-describedby=\{feedback \? "searchFeedback" : undefined\}/);
+  assert.match(search, /id="searchFeedback"[^>]*role="status"[^>]*aria-live="polite"/s);
+  assert.match(results, /aria-live="polite"/);
+  assert.match(results, /sourceOptions/);
+  assert.doesNotMatch(app, /searchAnnouncement = searchFeedback/);
+  assert.doesNotMatch(app, /searchAnnouncement = "正在搜索"/);
+  assert.doesNotMatch(app, /searchAnnouncement = "搜索失败"/);
+  assert.doesNotMatch(results, /const labels: Record<string, string>/);
+  assert.doesNotMatch(results, /netease:\s*"网易云音乐"/);
 });
 
 test("result row outlines are reserved for keyboard-visible focus", async () => {

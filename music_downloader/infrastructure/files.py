@@ -6,6 +6,7 @@ import os
 import re
 from typing import Any
 
+from music_downloader.domain.enums import source_label
 from music_downloader.domain.formatting import get_artist_str
 from music_downloader.domain.models import Song
 
@@ -67,7 +68,7 @@ def normalize_song_dict(song: dict[str, Any]) -> dict[str, str]:
         "artist": get_artist_str(song),
         "album": str(song.get("album", "未知")),
         "duration": duration_text or "--:--",
-        "source": str(song.get("source", "未知")),
+        "source": source_label(song.get("source")),
         "id": model.id,
         "url_id": model.url_id,
         "pic_id": model.pic_id,

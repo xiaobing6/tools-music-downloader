@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +16,17 @@ class _InlineSession:
 
     def submit(self, func, timeout: float | None = None) -> Any:  # noqa: ANN001
         return func()
+
+
+class _RaisingSession(_InlineSession):
+    def __init__(self, *, succeed_before_raise: int = 0) -> None:
+        self._remaining_successes = succeed_before_raise
+
+    def submit(self, func, timeout: float | None = None) -> Any:  # noqa: ANN001
+        if self._remaining_successes > 0:
+            self._remaining_successes -= 1
+            return func()
+        raise RuntimeError("download session failed")
 
 
 class _FakePage:
@@ -44,6 +57,43 @@ class _FakePlaywright:
         self.chromium = _FakeChromium(calls)
 
 
+class _FailingPage(_FakePage):
+    def goto(self, *_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("navigation failed")
+
+
+class _SequencedChromium:
+    def __init__(self, outcomes: list[object]) -> None:
+        self.outcomes = outcomes
+
+    def launch_persistent_context(self, **_kwargs: object) -> _FakeContext:
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        assert isinstance(outcome, _FakeContext)
+        return outcome
+
+
+class _SequencedPlaywright:
+    def __init__(self, outcomes: list[object]) -> None:
+        self.chromium = _SequencedChromium(outcomes)
+
+
+class _ProfileChromium:
+    def __init__(self, contexts: list[_FakeContext]) -> None:
+        self.contexts = contexts
+        self.calls: list[dict[str, object]] = []
+
+    def launch_persistent_context(self, **kwargs: object) -> _FakeContext:
+        self.calls.append(kwargs)
+        return self.contexts.pop(0)
+
+
+class _ProfilePlaywright:
+    def __init__(self, contexts: list[_FakeContext]) -> None:
+        self.chromium = _ProfileChromium(contexts)
+
+
 def test_gui_browser_hides_only_headless_platform_window(tmp_path: Path, monkeypatch) -> None:
     calls: list[dict[str, object]] = []
     cloudflare_results = iter([False, True])
@@ -61,6 +111,195 @@ def test_gui_browser_hides_only_headless_platform_window(tmp_path: Path, monkeyp
     assert calls[0]["args"] == ["--window-position=-32000,-32000"]
     assert calls[1]["headless"] is False
     assert calls[1]["args"] == []
+
+
+def test_gui_browser_cleans_navigation_failure_before_retry(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    failed_context = _FakeContext()
+    failed_context.pages = [_FailingPage()]
+    retry_context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _SequencedPlaywright([failed_context, retry_context])
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: True)
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
+    assert failed_context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is True
+    assert session.context is retry_context
+    assert session.page is retry_context.pages[0]
+    assert session.ready is True
+
+
+def test_gui_browser_cleans_context_when_verification_fails(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _SequencedPlaywright([context])
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: False)
+
+    assert session.start_browser(headless=False, user_data_dir=str(tmp_path)) is False
+    assert context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
+
+
+def test_gui_browser_recovers_default_profile_without_deleting_old_state(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    project_root = tmp_path / "project"
+    module_file = project_root / "music_downloader" / "gui" / "bridge.py"
+    profile_root = project_root / ".chrome-profile"
+    old_state = profile_root / "Default" / "Preferences"
+    old_state.parent.mkdir(parents=True)
+    old_state.write_text("keep", encoding="utf-8")
+
+    contexts = [_FakeContext(), _FakeContext(), _FakeContext()]
+    playwright = _ProfilePlaywright(contexts)
+    verification_results = iter([False, False, True])
+    session = bridge_module._PlaywrightThread()
+    session._playwright = playwright
+    monkeypatch.setattr(bridge_module, "__file__", str(module_file))
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(
+        bridge_module,
+        "wait_for_cloudflare",
+        lambda _page: next(verification_results),
+    )
+
+    assert session.start_browser(headless=True) is True
+    assert old_state.read_text(encoding="utf-8") == "keep"
+    assert [call["user_data_dir"] for call in playwright.chromium.calls] == [
+        str(profile_root),
+        str(profile_root),
+        str(profile_root / "recovery"),
+    ]
+    assert (profile_root / ".active-profile").read_text(encoding="utf-8") == "recovery"
+
+
+def test_gui_browser_warns_when_recovery_marker_cannot_be_written(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    project_root = tmp_path / "project"
+    module_file = project_root / "music_downloader" / "gui" / "bridge.py"
+    logs: list[tuple[str, str]] = []
+    playwright = _ProfilePlaywright([_FakeContext(), _FakeContext(), _FakeContext()])
+    verification_results = iter([False, False, True])
+    session = bridge_module._PlaywrightThread(
+        on_log=lambda message, level: logs.append((message, level))
+    )
+    session._playwright = playwright
+    original_write_text = Path.write_text
+
+    def write_text(path: Path, *args: object, **kwargs: object) -> int:
+        if path.name == ".active-profile":
+            raise OSError("marker is read-only")
+        return original_write_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write_text)
+    monkeypatch.setattr(bridge_module, "__file__", str(module_file))
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(
+        bridge_module,
+        "wait_for_cloudflare",
+        lambda _page: next(verification_results),
+    )
+
+    assert session.start_browser(headless=True) is True
+    assert any(level == "warn" and "无法记录恢复环境" in message for message, level in logs)
+
+
+def test_gui_browser_uses_executable_profile_when_compiled(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    executable = tmp_path / "dist" / "music_download.exe"
+    module_file = tmp_path / "onefile-temp" / "music_downloader" / "gui" / "bridge.py"
+    playwright = _ProfilePlaywright([_FakeContext()])
+    session = bridge_module._PlaywrightThread()
+    session._playwright = playwright
+    monkeypatch.setitem(bridge_module.__dict__, "__compiled__", object())
+    monkeypatch.setattr(sys, "argv", [str(executable)])
+    monkeypatch.setattr(bridge_module, "__file__", str(module_file))
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: True)
+
+    assert session.start_browser(headless=True) is True
+    assert playwright.chromium.calls[0]["user_data_dir"] == str(
+        executable.parent / ".chrome-profile"
+    )
+
+
+def test_gui_browser_cleans_state_when_headed_fallback_launch_fails(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    headless_context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    session._playwright = _SequencedPlaywright(
+        [headless_context, RuntimeError("headed launch failed")]
+    )
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: False)
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
+    assert headless_context.closed is True
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
+
+
+def test_gui_browser_timeout_does_not_launch_headed_fallback(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    verification_started = threading.Event()
+    release_verification = threading.Event()
+    workers: list[threading.Thread] = []
+    headless_context = _FakeContext()
+    headed_context = _FakeContext()
+    session = bridge_module._PlaywrightThread()
+    playwright = _SequencedPlaywright([headless_context, headed_context])
+    session._playwright = playwright
+
+    def wait_for_verification(_page: object) -> bool:
+        verification_started.set()
+        assert release_verification.wait(timeout=2.0)
+        return False
+
+    def timeout_submit(func, timeout=None) -> object:  # noqa: ANN001, ARG001
+        worker = threading.Thread(target=func)
+        workers.append(worker)
+        worker.start()
+        assert verification_started.wait(timeout=2.0)
+        raise TimeoutError("simulated submit timeout")
+
+    monkeypatch.setattr(session, "submit", timeout_submit)
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", wait_for_verification)
+
+    assert session.start_browser(headless=True, user_data_dir=str(tmp_path)) is False
+    release_verification.set()
+    workers[0].join(timeout=2.0)
+
+    assert not workers[0].is_alive()
+    assert len(playwright.chromium.outcomes) == 1
+    assert headless_context.closed is True
+    assert headed_context.closed is False
+    assert session.context is None
+    assert session.page is None
+    assert session.ready is False
 
 
 def test_download_event_includes_failure_reason_and_path(
@@ -146,6 +385,155 @@ def test_gui_download_uses_keyword_directory_like_cli(
     assert not (tmp_path / "第一首歌手").exists()
 
 
+def test_download_exception_completes_once_and_removes_task(
+    tmp_path: Path,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _RaisingSession()  # type: ignore[assignment]
+    task = DownloadTask(
+        task_id="task-exception",
+        songs=[
+            {"id": "1", "name": "One", "artist": "Artist", "_gui_index": 4},
+            {"id": "2", "name": "Two", "artist": "Artist", "_gui_index": 9},
+        ],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    bridge._tasks[task.task_id] = task
+
+    bridge._run_download(task)
+
+    complete_events = [event for event in events if event["type"] == "complete"]
+    done_events = [event for event in events if event["type"] == "song_done"]
+    assert complete_events == [
+        {
+            "type": "complete",
+            "task_id": task.task_id,
+            "success": 0,
+            "fail": 2,
+            "skip": 0,
+        }
+    ]
+    assert [event["index"] for event in done_events] == [4, 9]
+    assert all(event["result"] == "fail" for event in done_events)
+    assert task.task_id not in bridge._tasks
+
+
+def test_download_exception_preserves_completed_song_results(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _RaisingSession(succeed_before_raise=1)  # type: ignore[assignment]
+    monkeypatch.setattr(bridge_module, "download_song", lambda **_kwargs: "success")
+    task = DownloadTask(
+        task_id="task-partial",
+        songs=[
+            {"id": "1", "name": "One", "artist": "Artist"},
+            {"id": "2", "name": "Two", "artist": "Artist"},
+            {"id": "3", "name": "Three", "artist": "Artist"},
+        ],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    bridge._tasks[task.task_id] = task
+
+    bridge._run_download(task)
+
+    done_events = [event for event in events if event["type"] == "song_done"]
+    assert [event["result"] for event in done_events] == ["success", "fail", "fail"]
+    assert task.success == 1
+    assert task.fail == 2
+    assert sum(event["type"] == "complete" for event in events) == 1
+    assert task.task_id not in bridge._tasks
+
+
+def test_cancelled_download_completes_without_failing_unprocessed_songs(
+    tmp_path: Path,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _InlineSession()  # type: ignore[assignment]
+    task = DownloadTask(
+        task_id="task-cancelled",
+        songs=[{"id": "1", "name": "One", "artist": "Artist"}],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    task.cancel_event.set()
+    bridge._tasks[task.task_id] = task
+
+    bridge._run_download(task)
+
+    assert not [event for event in events if event["type"] == "song_done"]
+    assert [event for event in events if event["type"] == "complete"] == [
+        {
+            "type": "complete",
+            "task_id": task.task_id,
+            "success": 0,
+            "fail": 0,
+            "skip": 0,
+        }
+    ]
+    assert task.task_id not in bridge._tasks
+
+
+def test_download_target_directory_failure_marks_all_songs_once(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    events: list[dict[str, Any]] = []
+    bridge = MusicBridge(on_progress=events.append)
+    bridge._session = _InlineSession()  # type: ignore[assignment]
+    task = DownloadTask(
+        task_id="task-directory",
+        keyword="Album",
+        songs=[
+            {"id": "1", "name": "One", "artist": "Artist"},
+            {"id": "2", "name": "Two", "artist": "Artist"},
+        ],
+        source="netease",
+        bitrate="320",
+        download_lyric=True,
+        download_cover=True,
+        output_dir=str(tmp_path),
+    )
+    bridge._tasks[task.task_id] = task
+    real_makedirs = bridge_module.os.makedirs
+
+    def fail_target_dir(path: str, *, exist_ok: bool) -> None:
+        if path.endswith("Album"):
+            raise OSError("target unavailable")
+        real_makedirs(path, exist_ok=exist_ok)
+
+    monkeypatch.setattr(bridge_module.os, "makedirs", fail_target_dir)
+
+    bridge._run_download(task)
+
+    assert events[0] == {
+        "type": "start",
+        "task_id": task.task_id,
+        "total": 2,
+    }
+    done_events = [event for event in events if event["type"] == "song_done"]
+    assert len(done_events) == 2
+    assert all(event["result"] == "fail" for event in done_events)
+    assert sum(event["type"] == "complete" for event in events) == 1
+    assert task.fail == 2
+    assert task.task_id not in bridge._tasks
+
+
 def test_gui_search_returns_before_progressive_cover_resolution(monkeypatch) -> None:
     captured: list[tuple[list[Song], str, int]] = []
 
@@ -180,6 +568,26 @@ def test_gui_search_returns_before_progressive_cover_resolution(monkeypatch) -> 
     assert "cover" not in results[0]
     assert captured[0][0][0].pic_id == "pic-1"
     assert captured[0][1] == "netease"
+
+
+def test_gui_search_log_uses_catalog_display_name(monkeypatch) -> None:
+    logs: list[tuple[str, str]] = []
+
+    class FakeClient:
+        def __init__(self, _page: object) -> None:
+            pass
+
+        def search(self, _options: object) -> list[dict[str, object]]:
+            return []
+
+    bridge = MusicBridge(on_log=lambda message, level: logs.append((message, level)))
+    bridge._session = _InlineSession()  # type: ignore[assignment]
+    monkeypatch.setattr(bridge, "ensure_browser", lambda: True)
+    monkeypatch.setattr(bridge_module, "GdStudioClient", FakeClient)
+
+    bridge.search("Song", "netease", "song", 1)
+
+    assert any("来源: 网易云音乐 (netease)" in message for message, _level in logs)
 
 
 def test_cover_resolution_continues_after_one_song_fails(monkeypatch) -> None:

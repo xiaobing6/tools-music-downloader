@@ -10,6 +10,7 @@ from music_downloader.core.config import (
     VALID_BITRATES,
     VALID_SOURCES,
 )
+from music_downloader.domain import enums as enum_module
 from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source
 from music_downloader.domain.models import SearchOptions, Song
 
@@ -95,6 +96,31 @@ def test_config_choices_match_domain_enums() -> None:
     assert list(SEARCH_TYPE_MAP) == [item.value for item in SearchType]
     assert DEFAULT_SOURCE in VALID_SOURCES
     assert DEFAULT_BITRATE in VALID_BITRATES
+
+
+def test_source_catalog_is_complete_and_labeled() -> None:
+    expected = {
+        "netease": "网易云音乐",
+        "migu": "咪咕音乐",
+        "kugou": "酷狗音乐",
+        "kuwo": "酷我音乐",
+        "ytmusic": "YouTube Music",
+        "tidal": "Tidal",
+        "qobuz": "Qobuz",
+        "deezer": "Deezer",
+        "spotify": "Spotify",
+        "tencent": "QQ音乐",
+        "ximalaya": "喜马拉雅",
+        "joox": "JOOX",
+        "apple": "Apple Music",
+    }
+
+    assert {item.value: item.label for item in Source} == expected
+    assert list(expected) == VALID_SOURCES
+    assert enum_module.source_label("kugou") == "酷狗音乐"
+    assert enum_module.source_label(Source.NETEASE) == "网易云音乐"
+    assert enum_module.source_label("future-source") == "future-source"
+    assert enum_module.source_label(None) == "未知"
 
 
 @pytest.mark.parametrize(

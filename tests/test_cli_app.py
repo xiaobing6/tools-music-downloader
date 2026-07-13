@@ -51,6 +51,14 @@ def test_help_lists_supported_option_values() -> None:
     assert ".chrome-profile" in result.output
 
 
+def test_help_lists_source_ids_with_display_names() -> None:
+    result = CliRunner().invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "netease（网易云音乐）" in result.output
+    assert "kugou（酷狗音乐）" in result.output
+
+
 def test_help_uses_rich_rendering() -> None:
     result = CliRunner().invoke(app, ["--help"])
 
@@ -214,3 +222,13 @@ def test_source_runtime_root_matches_entrypoint_directory() -> None:
 
     assert root == Path(__file__).resolve().parents[1]
     assert (root / "music_download.py").is_file()
+
+
+def test_default_user_data_dir_uses_activated_recovery_profile(tmp_path: Path) -> None:
+    profile_root = tmp_path / ".chrome-profile"
+    profile_root.mkdir()
+    (profile_root / ".active-profile").write_text("recovery", encoding="utf-8")
+
+    resolved = workflow._resolve_user_data_dir(None, str(tmp_path))
+
+    assert resolved == str((profile_root / "recovery").resolve())
