@@ -15,8 +15,16 @@
 
 ## 界面预览
 
+### 启动页面
+
 <p align="center">
-  <img src="docs/images/gui-main.png" alt="音乐下载器 GUI 主界面" width="100%">
+  <img src="docs/images/gui-startup.png" alt="音乐下载器 GUI 启动页面" width="100%">
+</p>
+
+### 主工作台
+
+<p align="center">
+  <img src="docs/images/gui-main.png" alt="音乐下载器 GUI 主工作台" width="100%">
 </p>
 
 ## 环境要求
