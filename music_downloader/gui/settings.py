@@ -5,10 +5,10 @@ GUI choices are intentionally not persisted between runs.
 
 from __future__ import annotations
 
-import os
 import sys
-from pathlib import Path
 from typing import Any
+
+from music_downloader.core.runtime import runtime_root
 
 
 def _get_default_output_dir() -> str:
@@ -17,11 +17,11 @@ def _get_default_output_dir() -> str:
     Uses the same source/executable root logic as the CLI so GUI and CLI defaults stay
     in sync whether running from source or a Nuitka-compiled executable.
     """
-    if "__compiled__" in globals():
-        base_dir = Path(os.path.dirname(os.path.abspath(sys.argv[0])))
-    else:
-        # __file__ is music_downloader/gui/settings.py; go up to project root.
-        base_dir = Path(__file__).resolve().parent.parent.parent
+    base_dir = runtime_root(
+        __file__,
+        compiled="__compiled__" in globals(),
+        executable=sys.argv[0],
+    )
     return str(base_dir / "downloads")
 
 

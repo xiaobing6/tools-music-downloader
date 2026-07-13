@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import threading
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,21 @@ class _SequencedPlaywright:
         self.chromium = _SequencedChromium(outcomes)
 
 
+class _ProfileChromium:
+    def __init__(self, contexts: list[_FakeContext]) -> None:
+        self.contexts = contexts
+        self.calls: list[dict[str, object]] = []
+
+    def launch_persistent_context(self, **kwargs: object) -> _FakeContext:
+        self.calls.append(kwargs)
+        return self.contexts.pop(0)
+
+
+class _ProfilePlaywright:
+    def __init__(self, contexts: list[_FakeContext]) -> None:
+        self.chromium = _ProfileChromium(contexts)
+
+
 def test_gui_browser_hides_only_headless_platform_window(tmp_path: Path, monkeypatch) -> None:
     calls: list[dict[str, object]] = []
     cloudflare_results = iter([False, True])
@@ -136,6 +152,94 @@ def test_gui_browser_cleans_context_when_verification_fails(
     assert session.context is None
     assert session.page is None
     assert session.ready is False
+
+
+def test_gui_browser_recovers_default_profile_without_deleting_old_state(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    project_root = tmp_path / "project"
+    module_file = project_root / "music_downloader" / "gui" / "bridge.py"
+    profile_root = project_root / ".chrome-profile"
+    old_state = profile_root / "Default" / "Preferences"
+    old_state.parent.mkdir(parents=True)
+    old_state.write_text("keep", encoding="utf-8")
+
+    contexts = [_FakeContext(), _FakeContext(), _FakeContext()]
+    playwright = _ProfilePlaywright(contexts)
+    verification_results = iter([False, False, True])
+    session = bridge_module._PlaywrightThread()
+    session._playwright = playwright
+    monkeypatch.setattr(bridge_module, "__file__", str(module_file))
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(
+        bridge_module,
+        "wait_for_cloudflare",
+        lambda _page: next(verification_results),
+    )
+
+    assert session.start_browser(headless=True) is True
+    assert old_state.read_text(encoding="utf-8") == "keep"
+    assert [call["user_data_dir"] for call in playwright.chromium.calls] == [
+        str(profile_root),
+        str(profile_root),
+        str(profile_root / "recovery"),
+    ]
+    assert (profile_root / ".active-profile").read_text(encoding="utf-8") == "recovery"
+
+
+def test_gui_browser_warns_when_recovery_marker_cannot_be_written(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    project_root = tmp_path / "project"
+    module_file = project_root / "music_downloader" / "gui" / "bridge.py"
+    logs: list[tuple[str, str]] = []
+    playwright = _ProfilePlaywright([_FakeContext(), _FakeContext(), _FakeContext()])
+    verification_results = iter([False, False, True])
+    session = bridge_module._PlaywrightThread(
+        on_log=lambda message, level: logs.append((message, level))
+    )
+    session._playwright = playwright
+    original_write_text = Path.write_text
+
+    def write_text(path: Path, *args: object, **kwargs: object) -> int:
+        if path.name == ".active-profile":
+            raise OSError("marker is read-only")
+        return original_write_text(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write_text)
+    monkeypatch.setattr(bridge_module, "__file__", str(module_file))
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(
+        bridge_module,
+        "wait_for_cloudflare",
+        lambda _page: next(verification_results),
+    )
+
+    assert session.start_browser(headless=True) is True
+    assert any(level == "warn" and "无法记录恢复环境" in message for message, level in logs)
+
+
+def test_gui_browser_uses_executable_profile_when_compiled(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    executable = tmp_path / "dist" / "music_download.exe"
+    module_file = tmp_path / "onefile-temp" / "music_downloader" / "gui" / "bridge.py"
+    playwright = _ProfilePlaywright([_FakeContext()])
+    session = bridge_module._PlaywrightThread()
+    session._playwright = playwright
+    monkeypatch.setitem(bridge_module.__dict__, "__compiled__", object())
+    monkeypatch.setattr(sys, "argv", [str(executable)])
+    monkeypatch.setattr(bridge_module, "__file__", str(module_file))
+    monkeypatch.setattr(session, "submit", lambda func, timeout=None: func())
+    monkeypatch.setattr(bridge_module, "wait_for_cloudflare", lambda _page: True)
+
+    assert session.start_browser(headless=True) is True
+    assert playwright.chromium.calls[0]["user_data_dir"] == str(
+        executable.parent / ".chrome-profile"
+    )
 
 
 def test_gui_browser_cleans_state_when_headed_fallback_launch_fails(

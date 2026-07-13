@@ -86,6 +86,7 @@ scripts/build_exe.ps1                  # Windows exe 构建脚本
 - 默认通过 `launch_persistent_context` 启动，把 user data 放在项目根目录 `.chrome-profile/`，与系统 Chrome profile 隔离。
 - GUI 只在 headless 模式使用屏幕外窗口位置；headed 验证窗口保持正常位置。不要用禁用 GPU、隐藏 GUI 或删除 persistent profile 的方式替代这一兼容措施。
 - GUI 浏览器初始化失败、验证失败或超时时，必须在 Playwright 所属线程关闭并清空 page/context/ready 状态；重试不得复用失败会话或继续锁住 profile。
+- 默认 profile 在 headless 和 headed 模式下都验证失败时，可在保留旧数据的前提下尝试 `.chrome-profile/recovery/`；仅在恢复验证成功后写入 `.active-profile`，CLI 和 GUI 共用该激活结果。显式 `--user-data-dir` 不得自动切换。
 - `cf_clearance` 跨 profile 失效属预期副作用。
 - 如果用户主动指定 `--user-data-dir`，CLI 会透传，并打印当前目录位置。
 

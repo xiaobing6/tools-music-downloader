@@ -222,3 +222,13 @@ def test_source_runtime_root_matches_entrypoint_directory() -> None:
 
     assert root == Path(__file__).resolve().parents[1]
     assert (root / "music_download.py").is_file()
+
+
+def test_default_user_data_dir_uses_activated_recovery_profile(tmp_path: Path) -> None:
+    profile_root = tmp_path / ".chrome-profile"
+    profile_root.mkdir()
+    (profile_root / ".active-profile").write_text("recovery", encoding="utf-8")
+
+    resolved = workflow._resolve_user_data_dir(None, str(tmp_path))
+
+    assert resolved == str((profile_root / "recovery").resolve())

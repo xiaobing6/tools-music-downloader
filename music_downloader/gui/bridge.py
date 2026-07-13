@@ -10,10 +10,12 @@ from __future__ import annotations
 import contextlib
 import os
 import queue
+import sys
 import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from music_downloader.core.config import (
@@ -21,6 +23,12 @@ from music_downloader.core.config import (
     INTER_SONG_DELAY_SEC,
     PAGE_NAV_TIMEOUT_MS,
     USER_AGENT,
+)
+from music_downloader.core.runtime import (
+    ACTIVE_PROFILE_MARKER,
+    RECOVERY_PROFILE_NAME,
+    active_chrome_profile,
+    runtime_root,
 )
 from music_downloader.domain.enums import SearchType, Source, source_label
 from music_downloader.domain.models import SearchOptions, Song
@@ -156,61 +164,89 @@ class _PlaywrightThread:
         if self._browser_ready.is_set():
             return True
 
-        if user_data_dir is None:
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            user_data_dir = os.path.join(base_dir, ".chrome-profile")
-        os.makedirs(user_data_dir, exist_ok=True)
-
-        final_user_data_dir = user_data_dir
+        uses_default_profile = user_data_dir is None
+        if uses_default_profile:
+            base_dir = runtime_root(
+                __file__,
+                compiled="__compiled__" in globals(),
+                executable=sys.argv[0],
+            )
+            user_data_dir = str(base_dir / ".chrome-profile")
+        assert user_data_dir is not None
+        profile_root = Path(user_data_dir)
+        recovery_profile = profile_root / RECOVERY_PROFILE_NAME
+        marker = profile_root / ACTIVE_PROFILE_MARKER
+        active_profile = (
+            active_chrome_profile(profile_root) if uses_default_profile else profile_root
+        )
+        profile_candidates = (
+            [recovery_profile]
+            if active_profile == recovery_profile
+            else [profile_root, recovery_profile]
+            if uses_default_profile
+            else [profile_root]
+        )
         final_headless = headless
         open_cancelled = threading.Event()
 
-        def _open() -> bool:
+        def _try_profile(profile: Path) -> bool:
             self._cleanup_browser()
             if open_cancelled.is_set():
                 return False
-            try:
-                self._log("正在启动浏览器...", "info")
+            os.makedirs(profile, exist_ok=True)
+            self._context = self._playwright.chromium.launch_persistent_context(
+                user_data_dir=str(profile),
+                channel="chrome",
+                headless=final_headless,
+                user_agent=USER_AGENT,
+                args=_browser_launch_args(headless=final_headless),
+            )
+            self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
+            self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
+            self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
+            if open_cancelled.is_set():
+                return False
+            cf_passed = wait_for_cloudflare(self._page)
+            if open_cancelled.is_set():
+                return False
+
+            if not cf_passed and final_headless:
+                self._log("无头模式未通过验证，尝试有头模式...", "warn")
+                self._cleanup_browser()
                 self._context = self._playwright.chromium.launch_persistent_context(
-                    user_data_dir=final_user_data_dir,
+                    user_data_dir=str(profile),
                     channel="chrome",
-                    headless=final_headless,
+                    headless=False,
                     user_agent=USER_AGENT,
-                    args=_browser_launch_args(headless=final_headless),
+                    args=_browser_launch_args(headless=False),
                 )
                 self._page = (
                     self._context.pages[0] if self._context.pages else self._context.new_page()
                 )
-                self._log("正在访问音乐站点，等待 Cloudflare 验证...", "info")
                 self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
                 if open_cancelled.is_set():
                     return False
                 cf_passed = wait_for_cloudflare(self._page)
-                if open_cancelled.is_set():
-                    return False
+            return cf_passed and not open_cancelled.is_set()
 
-                if not cf_passed and final_headless:
-                    self._log("无头模式未通过验证，尝试有头模式...", "warn")
-                    self._cleanup_browser()
-                    self._context = self._playwright.chromium.launch_persistent_context(
-                        user_data_dir=final_user_data_dir,
-                        channel="chrome",
-                        headless=False,
-                        user_agent=USER_AGENT,
-                        args=_browser_launch_args(headless=False),
-                    )
-                    self._page = (
-                        self._context.pages[0] if self._context.pages else self._context.new_page()
-                    )
-                    self._page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_NAV_TIMEOUT_MS)
-                    if open_cancelled.is_set():
-                        return False
-                    cf_passed = wait_for_cloudflare(self._page)
-
-                if cf_passed and not open_cancelled.is_set():
-                    self._log("浏览器就绪，Cloudflare 验证通过", "success")
-                    self._browser_ready.set()
-                    return True
+        def _open() -> bool:
+            try:
+                self._log("正在启动浏览器...", "info")
+                for index, profile in enumerate(profile_candidates):
+                    if _try_profile(profile):
+                        self._log("浏览器就绪，Cloudflare 验证通过", "success")
+                        self._browser_ready.set()
+                        if uses_default_profile and profile == recovery_profile:
+                            try:
+                                marker.write_text(RECOVERY_PROFILE_NAME, encoding="utf-8")
+                            except OSError as exc:
+                                self._log(
+                                    f"无法记录恢复环境，下次启动可能需要重新验证: {exc}",
+                                    "warn",
+                                )
+                        return True
+                    if index < len(profile_candidates) - 1:
+                        self._log("当前浏览器数据未通过验证，尝试恢复环境...", "warn")
                 self._log("Cloudflare 验证未通过", "error")
                 return False
             finally:

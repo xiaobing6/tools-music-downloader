@@ -251,6 +251,8 @@ npm.cmd run build
 
 `cf_clearance` 与 IP、UA、TLS 指纹和 Chrome profile 相关。工具默认使用项目目录下隔离的 `.chrome-profile/`，不会读取系统 Chrome profile。
 
+如果默认 profile 在无头和有头模式下都无法通过验证，GUI 会保留原 profile，并尝试 `.chrome-profile/recovery/`。恢复验证成功后，GUI 与 CLI 会共同使用该目录；显式传入 `--user-data-dir` 时不会自动切换目录。
+
 **为什么 GUI 旁边出现不可交互的白色窗口？**
 
 新版 Chrome 的 headless 模式仍会创建平台窗口，正常情况下该窗口不会显示。GUI 会在 headless 启动时把它放到屏幕外；如果白窗再次出现，请确认 `music_downloader/gui/bridge.py` 的 headless persistent context 仍使用屏幕外位置参数，并检查系统 Chrome 与 Playwright 版本。不要通过隐藏 GUI 或禁用整个浏览器来规避，因为搜索和下载仍依赖该浏览器会话。

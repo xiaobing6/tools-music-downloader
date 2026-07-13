@@ -30,6 +30,7 @@ from music_downloader.core.config import (
     VALID_SOURCES,
 )
 from music_downloader.core.console import console
+from music_downloader.core.runtime import active_chrome_profile, runtime_root
 from music_downloader.domain.enums import Bitrate, DownloadStatus, SearchType, Source, source_label
 from music_downloader.domain.models import DownloadOptions, SearchOptions
 from music_downloader.infrastructure.downloader import download_song
@@ -76,7 +77,7 @@ def _resolve_run_options(options: RunOptions, script_dir: str) -> RunOptions:
 
 def _source_runtime_root(module_file: str | os.PathLike[str]) -> Path:
     """Return the project root when running from source."""
-    return Path(module_file).resolve().parents[2]
+    return runtime_root(module_file, compiled=False)
 
 
 def do_search_and_download(
@@ -377,7 +378,8 @@ def _resolve_user_data_dir(user_data_dir: str | None, script_dir: str) -> str:
     """
     if user_data_dir:
         return os.path.abspath(user_data_dir)
-    return os.path.abspath(os.path.join(script_dir, ".chrome-profile"))
+    profile_root = os.path.join(script_dir, ".chrome-profile")
+    return os.path.abspath(active_chrome_profile(profile_root))
 
 
 def run_with_browser(options: RunOptions) -> int:
@@ -393,11 +395,13 @@ def run_with_browser(options: RunOptions) -> int:
     if sync_playwright is None:
         return 1
 
-    if "__compiled__" in globals():
-        # Nuitka 编译环境：sys.argv[0] 是用户执行的真实 EXE 路径
-        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-    else:
-        script_dir = str(_source_runtime_root(__file__))
+    script_dir = str(
+        runtime_root(
+            __file__,
+            compiled="__compiled__" in globals(),
+            executable=sys.argv[0],
+        )
+    )
     options = _resolve_run_options(options, script_dir)
     user_data_dir = _resolve_user_data_dir(options.user_data_dir, script_dir)
     os.makedirs(user_data_dir, exist_ok=True)
